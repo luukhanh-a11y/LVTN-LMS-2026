@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
@@ -24,11 +24,11 @@ public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
 
         CauHinhHeThong cauHinhHeThong = new CauHinhHeThong();
 
-        cauHinhHeThong.setTenTruong( request.getTenTruong() );
-        cauHinhHeThong.setLogoUrl( request.getLogoUrl() );
         cauHinhHeThong.setDiaChi( request.getDiaChi() );
-        cauHinhHeThong.setHotline( request.getHotline() );
         cauHinhHeThong.setEmailLienHe( request.getEmailLienHe() );
+        cauHinhHeThong.setHotline( request.getHotline() );
+        cauHinhHeThong.setLogoUrl( request.getLogoUrl() );
+        cauHinhHeThong.setTenTruong( request.getTenTruong() );
 
         return cauHinhHeThong;
     }
@@ -45,11 +45,11 @@ public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
         cauHinhHeThongResponse.setSoHocKyHienTai( entityHocKyHienTaiSoHocKy( entity ) );
         cauHinhHeThongResponse.setTenNamHocHienTai( entityHocKyHienTaiNamHocTenNamHoc( entity ) );
         cauHinhHeThongResponse.setCauHinhId( entity.getCauHinhId() );
-        cauHinhHeThongResponse.setTenTruong( entity.getTenTruong() );
-        cauHinhHeThongResponse.setLogoUrl( entity.getLogoUrl() );
         cauHinhHeThongResponse.setDiaChi( entity.getDiaChi() );
-        cauHinhHeThongResponse.setHotline( entity.getHotline() );
         cauHinhHeThongResponse.setEmailLienHe( entity.getEmailLienHe() );
+        cauHinhHeThongResponse.setHotline( entity.getHotline() );
+        cauHinhHeThongResponse.setLogoUrl( entity.getLogoUrl() );
+        cauHinhHeThongResponse.setTenTruong( entity.getTenTruong() );
 
         return cauHinhHeThongResponse;
     }
@@ -60,11 +60,11 @@ public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
             return;
         }
 
-        entity.setTenTruong( request.getTenTruong() );
-        entity.setLogoUrl( request.getLogoUrl() );
         entity.setDiaChi( request.getDiaChi() );
-        entity.setHotline( request.getHotline() );
         entity.setEmailLienHe( request.getEmailLienHe() );
+        entity.setHotline( request.getHotline() );
+        entity.setLogoUrl( request.getLogoUrl() );
+        entity.setTenTruong( request.getTenTruong() );
     }
 
     private Integer entityHocKyHienTaiHocKyId(CauHinhHeThong cauHinhHeThong) {

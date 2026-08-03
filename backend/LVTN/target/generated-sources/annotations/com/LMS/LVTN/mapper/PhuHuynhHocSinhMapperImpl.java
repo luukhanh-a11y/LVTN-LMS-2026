@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:47+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class PhuHuynhHocSinhMapperImpl implements PhuHuynhHocSinhMapper {
@@ -63,9 +63,9 @@ public class PhuHuynhHocSinhMapperImpl implements PhuHuynhHocSinhMapper {
 
         HoSoPhuHuynhResponse hoSoPhuHuynhResponse = new HoSoPhuHuynhResponse();
 
-        hoSoPhuHuynhResponse.setPhuHuynhId( hoSoPhuHuynh.getPhuHuynhId() );
-        hoSoPhuHuynhResponse.setHoTen( hoSoPhuHuynh.getHoTen() );
         hoSoPhuHuynhResponse.setEmailNhanThongBao( hoSoPhuHuynh.getEmailNhanThongBao() );
+        hoSoPhuHuynhResponse.setHoTen( hoSoPhuHuynh.getHoTen() );
+        hoSoPhuHuynhResponse.setPhuHuynhId( hoSoPhuHuynh.getPhuHuynhId() );
 
         return hoSoPhuHuynhResponse;
     }
@@ -77,11 +77,11 @@ public class PhuHuynhHocSinhMapperImpl implements PhuHuynhHocSinhMapper {
 
         HoSoHocSinhResponse hoSoHocSinhResponse = new HoSoHocSinhResponse();
 
+        hoSoHocSinhResponse.setGioiTinh( hoSoHocSinh.getGioiTinh() );
+        hoSoHocSinhResponse.setHoTen( hoSoHocSinh.getHoTen() );
         hoSoHocSinhResponse.setHocSinhId( hoSoHocSinh.getHocSinhId() );
         hoSoHocSinhResponse.setMaHocSinh( hoSoHocSinh.getMaHocSinh() );
-        hoSoHocSinhResponse.setHoTen( hoSoHocSinh.getHoTen() );
         hoSoHocSinhResponse.setNgaySinh( hoSoHocSinh.getNgaySinh() );
-        hoSoHocSinhResponse.setGioiTinh( hoSoHocSinh.getGioiTinh() );
         hoSoHocSinhResponse.setTongXp( hoSoHocSinh.getTongXp() );
 
         return hoSoHocSinhResponse;

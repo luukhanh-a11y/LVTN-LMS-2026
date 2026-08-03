@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class LoImportMapperImpl implements LoImportMapper {
@@ -42,14 +42,14 @@ public class LoImportMapperImpl implements LoImportMapper {
             loImportResponse.setNguoiThucHienId( Long.parseLong( nguoiDungId ) );
         }
         loImportResponse.setTenNguoiThucHien( entityNguoiThucHienTenDangNhap( entity ) );
+        loImportResponse.setChiTietLoi( entity.getChiTietLoi() );
         loImportResponse.setLoId( entity.getLoId() );
         loImportResponse.setLoaiImport( entity.getLoaiImport() );
-        loImportResponse.setTenFile( entity.getTenFile() );
-        loImportResponse.setTrangThai( entity.getTrangThai() );
         loImportResponse.setSoThanhCong( entity.getSoThanhCong() );
-        loImportResponse.setChiTietLoi( entity.getChiTietLoi() );
-        loImportResponse.setTomTatKetQua( entity.getTomTatKetQua() );
+        loImportResponse.setTenFile( entity.getTenFile() );
         loImportResponse.setThoiDiemImport( entity.getThoiDiemImport() );
+        loImportResponse.setTomTatKetQua( entity.getTomTatKetQua() );
+        loImportResponse.setTrangThai( entity.getTrangThai() );
 
         return loImportResponse;
     }

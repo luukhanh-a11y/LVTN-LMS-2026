@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class HuyHieuMapperImpl implements HuyHieuMapper {
@@ -22,11 +22,11 @@ public class HuyHieuMapperImpl implements HuyHieuMapper {
 
         HuyHieu huyHieu = new HuyHieu();
 
-        huyHieu.setTenHuyHieu( request.getTenHuyHieu() );
-        huyHieu.setMoTa( request.getMoTa() );
+        huyHieu.setDieuKien( request.getDieuKien() );
         huyHieu.setIconUrl( request.getIconUrl() );
         huyHieu.setLoai( request.getLoai() );
-        huyHieu.setDieuKien( request.getDieuKien() );
+        huyHieu.setMoTa( request.getMoTa() );
+        huyHieu.setTenHuyHieu( request.getTenHuyHieu() );
 
         return huyHieu;
     }
@@ -39,12 +39,12 @@ public class HuyHieuMapperImpl implements HuyHieuMapper {
 
         HuyHieuResponse huyHieuResponse = new HuyHieuResponse();
 
+        huyHieuResponse.setDieuKien( entity.getDieuKien() );
         huyHieuResponse.setHuyHieuId( entity.getHuyHieuId() );
-        huyHieuResponse.setTenHuyHieu( entity.getTenHuyHieu() );
-        huyHieuResponse.setMoTa( entity.getMoTa() );
         huyHieuResponse.setIconUrl( entity.getIconUrl() );
         huyHieuResponse.setLoai( entity.getLoai() );
-        huyHieuResponse.setDieuKien( entity.getDieuKien() );
+        huyHieuResponse.setMoTa( entity.getMoTa() );
+        huyHieuResponse.setTenHuyHieu( entity.getTenHuyHieu() );
 
         return huyHieuResponse;
     }
@@ -55,10 +55,10 @@ public class HuyHieuMapperImpl implements HuyHieuMapper {
             return;
         }
 
-        entity.setTenHuyHieu( request.getTenHuyHieu() );
-        entity.setMoTa( request.getMoTa() );
+        entity.setDieuKien( request.getDieuKien() );
         entity.setIconUrl( request.getIconUrl() );
         entity.setLoai( request.getLoai() );
-        entity.setDieuKien( request.getDieuKien() );
+        entity.setMoTa( request.getMoTa() );
+        entity.setTenHuyHieu( request.getTenHuyHieu() );
     }
 }

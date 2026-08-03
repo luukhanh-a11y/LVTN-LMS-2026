@@ -34,7 +34,15 @@ public class LichSuTuHocService {
     HoSoHocSinhRepository hoSoHocSinhRepository;
     TienDoHocSinhService tienDoHocSinhService;
 
+
     public LichSuTuHocResponse nopBai(LichSuTuHocRequest request){
+
+        if(!dangBaiRepository.isSachGiaoKhoa(request.getDangBaiId()))
+            throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
+        if (lichSuTuHocRepository
+                .existsByHocSinh_HocSinhIdAndDangBai_DangBaiId(request.getHocSinhId(), request.getDangBaiId()))
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
+
         DangBai dangBai = dangBaiRepository.findById(request.getDangBaiId())
                 .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
 
@@ -49,6 +57,11 @@ public class LichSuTuHocService {
         lichSuTuHoc.setDiemSo(diem);
 
         LichSuTuHoc saved = lichSuTuHocRepository.save(lichSuTuHoc);
+
+        int xp = dangBai.getXpThuong() + hocSinh.getTongXp();
+        hocSinh.setTongXp(xp);
+
+        hoSoHocSinhRepository.save(hocSinh);
 
         try {
             tienDoHocSinhService.updateProgress(hocSinh.getHocSinhId(), dangBai.getBaiHoc().getBaiHocId());
@@ -105,14 +118,20 @@ public class LichSuTuHocService {
     }
 
     public LichSuTuHocResponse udpate(Long lichSuID,LichSuTuHocRequest request){
-
-        if (lichSuTuHocRepository.findByDangBai_DangBaiId(request.getDangBaiId()) == null)
-            throw new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND);
-
         LichSuTuHoc lichSuTuHoc = lichSuTuHocRepository.findById(lichSuID)
                 .orElseThrow(() -> new AppExceptions(Errorcode.LICH_SU_TU_HOC_NOT_FOUND));
 
+        DangBai dangBai = dangBaiRepository.findById(request.getDangBaiId())
+                .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
+
+        HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(request.getHocSinhId())
+                .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+
+        BigDecimal diem = gameService.chamDiem(dangBai.getDapAnChuan(), request.getChiTietBaiLam());
+
         lichSuTuHocMapper.updateLichSuTuHoc(request, lichSuTuHoc);
+        lichSuTuHoc.setDiemSo(diem);
+
         return lichSuTuHocMapper.toResponse(lichSuTuHocRepository.save(lichSuTuHoc));
     }
 

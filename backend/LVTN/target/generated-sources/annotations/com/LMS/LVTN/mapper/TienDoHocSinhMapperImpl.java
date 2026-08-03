@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:02+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class TienDoHocSinhMapperImpl implements TienDoHocSinhMapper {
@@ -26,10 +26,10 @@ public class TienDoHocSinhMapperImpl implements TienDoHocSinhMapper {
 
         TienDoHocSinh tienDoHocSinh = new TienDoHocSinh();
 
+        tienDoHocSinh.setDaHoanThanh( request.getDaHoanThanh() );
+        tienDoHocSinh.setLanXemCuoi( request.getLanXemCuoi() );
         tienDoHocSinh.setPhanTramHoanThanh( request.getPhanTramHoanThanh() );
         tienDoHocSinh.setThoiGianHoc( request.getThoiGianHoc() );
-        tienDoHocSinh.setLanXemCuoi( request.getLanXemCuoi() );
-        tienDoHocSinh.setDaHoanThanh( request.getDaHoanThanh() );
 
         return tienDoHocSinh;
     }
@@ -49,11 +49,11 @@ public class TienDoHocSinhMapperImpl implements TienDoHocSinhMapper {
         tienDoHocSinhResponse.setHocKyId( entityHocKyHocKyId( entity ) );
         tienDoHocSinhResponse.setSoHocKy( entityHocKySoHocKy( entity ) );
         tienDoHocSinhResponse.setTenNamHoc( entityHocKyNamHocTenNamHoc( entity ) );
-        tienDoHocSinhResponse.setTienDoId( entity.getTienDoId() );
+        tienDoHocSinhResponse.setDaHoanThanh( entity.getDaHoanThanh() );
+        tienDoHocSinhResponse.setLanXemCuoi( entity.getLanXemCuoi() );
         tienDoHocSinhResponse.setPhanTramHoanThanh( entity.getPhanTramHoanThanh() );
         tienDoHocSinhResponse.setThoiGianHoc( entity.getThoiGianHoc() );
-        tienDoHocSinhResponse.setLanXemCuoi( entity.getLanXemCuoi() );
-        tienDoHocSinhResponse.setDaHoanThanh( entity.getDaHoanThanh() );
+        tienDoHocSinhResponse.setTienDoId( entity.getTienDoId() );
 
         return tienDoHocSinhResponse;
     }
@@ -64,10 +64,10 @@ public class TienDoHocSinhMapperImpl implements TienDoHocSinhMapper {
             return;
         }
 
+        entity.setDaHoanThanh( request.getDaHoanThanh() );
+        entity.setLanXemCuoi( request.getLanXemCuoi() );
         entity.setPhanTramHoanThanh( request.getPhanTramHoanThanh() );
         entity.setThoiGianHoc( request.getThoiGianHoc() );
-        entity.setLanXemCuoi( request.getLanXemCuoi() );
-        entity.setDaHoanThanh( request.getDaHoanThanh() );
     }
 
     private Long entityHocSinhHocSinhId(TienDoHocSinh tienDoHocSinh) {

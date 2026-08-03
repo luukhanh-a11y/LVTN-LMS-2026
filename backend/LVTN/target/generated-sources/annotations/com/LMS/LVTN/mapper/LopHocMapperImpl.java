@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class LopHocMapperImpl implements LopHocMapper {
@@ -24,9 +24,9 @@ public class LopHocMapperImpl implements LopHocMapper {
 
         LopHoc lopHoc = new LopHoc();
 
-        lopHoc.setTenLop( request.getTenLop() );
         lopHoc.setKhoiLop( request.getKhoiLop() );
         lopHoc.setSiSoToiDa( request.getSiSoToiDa() );
+        lopHoc.setTenLop( request.getTenLop() );
         lopHoc.setTrangThai( request.getTrangThai() );
 
         return lopHoc;
@@ -44,10 +44,10 @@ public class LopHocMapperImpl implements LopHocMapper {
         lopHocResponse.setTenNamHoc( entityNamHocTenNamHoc( entity ) );
         lopHocResponse.setGiaoVienChuNhiemId( entityGiaoVienChuNhiemGiaoVienId( entity ) );
         lopHocResponse.setTenGiaoVienChuNhiem( entityGiaoVienChuNhiemHoTen( entity ) );
-        lopHocResponse.setLopHocId( entity.getLopHocId() );
-        lopHocResponse.setTenLop( entity.getTenLop() );
         lopHocResponse.setKhoiLop( entity.getKhoiLop() );
+        lopHocResponse.setLopHocId( entity.getLopHocId() );
         lopHocResponse.setSiSoToiDa( entity.getSiSoToiDa() );
+        lopHocResponse.setTenLop( entity.getTenLop() );
         lopHocResponse.setTrangThai( entity.getTrangThai() );
 
         return lopHocResponse;
@@ -59,9 +59,9 @@ public class LopHocMapperImpl implements LopHocMapper {
             return;
         }
 
-        entity.setTenLop( request.getTenLop() );
         entity.setKhoiLop( request.getKhoiLop() );
         entity.setSiSoToiDa( request.getSiSoToiDa() );
+        entity.setTenLop( request.getTenLop() );
         entity.setTrangThai( request.getTrangThai() );
     }
 

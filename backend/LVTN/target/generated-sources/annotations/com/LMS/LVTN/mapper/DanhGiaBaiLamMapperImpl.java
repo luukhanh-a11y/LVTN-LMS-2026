@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:47+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class DanhGiaBaiLamMapperImpl implements DanhGiaBaiLamMapper {
@@ -25,9 +25,9 @@ public class DanhGiaBaiLamMapperImpl implements DanhGiaBaiLamMapper {
         DanhGiaBaiLam danhGiaBaiLam = new DanhGiaBaiLam();
 
         danhGiaBaiLam.setDiemSo( request.getDiemSo() );
-        danhGiaBaiLam.setXepLoai( request.getXepLoai() );
-        danhGiaBaiLam.setNhanXet( request.getNhanXet() );
         danhGiaBaiLam.setHanhDong( request.getHanhDong() );
+        danhGiaBaiLam.setNhanXet( request.getNhanXet() );
+        danhGiaBaiLam.setXepLoai( request.getXepLoai() );
 
         return danhGiaBaiLam;
     }
@@ -45,10 +45,10 @@ public class DanhGiaBaiLamMapperImpl implements DanhGiaBaiLamMapper {
         danhGiaBaiLamResponse.setTenGiaoVien( entityGiaoVienHoTen( entity ) );
         danhGiaBaiLamResponse.setDanhGiaId( entity.getDanhGiaId() );
         danhGiaBaiLamResponse.setDiemSo( entity.getDiemSo() );
-        danhGiaBaiLamResponse.setXepLoai( entity.getXepLoai() );
-        danhGiaBaiLamResponse.setNhanXet( entity.getNhanXet() );
         danhGiaBaiLamResponse.setHanhDong( entity.getHanhDong() );
+        danhGiaBaiLamResponse.setNhanXet( entity.getNhanXet() );
         danhGiaBaiLamResponse.setThoiDiemCham( entity.getThoiDiemCham() );
+        danhGiaBaiLamResponse.setXepLoai( entity.getXepLoai() );
 
         return danhGiaBaiLamResponse;
     }
@@ -60,9 +60,9 @@ public class DanhGiaBaiLamMapperImpl implements DanhGiaBaiLamMapper {
         }
 
         entity.setDiemSo( request.getDiemSo() );
-        entity.setXepLoai( request.getXepLoai() );
-        entity.setNhanXet( request.getNhanXet() );
         entity.setHanhDong( request.getHanhDong() );
+        entity.setNhanXet( request.getNhanXet() );
+        entity.setXepLoai( request.getXepLoai() );
     }
 
     private Long entityBaiNopBaiNopId(DanhGiaBaiLam danhGiaBaiLam) {

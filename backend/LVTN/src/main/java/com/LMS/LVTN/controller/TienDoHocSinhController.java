@@ -32,6 +32,15 @@ public class TienDoHocSinhController {
                 .build();
     }
 
+    @GetMapping("/tra-cuu")
+    public ApiResponse<TienDoHocSinhResponse> getByHocSinhAndBaiHoc(
+            @RequestParam Long hocSinhId, 
+            @RequestParam Integer baiHocId) {
+        return ApiResponse.<TienDoHocSinhResponse>builder()
+                .data(tienDoHocSinhService.getByHocSinhIdAndBaiHocId(hocSinhId, baiHocId))
+                .build();
+    }
+
     @PostMapping("/update-progress")
     public ApiResponse<String> updateProgress(@RequestParam Long hocSinhId, @RequestParam Integer baiHocId) {
         tienDoHocSinhService.updateProgress(hocSinhId, baiHocId);

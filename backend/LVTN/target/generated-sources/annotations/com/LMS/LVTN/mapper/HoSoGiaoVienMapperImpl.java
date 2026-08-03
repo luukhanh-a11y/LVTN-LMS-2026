@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:00+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class HoSoGiaoVienMapperImpl implements HoSoGiaoVienMapper {
@@ -23,11 +23,11 @@ public class HoSoGiaoVienMapperImpl implements HoSoGiaoVienMapper {
 
         HoSoGiaoVien hoSoGiaoVien = new HoSoGiaoVien();
 
-        hoSoGiaoVien.setMaGiaoVien( request.getMaGiaoVien() );
-        hoSoGiaoVien.setHoTen( request.getHoTen() );
         hoSoGiaoVien.setBoMon( request.getBoMon() );
-        hoSoGiaoVien.setNgaySinh( request.getNgaySinh() );
         hoSoGiaoVien.setGioiTinh( request.getGioiTinh() );
+        hoSoGiaoVien.setHoTen( request.getHoTen() );
+        hoSoGiaoVien.setMaGiaoVien( request.getMaGiaoVien() );
+        hoSoGiaoVien.setNgaySinh( request.getNgaySinh() );
 
         return hoSoGiaoVien;
     }
@@ -41,12 +41,12 @@ public class HoSoGiaoVienMapperImpl implements HoSoGiaoVienMapper {
         HoSoGiaoVienResponse hoSoGiaoVienResponse = new HoSoGiaoVienResponse();
 
         hoSoGiaoVienResponse.setNguoiDungId( entityNguoiDungNguoiDungId( entity ) );
-        hoSoGiaoVienResponse.setGiaoVienId( entity.getGiaoVienId() );
-        hoSoGiaoVienResponse.setMaGiaoVien( entity.getMaGiaoVien() );
-        hoSoGiaoVienResponse.setHoTen( entity.getHoTen() );
         hoSoGiaoVienResponse.setBoMon( entity.getBoMon() );
-        hoSoGiaoVienResponse.setNgaySinh( entity.getNgaySinh() );
+        hoSoGiaoVienResponse.setGiaoVienId( entity.getGiaoVienId() );
         hoSoGiaoVienResponse.setGioiTinh( entity.getGioiTinh() );
+        hoSoGiaoVienResponse.setHoTen( entity.getHoTen() );
+        hoSoGiaoVienResponse.setMaGiaoVien( entity.getMaGiaoVien() );
+        hoSoGiaoVienResponse.setNgaySinh( entity.getNgaySinh() );
 
         return hoSoGiaoVienResponse;
     }
@@ -57,11 +57,11 @@ public class HoSoGiaoVienMapperImpl implements HoSoGiaoVienMapper {
             return;
         }
 
-        entity.setMaGiaoVien( request.getMaGiaoVien() );
-        entity.setHoTen( request.getHoTen() );
         entity.setBoMon( request.getBoMon() );
-        entity.setNgaySinh( request.getNgaySinh() );
         entity.setGioiTinh( request.getGioiTinh() );
+        entity.setHoTen( request.getHoTen() );
+        entity.setMaGiaoVien( request.getMaGiaoVien() );
+        entity.setNgaySinh( request.getNgaySinh() );
     }
 
     private String entityNguoiDungNguoiDungId(HoSoGiaoVien hoSoGiaoVien) {

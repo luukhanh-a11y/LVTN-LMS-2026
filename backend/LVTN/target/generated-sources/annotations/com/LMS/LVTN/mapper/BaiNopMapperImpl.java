@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:01+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class BaiNopMapperImpl implements BaiNopMapper {
@@ -24,15 +24,15 @@ public class BaiNopMapperImpl implements BaiNopMapper {
 
         BaiNop baiNop = new BaiNop();
 
-        baiNop.setNoiDungText( request.getNoiDungText() );
-        baiNop.setFileDinhKem( request.getFileDinhKem() );
-        baiNop.setDiemTuDong( request.getDiemTuDong() );
-        baiNop.setXpNhanDuoc( request.getXpNhanDuoc() );
         baiNop.setChiTietBaiLam( request.getChiTietBaiLam() );
-        baiNop.setSoLanLam( request.getSoLanLam() );
-        baiNop.setTrangThai( request.getTrangThai() );
+        baiNop.setDiemTuDong( request.getDiemTuDong() );
+        baiNop.setFileDinhKem( request.getFileDinhKem() );
         baiNop.setLaNopTre( request.getLaNopTre() );
+        baiNop.setNoiDungText( request.getNoiDungText() );
+        baiNop.setSoLanLam( request.getSoLanLam() );
         baiNop.setThoiDiemNop( request.getThoiDiemNop() );
+        baiNop.setTrangThai( request.getTrangThai() );
+        baiNop.setXpNhanDuoc( request.getXpNhanDuoc() );
 
         return baiNop;
     }
@@ -50,15 +50,15 @@ public class BaiNopMapperImpl implements BaiNopMapper {
         baiNopResponse.setHocSinhId( entityHocSinhHocSinhId( entity ) );
         baiNopResponse.setHoTenHocSinh( entityHocSinhHoTen( entity ) );
         baiNopResponse.setBaiNopId( entity.getBaiNopId() );
-        baiNopResponse.setNoiDungText( entity.getNoiDungText() );
-        baiNopResponse.setFileDinhKem( entity.getFileDinhKem() );
-        baiNopResponse.setDiemTuDong( entity.getDiemTuDong() );
-        baiNopResponse.setXpNhanDuoc( entity.getXpNhanDuoc() );
         baiNopResponse.setChiTietBaiLam( entity.getChiTietBaiLam() );
-        baiNopResponse.setSoLanLam( entity.getSoLanLam() );
-        baiNopResponse.setTrangThai( entity.getTrangThai() );
+        baiNopResponse.setDiemTuDong( entity.getDiemTuDong() );
+        baiNopResponse.setFileDinhKem( entity.getFileDinhKem() );
         baiNopResponse.setLaNopTre( entity.getLaNopTre() );
+        baiNopResponse.setNoiDungText( entity.getNoiDungText() );
+        baiNopResponse.setSoLanLam( entity.getSoLanLam() );
         baiNopResponse.setThoiDiemNop( entity.getThoiDiemNop() );
+        baiNopResponse.setTrangThai( entity.getTrangThai() );
+        baiNopResponse.setXpNhanDuoc( entity.getXpNhanDuoc() );
 
         return baiNopResponse;
     }
@@ -69,32 +69,32 @@ public class BaiNopMapperImpl implements BaiNopMapper {
             return;
         }
 
-        if ( request.getNoiDungText() != null ) {
-            entity.setNoiDungText( request.getNoiDungText() );
-        }
-        if ( request.getFileDinhKem() != null ) {
-            entity.setFileDinhKem( request.getFileDinhKem() );
+        if ( request.getChiTietBaiLam() != null ) {
+            entity.setChiTietBaiLam( request.getChiTietBaiLam() );
         }
         if ( request.getDiemTuDong() != null ) {
             entity.setDiemTuDong( request.getDiemTuDong() );
         }
-        if ( request.getXpNhanDuoc() != null ) {
-            entity.setXpNhanDuoc( request.getXpNhanDuoc() );
-        }
-        if ( request.getChiTietBaiLam() != null ) {
-            entity.setChiTietBaiLam( request.getChiTietBaiLam() );
-        }
-        if ( request.getSoLanLam() != null ) {
-            entity.setSoLanLam( request.getSoLanLam() );
-        }
-        if ( request.getTrangThai() != null ) {
-            entity.setTrangThai( request.getTrangThai() );
+        if ( request.getFileDinhKem() != null ) {
+            entity.setFileDinhKem( request.getFileDinhKem() );
         }
         if ( request.getLaNopTre() != null ) {
             entity.setLaNopTre( request.getLaNopTre() );
         }
+        if ( request.getNoiDungText() != null ) {
+            entity.setNoiDungText( request.getNoiDungText() );
+        }
+        if ( request.getSoLanLam() != null ) {
+            entity.setSoLanLam( request.getSoLanLam() );
+        }
         if ( request.getThoiDiemNop() != null ) {
             entity.setThoiDiemNop( request.getThoiDiemNop() );
+        }
+        if ( request.getTrangThai() != null ) {
+            entity.setTrangThai( request.getTrangThai() );
+        }
+        if ( request.getXpNhanDuoc() != null ) {
+            entity.setXpNhanDuoc( request.getXpNhanDuoc() );
         }
     }
 

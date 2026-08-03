@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:02+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class BaiTapMapperImpl implements BaiTapMapper {
@@ -27,13 +27,13 @@ public class BaiTapMapperImpl implements BaiTapMapper {
 
         BaiTap baiTap = new BaiTap();
 
-        baiTap.setTieuDe( request.getTieuDe() );
-        baiTap.setMoTa( request.getMoTa() );
-        baiTap.setLoaiBaiTap( request.getLoaiBaiTap() );
-        baiTap.setThoiDiemBatDau( request.getThoiDiemBatDau() );
-        baiTap.setDeadline( request.getDeadline() );
         baiTap.setChoNopLai( request.getChoNopLai() );
+        baiTap.setDeadline( request.getDeadline() );
+        baiTap.setLoaiBaiTap( request.getLoaiBaiTap() );
+        baiTap.setMoTa( request.getMoTa() );
         baiTap.setSoLanNopLaiToiDa( request.getSoLanNopLaiToiDa() );
+        baiTap.setThoiDiemBatDau( request.getThoiDiemBatDau() );
+        baiTap.setTieuDe( request.getTieuDe() );
         baiTap.setTrangThai( request.getTrangThai() );
 
         return baiTap;
@@ -57,15 +57,15 @@ public class BaiTapMapperImpl implements BaiTapMapper {
         baiTapResponse.setSoHocKy( entityHocKySoHocKy( entity ) );
         baiTapResponse.setTenNamHoc( entityHocKyNamHocTenNamHoc( entity ) );
         baiTapResponse.setBaiTapId( entity.getBaiTapId() );
-        baiTapResponse.setTieuDe( entity.getTieuDe() );
-        baiTapResponse.setMoTa( entity.getMoTa() );
-        baiTapResponse.setLoaiBaiTap( entity.getLoaiBaiTap() );
-        baiTapResponse.setThoiDiemBatDau( entity.getThoiDiemBatDau() );
-        baiTapResponse.setDeadline( entity.getDeadline() );
         baiTapResponse.setChoNopLai( entity.getChoNopLai() );
-        baiTapResponse.setSoLanNopLaiToiDa( entity.getSoLanNopLaiToiDa() );
-        baiTapResponse.setTrangThai( entity.getTrangThai() );
+        baiTapResponse.setDeadline( entity.getDeadline() );
+        baiTapResponse.setLoaiBaiTap( entity.getLoaiBaiTap() );
+        baiTapResponse.setMoTa( entity.getMoTa() );
         baiTapResponse.setNgayTao( entity.getNgayTao() );
+        baiTapResponse.setSoLanNopLaiToiDa( entity.getSoLanNopLaiToiDa() );
+        baiTapResponse.setThoiDiemBatDau( entity.getThoiDiemBatDau() );
+        baiTapResponse.setTieuDe( entity.getTieuDe() );
+        baiTapResponse.setTrangThai( entity.getTrangThai() );
 
         return baiTapResponse;
     }
@@ -76,13 +76,13 @@ public class BaiTapMapperImpl implements BaiTapMapper {
             return;
         }
 
-        entity.setTieuDe( request.getTieuDe() );
-        entity.setMoTa( request.getMoTa() );
-        entity.setLoaiBaiTap( request.getLoaiBaiTap() );
-        entity.setThoiDiemBatDau( request.getThoiDiemBatDau() );
-        entity.setDeadline( request.getDeadline() );
         entity.setChoNopLai( request.getChoNopLai() );
+        entity.setDeadline( request.getDeadline() );
+        entity.setLoaiBaiTap( request.getLoaiBaiTap() );
+        entity.setMoTa( request.getMoTa() );
         entity.setSoLanNopLaiToiDa( request.getSoLanNopLaiToiDa() );
+        entity.setThoiDiemBatDau( request.getThoiDiemBatDau() );
+        entity.setTieuDe( request.getTieuDe() );
         entity.setTrangThai( request.getTrangThai() );
     }
 

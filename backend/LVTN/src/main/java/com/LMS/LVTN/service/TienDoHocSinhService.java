@@ -31,14 +31,24 @@ public class TienDoHocSinhService {
     DangBaiRepository dangBaiRepository;
     TienDoHocSinhMapper tienDoHocSinhMapper;
 
-    @Transactional
-    public TienDoHocSinh getOrCreateTienDo(Long hocSinhId, Integer baiHocId) {
-        Optional<TienDoHocSinh> opt = tienDoHocSinhRepository
-                .findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId);
-        if (opt.isPresent()) {
-            return opt.get();
-        }
+    @Transactional(readOnly = true)
+    public TienDoHocSinhResponse getByHocSinhIdAndBaiHocId(Long hocSinhId, Integer baiHocId) {
+        return tienDoHocSinhRepository.findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId)
+                .map(tienDoHocSinhMapper::toResponse)
+                .orElseGet(() -> {
+                    // Trả về DTO ảo trên RAM (Không tạo bản ghi trong CSDL để tránh rác dữ liệu)
+                    TienDoHocSinhResponse emptyResp = new TienDoHocSinhResponse();
+                    emptyResp.setHocSinhId(hocSinhId);
+                    emptyResp.setBaiHocId(baiHocId);
+                    emptyResp.setPhanTramHoanThanh((short) 0);
+                    emptyResp.setThoiGianHoc(0);
+                    emptyResp.setDaHoanThanh(false);
+                    return emptyResp;
+                });
+    }
 
+    @Transactional
+    public TienDoHocSinh createTienDo(Long hocSinhId, Integer baiHocId) {
         HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(hocSinhId)
                 .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
 
@@ -66,6 +76,13 @@ public class TienDoHocSinhService {
         tienDo.setDaHoanThanh(false);
 
         return tienDoHocSinhRepository.save(tienDo);
+    }
+
+    @Transactional
+    public TienDoHocSinh getOrCreateTienDo(Long hocSinhId, Integer baiHocId) {
+        return tienDoHocSinhRepository
+                .findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId)
+                .orElseGet(() -> createTienDo(hocSinhId, baiHocId));
     }
 
     @Transactional

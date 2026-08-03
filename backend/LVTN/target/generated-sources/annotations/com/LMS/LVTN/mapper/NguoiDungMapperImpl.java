@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T01:11:46+0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.1 (Oracle Corporation)"
+    date = "2026-08-04T02:43:02+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class NguoiDungMapperImpl implements NguoiDungMapper {
@@ -25,9 +25,9 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
 
         NguoiDung nguoiDung = new NguoiDung();
 
-        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
         nguoiDung.setEmail( request.getEmail() );
         nguoiDung.setSoDienThoai( request.getSoDienThoai() );
+        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
 
         return nguoiDung;
     }
@@ -40,11 +40,11 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
 
         NguoiDung nguoiDung = new NguoiDung();
 
-        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
-        nguoiDung.setVaiTro( request.getVaiTro() );
-        nguoiDung.setTrangThai( request.getTrangThai() );
         nguoiDung.setEmail( request.getEmail() );
         nguoiDung.setSoDienThoai( request.getSoDienThoai() );
+        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
+        nguoiDung.setTrangThai( request.getTrangThai() );
+        nguoiDung.setVaiTro( request.getVaiTro() );
 
         return nguoiDung;
     }
@@ -57,12 +57,12 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
 
         NguoiDungResponse nguoiDungResponse = new NguoiDungResponse();
 
-        nguoiDungResponse.setNguoiDungId( entity.getNguoiDungId() );
-        nguoiDungResponse.setTenDangNhap( entity.getTenDangNhap() );
-        nguoiDungResponse.setVaiTro( entity.getVaiTro() );
-        nguoiDungResponse.setTrangThai( entity.getTrangThai() );
         nguoiDungResponse.setEmail( entity.getEmail() );
+        nguoiDungResponse.setNguoiDungId( entity.getNguoiDungId() );
         nguoiDungResponse.setSoDienThoai( entity.getSoDienThoai() );
+        nguoiDungResponse.setTenDangNhap( entity.getTenDangNhap() );
+        nguoiDungResponse.setTrangThai( entity.getTrangThai() );
+        nguoiDungResponse.setVaiTro( entity.getVaiTro() );
 
         return nguoiDungResponse;
     }
@@ -73,9 +73,9 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
             return;
         }
 
-        entity.setTenDangNhap( request.getTenDangNhap() );
         entity.setEmail( request.getEmail() );
         entity.setSoDienThoai( request.getSoDienThoai() );
+        entity.setTenDangNhap( request.getTenDangNhap() );
     }
 
     @Override

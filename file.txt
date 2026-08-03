@@ -1,0 +1,173 @@
+================================================================================
+DANH SÁCH BẢNG, KHÓA CHÍNH (ID) VÀ LIÊN KẾT KHÓA NGOẠI (CƠ SỞ DỮ LIỆU LMS1)
+(Đã tối ưu & gỡ bỏ hoàn toàn các liên kết vòng / khóa ngoại dư thừa)
+================================================================================
+
+1. BẢNG: cau_hinh_he_thong
+   - Khóa chính (ID): cau_hinh_id (SMALLINT)
+   - Khóa ngoại (FK):
+     + hoc_ky_hien_tai_id -> hoc_ky (hoc_ky_id)
+
+2. BẢNG: invalidated_token
+   - Khóa chính (ID): id (VARCHAR)
+   - Khóa ngoại (FK): (Không có)
+
+3. BẢNG: nam_hoc
+   - Khóa chính (ID): nam_hoc_id (INT)
+   - Khóa ngoại (FK): (Không có)
+
+4. BẢNG: hoc_ky
+   - Khóa chính (ID): hoc_ky_id (INT)
+   - Khóa ngoại (FK):
+     + nam_hoc_id -> nam_hoc (nam_hoc_id)
+
+5. BẢNG: nguoi_dung
+   - Khóa chính (ID): nguoi_dung_id (VARCHAR)
+   - Khóa ngoại (FK): (Không có)
+
+6. BẢNG: ho_so_giao_vien
+   - Khóa chính (ID): giao_vien_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_dung_id -> nguoi_dung (nguoi_dung_id)
+
+7. BẢNG: ho_so_phu_huynh
+   - Khóa chính (ID): phu_huynh_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_dung_id -> nguoi_dung (nguoi_dung_id)
+
+8. BẢNG: mon_hoc
+   - Khóa chính (ID): mon_hoc_id (SMALLINT)
+   - Khóa ngoại (FK): (Không có)
+
+9. BẢNG: lop_hoc
+   - Khóa chính (ID): lop_hoc_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nam_hoc_id -> nam_hoc (nam_hoc_id)
+     + giao_vien_chu_nhiem_id -> ho_so_giao_vien (giao_vien_id)
+
+10. BẢNG: ho_so_hoc_sinh
+   - Khóa chính (ID): hoc_sinh_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_dung_id -> nguoi_dung (nguoi_dung_id)
+     + lop_hoc_id -> lop_hoc (lop_hoc_id)
+
+11. BẢNG: phu_huynh_hoc_sinh
+   - Khóa chính (ID): lien_ket_id (BIGINT)
+   - Khóa ngoại (FK):
+     + phu_huynh_id -> ho_so_phu_huynh (phu_huynh_id)
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+
+12. BẢNG: phan_cong_giang_day
+   - Khóa chính (ID): phan_cong_id (BIGINT)
+   - Khóa ngoại (FK):
+     + giao_vien_id -> ho_so_giao_vien (giao_vien_id)
+     + lop_hoc_id -> lop_hoc (lop_hoc_id)
+     + mon_hoc_id -> mon_hoc (mon_hoc_id)
+     + hoc_ky_id -> hoc_ky (hoc_ky_id)
+
+13. BẢNG: sach
+   - Khóa chính (ID): sach_id (INT)
+   - Khóa ngoại (FK):
+     + mon_hoc_id -> mon_hoc (mon_hoc_id)
+
+14. BẢNG: chu_de
+   - Khóa chính (ID): chu_de_id (INT)
+   - Khóa ngoại (FK):
+     + sach_id -> sach (sach_id)
+
+15. BẢNG: bai_hoc
+   - Khóa chính (ID): bai_hoc_id (INT)
+   - Khóa ngoại (FK):
+     + chu_de_id -> chu_de (chu_de_id)
+
+16. BẢNG: dang_bai
+   - Khóa chính (ID): dang_bai_id (INT)
+   - Khóa ngoại (FK):
+     + bai_hoc_id -> bai_hoc (bai_hoc_id)
+     + giao_vien_id -> ho_so_giao_vien (giao_vien_id)
+     *(Đã gỡ bỏ mon_hoc_id trùng lặp)*
+
+17. BẢNG: bai_tap
+   - Khóa chính (ID): bai_tap_id (BIGINT)
+   - Khóa ngoại (FK):
+     + giao_vien_id -> ho_so_giao_vien (giao_vien_id)
+     + lop_hoc_id -> lop_hoc (lop_hoc_id)
+     + dang_bai_id -> dang_bai (dang_bai_id)
+     + hoc_ky_id -> hoc_ky (hoc_ky_id)
+     *(Đã gỡ bỏ bai_hoc_id trùng lặp)*
+
+18. BẢNG: bai_nop
+   - Khóa chính (ID): bai_nop_id (BIGINT)
+   - Khóa ngoại (FK):
+     + bai_tap_id -> bai_tap (bai_tap_id)
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+     *(Đã gỡ bỏ dang_bai_id trùng lặp)*
+
+19. BẢNG: danh_gia_bai_lam
+   - Khóa chính (ID): danh_gia_id (BIGINT)
+   - Khóa ngoại (FK):
+     + bai_nop_id -> bai_nop (bai_nop_id)
+     + giao_vien_id -> ho_so_giao_vien (giao_vien_id)
+
+20. BẢNG: huy_hieu
+   - Khóa chính (ID): huy_hieu_id (INT)
+   - Khóa ngoại (FK): (Không có)
+
+21. BẢNG: khen_thuong_hoc_sinh
+   - Khóa chính (ID): khen_thuong_id (BIGINT)
+   - Khóa ngoại (FK):
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+     + huy_hieu_id -> huy_hieu (huy_hieu_id)
+     + giao_vien_id -> ho_so_giao_vien (giao_vien_id)
+
+22. BẢNG: ket_qua_cuoi_nam
+   - Khóa chính (ID): ket_qua_id (BIGINT)
+   - Khóa ngoại (FK):
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+     + lop_hoc_id -> lop_hoc (lop_hoc_id)
+     + giao_vien_xet_id -> ho_so_giao_vien (giao_vien_id)
+
+23. BẢNG: lich_su_chuyen_lop
+   - Khóa chính (ID): chuyen_lop_id (BIGINT)
+   - Khóa ngoại (FK):
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+     + lop_cu_id -> lop_hoc (lop_hoc_id)
+     + lop_moi_id -> lop_hoc (lop_hoc_id)
+     + nguoi_thuc_hien_id -> nguoi_dung (nguoi_dung_id)
+
+24. BẢNG: lich_su_tu_hoc
+   - Khóa chính (ID): tu_hoc_id (BIGINT)
+   - Khóa ngoại (FK):
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+     + dang_bai_id -> dang_bai (dang_bai_id)
+
+25. BẢNG: lo_import
+   - Khóa chính (ID): lo_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_thuc_hien_id -> nguoi_dung (nguoi_dung_id)
+
+26. BẢNG: thong_bao
+   - Khóa chính (ID): thong_bao_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_gui_id -> nguoi_dung (nguoi_dung_id)
+
+27. BẢNG: hop_thu_thong_bao
+   - Khóa chính (ID): hop_thu_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_dung_id -> nguoi_dung (nguoi_dung_id)
+     + thong_bao_id -> thong_bao (thong_bao_id)
+
+28. BẢNG: phieu_ho_tro
+   - Khóa chính (ID): phieu_id (BIGINT)
+   - Khóa ngoại (FK):
+     + nguoi_dung_tao_id -> nguoi_dung (nguoi_dung_id)
+     + nguoi_dung_lien_quan_id -> nguoi_dung (nguoi_dung_id)
+     + admin_xu_ly_id -> nguoi_dung (nguoi_dung_id)
+
+29. BẢNG: tien_do_hoc_sinh
+   - Khóa chính (ID): tien_do_id (BIGINT)
+   - Khóa ngoại (FK):
+     + hoc_sinh_id -> ho_so_hoc_sinh (hoc_sinh_id)
+     + bai_hoc_id -> bai_hoc (bai_hoc_id)
+     + hoc_ky_id -> hoc_ky (hoc_ky_id)
+================================================================================

@@ -1,0 +1,271 @@
+{
+  "semantics": [
+    {
+      "label": "Nút kiểm tra",
+      "default": "Kiểm tra"
+    },
+    {
+      "label": "Nút nộp bài",
+      "default": "Nộp bài"
+    },
+    {
+      "label": "Nút làm lại",
+      "default": "Làm lại"
+    },
+    {
+      "label": "Nội dung giải thích điểm số",
+      "default": "Đáp án đúng được +1 điểm. Đáp án sai bị -1 điểm. Điểm thấp nhất là 0."
+    },
+    {
+      "fields": [
+        {
+          "label": "Thiết lập",
+          "fields": [
+            {
+              "label": "Ảnh nền",
+              "description": "Không bắt buộc. Chọn ảnh làm nền cho khu vực kéo thả."
+            },
+            {
+              "label": "Kích thước khu vực làm bài",
+              "description": "Nhập kích thước (px) cho khu vực làm bài."
+            }
+          ]
+        },
+        {
+          "label": "Nội dung bài tập",
+          "description": "Bước 1: đặt các ô thả trước.<br />Bước 2: đặt các phần tử kéo thả và chọn ô thả phù hợp cho từng phần tử.<br />Bước 3: sửa lại từng ô thả và chọn đáp án đúng cho ô đó.",
+          "fields": [
+            {
+              "label": "Phần tử kéo thả",
+              "entity": "phần tử",
+              "field": {
+                "label": "Phần tử",
+                "fields": [
+                  {
+                    "description": "Chọn loại nội dung bạn muốn thêm."
+                  },
+                  {},
+                  {},
+                  {},
+                  {},
+                  {
+                    "label": "Chọn ô thả"
+                  },
+                  {
+                    "label": "Độ mờ nền",
+                    "description": "Giảm độ mờ có thể làm giảm độ tương phản và ảnh hưởng khả năng hỗ trợ tiếp cận."
+                  },
+                  {
+                    "label": "Cho phép dùng nhiều lần",
+                    "description": "Nhân bản phần tử này để có thể kéo vào nhiều ô thả khác nhau."
+                  }
+                ]
+              }
+            },
+            {
+              "label": "Ô thả",
+              "entity": "Ô thả",
+              "field": {
+                "label": "Ô thả",
+                "fields": [
+                  {
+                    "label": "Nhãn",
+                    "description": "Nhãn này dùng cho công nghệ hỗ trợ tiếp cận."
+                  },
+                  {
+                    "label": "Hiện nhãn"
+                  },
+                  {},
+                  {},
+                  {},
+                  {},
+                  {
+                    "label": "Chọn phần tử đúng"
+                  },
+                  {
+                    "label": "Độ mờ nền",
+                    "description": "Giảm độ mờ có thể làm giảm độ tương phản và ảnh hưởng khả năng hỗ trợ tiếp cận."
+                  },
+                  {
+                    "label": "Gợi ý và nhận xét",
+                    "fields": [
+                      {
+                        "label": "Nội dung gợi ý"
+                      },
+                      {
+                        "label": "Thông báo khi ghép đúng",
+                        "description": "Hiển thị dưới bài tập khi bấm \"Kiểm tra\" nếu ghép đúng phần tử."
+                      },
+                      {
+                        "label": "Thông báo khi ghép sai",
+                        "description": "Hiển thị dưới bài tập khi bấm \"Kiểm tra\" nếu ghép sai."
+                      }
+                    ]
+                  },
+                  {
+                    "label": "Ô thả này chỉ chứa một phần tử",
+                    "description": "Đảm bảo ô thả này chỉ có đúng một đáp án"
+                  },
+                  {
+                    "label": "Bật tự động căn chỉnh",
+                    "description": "Tự động căn chỉnh mọi phần tử được thả vào ô này."
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Nhận xét tổng kết",
+      "fields": [
+        {
+          "widgets": [
+            {
+              "label": "Mặc định"
+            }
+          ],
+          "label": "Đặt nhận xét riêng theo từng mức điểm",
+          "description": "Bấm \"Thêm khoảng\" để thêm các mức điểm. Ví dụ: 0-20% Cần cố gắng hơn, 21-91% Khá tốt, 91-100% Xuất sắc!",
+          "entity": "khoảng điểm",
+          "field": {
+            "fields": [
+              {
+                "label": "Khoảng điểm"
+              },
+              {},
+              {
+                "label": "Nhận xét cho khoảng điểm này",
+                "placeholder": "Nhập nhận xét"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "Thiết lập hành vi",
+      "description": "Các tuỳ chọn này giúp điều khiển cách bài tập hoạt động.",
+      "fields": [
+        {
+          "label": "Bật \"Làm lại\""
+        },
+        {
+          "label": "Bật nút \"Kiểm tra\""
+        },
+        {
+          "label": "Tính 1 điểm cho cả bài",
+          "description": "Tắt để tính 1 điểm cho mỗi phần tử đặt đúng vị trí."
+        },
+        {
+          "label": "Áp dụng trừ điểm",
+          "description": "Trừ điểm cho phần tử đặt sai ô. Bắt buộc bật nếu cùng một phần tử có thể thả được vào nhiều ô, hoặc nếu chỉ có 1 ô thả. Nếu không bật, học sinh có thể ghép hết vào mọi ô và luôn được điểm tối đa."
+        },
+        {
+          "label": "Bật giải thích điểm số",
+          "description": "Hiển thị giải thích điểm số cho học sinh khi kiểm tra đáp án (nếu tuỳ chọn 'Áp dụng trừ điểm' được bật)."
+        },
+        {
+          "label": "Độ mờ nền cho phần tử kéo thả",
+          "description": "Nếu đặt giá trị này, nó sẽ ghi đè độ mờ đã đặt riêng cho từng phần tử. Nhập số từ 0 đến 100, trong đó 0 là trong suốt hoàn toàn và 100 là không trong suốt."
+        },
+        {
+          "label": "Làm nổi bật ô thả",
+          "description": "Chọn thời điểm làm nổi bật ô thả.",
+          "options": [
+            {
+              "label": "Khi đang kéo"
+            },
+            {
+              "label": "Luôn luôn"
+            },
+            {
+              "label": "Không bao giờ"
+            }
+          ]
+        },
+        {
+          "label": "Khoảng cách tự động căn chỉnh (px)"
+        },
+        {
+          "label": "Bật chế độ toàn màn hình",
+          "description": "Bật tuỳ chọn này để hiện nút toàn màn hình."
+        },
+        {
+          "label": "Hiện điểm từng đáp án",
+          "description": "Hiện điểm đạt được cho mỗi đáp án. Không áp dụng khi bật 'Tính 1 điểm cho cả bài'."
+        },
+        {
+          "label": "Hiện tiêu đề",
+          "description": "Bỏ chọn nếu không muốn hiện tiêu đề. Tiêu đề vẫn hiện trong phần tổng hợp, thống kê..."
+        }
+      ]
+    },
+    {
+      "label": "Bản dịch",
+      "fields": [
+        {
+          "label": "Nhãn toàn màn hình",
+          "default": "Toàn màn hình"
+        },
+        {
+          "label": "Nhãn thoát toàn màn hình",
+          "default": "Thoát toàn màn hình"
+        }
+      ]
+    },
+    {
+      "label": "Tiền tố phần tử kéo thả",
+      "default": "Phần tử {num} trên {total}."
+    },
+    {
+      "label": "Hậu tố phần tử kéo thả",
+      "default": "Đã đặt vào ô {num}."
+    },
+    {
+      "label": "Tiền tố ô thả",
+      "default": "Ô thả {num} trên {total}."
+    },
+    {
+      "label": "Nhãn khi chưa chọn ô thả",
+      "default": "Chưa chọn ô thả."
+    },
+    {
+      "label": "Nhãn nút xem gợi ý",
+      "default": "Xem gợi ý."
+    },
+    {
+      "label": "Nhãn có gợi ý",
+      "default": "Có gợi ý"
+    },
+    {
+      "label": "Nhãn đáp án đúng",
+      "default": "Đúng"
+    },
+    {
+      "label": "Nhãn đáp án sai",
+      "default": "Sai"
+    },
+    {
+      "label": "Tiêu đề khung nhận xét đúng/sai",
+      "default": "Nhận xét"
+    },
+    {
+      "label": "Câu đọc điểm số cho phần mềm đọc màn hình",
+      "default": "Bạn đạt :num trên :total điểm"
+    },
+    {
+      "label": "Nút xem giải thích điểm số",
+      "default": "Xem giải thích điểm số"
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận cho nút \"Kiểm tra\"",
+      "default": "Kiểm tra đáp án. Các phương án sẽ được đánh dấu đúng, sai hoặc chưa trả lời."
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận cho nút \"Làm lại\"",
+      "default": "Làm lại bài tập. Đặt lại toàn bộ câu trả lời và bắt đầu lại."
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+{
+  "semantics": [
+    {
+      "label": "Giới thiệu bộ đề",
+      "fields": [
+        {
+          "label": "Hiện phần giới thiệu"
+        },
+        {
+          "label": "Tiêu đề",
+          "description": "Tiêu đề này sẽ hiển thị phía trên phần giới thiệu."
+        },
+        {
+          "label": "Nội dung giới thiệu",
+          "description": "Nội dung này sẽ hiển thị trước khi học sinh bắt đầu làm bài."
+        },
+        {
+          "label": "Nhãn nút bắt đầu",
+          "default": "Bắt đầu làm bài"
+        },
+        {
+          "label": "Ảnh nền",
+          "description": "Ảnh nền cho phần giới thiệu (không bắt buộc)."
+        }
+      ]
+    },
+    {
+      "label": "Ảnh nền",
+      "description": "Ảnh nền cho bộ đề (không bắt buộc)."
+    },
+    {
+      "label": "Kiểu hiển thị tiến trình",
+      "description": "Kiểu hiển thị thanh tiến trình làm bài.",
+      "options": [
+        {
+          "label": "Dạng chữ"
+        },
+        {
+          "label": "Dạng chấm tròn"
+        }
+      ]
+    },
+    {
+      "label": "Tỷ lệ điểm đạt",
+      "description": "Tỷ lệ % trên tổng điểm cần đạt để hoàn thành bộ đề."
+    },
+    {
+      "label": "Danh sách câu hỏi",
+      "widgets": [
+        {
+          "label": "Mặc định"
+        },
+        {
+          "label": "Dạng văn bản"
+        }
+      ],
+      "entity": "câu hỏi",
+      "field": {
+        "label": "Loại câu hỏi",
+        "description": "Thư viện dùng cho câu hỏi này."
+      }
+    },
+    {
+      "label": "Văn bản giao diện trong bài",
+      "fields": [
+        {
+          "label": "Nút quay lại",
+          "default": "Câu trước"
+        },
+        {
+          "label": "Nút tiếp theo",
+          "default": "Câu tiếp theo"
+        },
+        {
+          "label": "Nút hoàn thành",
+          "default": "Hoàn thành"
+        },
+        {
+          "label": "Nút nộp bài",
+          "default": "Nộp bài"
+        },
+        {
+          "label": "Văn bản tiến trình",
+          "description": "Dùng khi chọn kiểu hiển thị dạng chữ.",
+          "default": "Câu hỏi: @current trên @total câu"
+        },
+        {
+          "label": "Nhãn nhảy tới câu hỏi bất kỳ",
+          "description": "Dùng ký hiệu '%d' thay cho số thứ tự câu hỏi, và %total thay cho tổng số câu hỏi.",
+          "default": "Câu %d trên %total"
+        },
+        {
+          "label": "Nhãn câu hỏi trong hộp thoại bản quyền",
+          "default": "Câu hỏi"
+        },
+        {
+          "label": "Tiến trình cho phần mềm đọc màn hình",
+          "description": "Có thể dùng biến @current và @total",
+          "default": "Câu @current trên @total"
+        },
+        {
+          "label": "Văn bản câu chưa trả lời",
+          "default": "Chưa trả lời"
+        },
+        {
+          "label": "Văn bản câu đã trả lời",
+          "default": "Đã trả lời"
+        },
+        {
+          "label": "Văn bản câu hiện tại",
+          "default": "Câu hiện tại"
+        },
+        {
+          "label": "Nhãn điều hướng cho phần mềm đọc màn hình",
+          "default": "Danh sách câu hỏi"
+        },
+        {
+          "label": "Hướng dẫn điều hướng bộ đề cho phần mềm đọc màn hình",
+          "default": "Chọn câu hỏi muốn xem"
+        }
+      ]
+    },
+    {
+      "label": "Không cho quay lại câu trước",
+      "description": "Bật tuỳ chọn này sẽ chỉ cho phép học sinh đi tiếp, không quay lại được câu trước trong bộ đề."
+    },
+    {
+      "label": "Xáo trộn thứ tự câu hỏi",
+      "description": "Bật để hiển thị các câu hỏi theo thứ tự ngẫu nhiên."
+    },
+    {
+      "label": "Số câu hỏi hiển thị:",
+      "description": "Chọn ngẫu nhiên một số câu trong tổng số câu hỏi để hiển thị."
+    },
+    {
+      "label": "Hoàn thành bài",
+      "fields": [
+        {
+          "label": "Hiện kết quả"
+        },
+        {
+          "label": "Hiện nút xem đáp án"
+        },
+        {
+          "label": "Hiện nút làm lại"
+        },
+        {
+          "label": "Thông báo khi không hiện kết quả",
+          "description": "Nội dung hiển thị ở trang kết thúc khi tắt \"Hiện kết quả\"",
+          "default": "Đã hoàn thành"
+        },
+        {
+          "label": "Tiêu đề nhận xét",
+          "default": "Kết quả của bạn:",
+          "description": "Tiêu đề này hiển thị cuối bài sau khi học sinh trả lời hết các câu hỏi."
+        },
+        {
+          "label": "Câu đọc điểm số",
+          "description": "Nhãn này dùng để đọc điểm số cuối cùng cho học sinh ở trang kết thúc",
+          "default": "Bạn đạt @finals trên @totals điểm"
+        },
+        {
+          "label": "Nhận xét tổng kết",
+          "fields": [
+            {
+              "widgets": [
+                {
+                  "label": "Mặc định"
+                }
+              ],
+              "label": "Đặt nhận xét riêng theo từng mức điểm",
+              "description": "Ví dụ: 0-20% Cần cố gắng hơn, 21-91% Khá tốt, 91-100% Xuất sắc!",
+              "entity": "khoảng điểm",
+              "field": {
+                "fields": [
+                  {
+                    "label": "Khoảng điểm"
+                  },
+                  {},
+                  {
+                    "label": "Nhận xét cho khoảng điểm này",
+                    "placeholder": "Nhập nhận xét"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "label": "Nhận xét kiểu cũ",
+          "fields": [
+            {
+              "label": "Lời chúc khi đạt",
+              "description": "Nội dung hiển thị phía trên điểm số nếu học sinh hoàn thành đạt yêu cầu."
+            },
+            {
+              "label": "Nhận xét khi đạt",
+              "description": "Nội dung hiển thị phía dưới điểm số nếu học sinh hoàn thành đạt yêu cầu."
+            },
+            {
+              "label": "Tiêu đề khi chưa đạt",
+              "description": "Nội dung hiển thị phía trên điểm số nếu học sinh chưa đạt yêu cầu."
+            },
+            {
+              "label": "Nhận xét khi chưa đạt",
+              "description": "Nội dung hiển thị phía dưới điểm số nếu học sinh chưa đạt yêu cầu."
+            }
+          ]
+        },
+        {
+          "label": "Nhãn nút xem đáp án",
+          "default": "Xem đáp án",
+          "description": "Nội dung nút xem đáp án."
+        },
+        {
+          "label": "Nhãn nút làm lại",
+          "default": "Làm lại",
+          "description": "Nội dung nút làm lại."
+        },
+        {
+          "label": "Nhãn nút hoàn thành",
+          "default": "Hoàn thành"
+        },
+        {
+          "label": "Nhãn nút nộp bài",
+          "default": "Nộp bài"
+        },
+        {
+          "label": "Phát video trước khi hiện kết quả"
+        },
+        {
+          "label": "Bật nút bỏ qua video"
+        },
+        {
+          "label": "Nhãn nút bỏ qua video",
+          "default": "Bỏ qua video"
+        },
+        {
+          "label": "Video khi đạt",
+          "description": "Video phát khi học sinh hoàn thành đạt yêu cầu."
+        },
+        {
+          "label": "Video khi chưa đạt",
+          "description": "Video phát khi học sinh chưa hoàn thành đạt yêu cầu."
+        }
+      ]
+    },
+    {
+      "label": "Thiết lập nút \"Xem đáp án\" và \"Làm lại\"",
+      "fields": [
+        {
+          "label": "Hiện nút \"Kiểm tra\"",
+          "description": "Tuỳ chọn này quyết định nút \"Kiểm tra\" có hiện cho mọi câu hỏi hay không."
+        },
+        {
+          "label": "Ghi đè nút \"Xem đáp án\"",
+          "description": "Tuỳ chọn này quyết định nút \"Xem đáp án\" hiện cho mọi câu, tắt cho mọi câu, hay để riêng từng câu tự cấu hình.",
+          "options": [
+            {
+              "label": "Bật"
+            },
+            {
+              "label": "Tắt"
+            }
+          ]
+        },
+        {
+          "label": "Ghi đè nút \"Làm lại\"",
+          "description": "Tuỳ chọn này quyết định nút \"Làm lại\" hiện cho mọi câu, tắt cho mọi câu, hay để riêng từng câu tự cấu hình.",
+          "options": [
+            {
+              "label": "Bật"
+            },
+            {
+              "label": "Tắt"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

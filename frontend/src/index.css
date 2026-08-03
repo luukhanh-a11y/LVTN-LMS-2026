@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Baloo+2:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    --font-heading: 'Baloo 2', sans-serif;
+    --font-body: 'Nunito', sans-serif;
+    --font-pro: 'Be Vietnam Pro', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.4;
+  }
+}
+
+@layer utilities {
+  .bg-polka-dots {
+    background-image: radial-gradient(#e2e8f0 2px, transparent 2px);
+    background-size: 32px 32px;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.02) translateY(-4px); }
+  }
+
+  @keyframes jump {
+    0%, 100% { transform: translateY(0); }
+    40%, 60% { transform: translateY(-15px); }
+    50% { transform: translateY(-18px); }
+  }
+
+  .animate-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  .animate-breathe {
+    animation: breathe 3s ease-in-out infinite;
+  }
+
+  .animate-jump {
+    animation: jump 0.6s ease-in-out;
+  }
+}
+
+

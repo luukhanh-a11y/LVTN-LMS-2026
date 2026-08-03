@@ -1,0 +1,20 @@
+{
+  "libraryStrings":{
+    "insertElement":"Thêm :type",
+    "done":"Xong",
+    "remove":"Xoá",
+    "image":"Hình ảnh",
+    "text":"Văn bản",
+    "noTaskSize":"Vui lòng nhập kích thước bài tập trước.",
+    "confirmRemoval":"Bạn có chắc muốn xoá phần tử này?",
+    "backgroundOpacityOverridden":"Độ mờ nền đã bị ghi đè",
+    "advancedtext":"Văn bản",
+    "dropzone":"Ô thả",
+    "selectAll":"Chọn tất cả",
+    "deselectAll":"Bỏ chọn tất cả",
+    "deleteTaskTitle": "Đang xoá bài tập",
+    "cancel": "Huỷ",
+    "confirm": "Xác nhận",
+    "ok": "Đồng ý"
+  }
+}

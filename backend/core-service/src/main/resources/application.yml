@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  config:
+    import: optional:classpath:application-secrets.yml
+  application:
+    name: core-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/LMS?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Tạm thời bật update để Hibernate tự động Alter Table
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: trangiahuy7676@gmail.com
+    password: fjshqbydcvecvppe
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+jwt:
+  secret: h5p_shared_secret_titkul_lms_2026_super_secure_key_1234567890
+  expiration: 86400000 # 24 hours
+
+app:
+  upload-dir: ./uploads
+  base-url: http://localhost:8080

@@ -1,0 +1,143 @@
+{
+  "semantics": [
+    {
+      "label": "Hình ảnh/Video minh hoạ",
+      "fields": [
+        {
+          "label": "Loại",
+          "description": "Hình ảnh hoặc video hiển thị phía trên câu hỏi (không bắt buộc)."
+        },
+        {
+          "label": "Tắt phóng to ảnh"
+        }
+      ]
+    },
+    {
+      "label": "Mô tả bài tập",
+      "description": "Mô tả cách học sinh làm bài này.",
+      "placeholder": "Bấm chọn tất cả động từ trong đoạn văn sau."
+    },
+    {
+      "label": "Đoạn văn",
+      "placeholder": "Đây là một câu trả lời: *đáp án*.",
+      "important": {
+        "description": "<ul><li>Từ cần đánh dấu được thêm dấu sao (*) bao quanh.</li><li>Muốn hiện dấu sao trong từ được đánh dấu, thêm một dấu sao nữa, *đáp_án*** =&gt; đáp_án*.</li></ul>",
+        "example": "Các từ đúng được đánh dấu như sau: *đáp_án*, muốn hiện dấu sao thì viết: *đáp_án***."
+      }
+    },
+    {
+      "label": "Nhận xét tổng kết",
+      "fields": [
+        {
+          "widgets": [
+            {
+              "label": "Mặc định"
+            }
+          ],
+          "label": "Đặt nhận xét riêng theo từng mức điểm",
+          "description": "Bấm \"Thêm khoảng\" để thêm các mức điểm. Ví dụ: 0-20% Cần cố gắng hơn, 21-91% Khá tốt, 91-100% Xuất sắc!",
+          "entity": "khoảng điểm",
+          "field": {
+            "fields": [
+              {
+                "label": "Khoảng điểm"
+              },
+              {},
+              {
+                "label": "Nhận xét cho khoảng điểm này",
+                "placeholder": "Nhập nhận xét"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "Nhãn nút \"Kiểm tra\"",
+      "default": "Kiểm tra"
+    },
+    {
+      "label": "Nhãn nút \"Nộp bài\"",
+      "default": "Nộp bài"
+    },
+    {
+      "label": "Nhãn nút \"Làm lại\"",
+      "default": "Làm lại"
+    },
+    {
+      "label": "Nhãn nút \"Xem đáp án\"",
+      "default": "Xem đáp án"
+    },
+    {
+      "label": "Thiết lập hành vi",
+      "description": "Các tuỳ chọn này giúp điều khiển cách bài tập hoạt động.",
+      "fields": [
+        {
+          "label": "Bật \"Làm lại\""
+        },
+        {
+          "label": "Bật nút \"Xem đáp án\""
+        },
+        {
+          "label": "Bật nút \"Kiểm tra\""
+        },
+        {
+          "label": "Hiện điểm từng đáp án",
+          "description": "Hiện điểm đạt được cho mỗi đáp án."
+        }
+      ]
+    },
+    {
+      "label": "Thông báo trả lời đúng",
+      "default": "Chính xác!",
+      "description": "Nội dung báo đáp án đúng"
+    },
+    {
+      "label": "Thông báo trả lời sai",
+      "default": "Chưa đúng!",
+      "description": "Nội dung báo đáp án sai"
+    },
+    {
+      "label": "Thông báo chưa chọn từ đúng",
+      "default": "Chưa chọn hết đáp án!",
+      "description": "Nội dung báo còn thiếu đáp án"
+    },
+    {
+      "label": "Mô tả khi xem đáp án",
+      "default": "Bài tập đã hiển thị kèm đáp án.",
+      "description": "Nội dung báo cho học sinh biết bài đã được cập nhật hiện đáp án đúng."
+    },
+    {
+      "label": "Câu đọc điểm số cho phần mềm đọc màn hình",
+      "default": "Bạn đạt :num trên :total điểm"
+    },
+    {
+      "label": "Nhãn đoạn văn bản đầy đủ cho công nghệ hỗ trợ tiếp cận",
+      "default": "Đoạn văn đầy đủ"
+    },
+    {
+      "label": "Nhãn đoạn văn có thể đánh dấu từ cho công nghệ hỗ trợ tiếp cận",
+      "default": "Đoạn văn có thể đánh dấu từ"
+    },
+    {
+      "label": "Tiêu đề chế độ xem đáp án cho công nghệ hỗ trợ tiếp cận",
+      "default": "Chế độ xem đáp án"
+    },
+    {
+      "label": "Tiêu đề chế độ làm bài cho công nghệ hỗ trợ tiếp cận",
+      "default": "Chế độ làm bài"
+    },
+    {
+      "label": "Mô tả hỗ trợ tiếp cận cho nút \"Kiểm tra\"",
+      "default": "Kiểm tra đáp án. Các phương án sẽ được đánh dấu đúng, sai hoặc chưa trả lời."
+    },
+    {
+      "label": "Mô tả hỗ trợ tiếp cận cho nút \"Xem đáp án\"",
+      "default": "Xem đáp án đúng. Bài tập sẽ được đánh dấu kèm đáp án đúng."
+    },
+    {
+      "label": "Mô tả hỗ trợ tiếp cận cho nút \"Làm lại\"",
+      "default": "Làm lại bài tập. Đặt lại toàn bộ câu trả lời và bắt đầu lại."
+    }
+  ]
+}

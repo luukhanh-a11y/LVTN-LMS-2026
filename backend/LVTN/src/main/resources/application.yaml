@@ -1,0 +1,15 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: LVTN
+  datasource:
+    url: "jdbc:mysql://localhost:3306/lms1?serverTimezone=Asia/Ho_Chi_Minh&useSSL=false"
+    username: root
+    password:
+
+jwt:
+  signerKey: "3c9v8b7n6m5,1q2w3e4r5t6y7u8i9o0pA$SDFGHJKL:ZXCVBNM<>?|}{POIUYTREWQ"
+  valid-duration: 3600 # 1 hour
+  refreshable-duration: 86400 # 1 day

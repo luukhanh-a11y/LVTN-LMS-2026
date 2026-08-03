@@ -1,0 +1,31 @@
+{
+  "semantics": [
+    {
+      "label": "Hình ảnh"
+    },
+    {
+      "label": "Chỉ mang tính trang trí",
+      "description": "Bật tuỳ chọn này nếu hình ảnh chỉ để trang trí, không mang thông tin gì thêm cho nội dung. Phần mềm đọc màn hình sẽ bỏ qua ảnh này và không đọc mô tả thay thế."
+    },
+    {
+      "label": "Mô tả thay thế (Alt text)",
+      "description": "Bắt buộc. Nếu trình duyệt không tải được ảnh, nội dung này sẽ hiển thị thay thế. Cũng được phần mềm đọc màn hình sử dụng."
+    },
+    {
+      "label": "Chú thích khi rê chuột",
+      "description": "Không bắt buộc. Nội dung này hiển thị khi người dùng rê chuột qua ảnh."
+    },
+    {
+      "label": "Tên nội dung ảnh",
+      "default": "Hình ảnh"
+    },
+    {
+      "label": "Phóng to ảnh",
+      "default": "Phóng to ảnh"
+    },
+    {
+      "label": "Thu nhỏ ảnh",
+      "default": "Thu nhỏ ảnh"
+    }
+  ]
+}

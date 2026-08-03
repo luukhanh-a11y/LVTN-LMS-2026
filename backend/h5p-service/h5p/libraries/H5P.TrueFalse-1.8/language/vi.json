@@ -1,0 +1,163 @@
+{
+  "semantics": [
+    {
+      "label": "Hình ảnh/Video minh hoạ",
+      "fields": [
+        {
+          "label": "Loại",
+          "description": "Hình ảnh hoặc video hiển thị phía trên câu hỏi (không bắt buộc)."
+        },
+        {
+          "label": "Tắt phóng to ảnh"
+        }
+      ]
+    },
+    {
+      "label": "Câu hỏi"
+    },
+    {
+      "label": "Đáp án đúng",
+      "options": [
+        {
+          "label": "Đúng"
+        },
+        {
+          "label": "Sai"
+        }
+      ]
+    },
+    {
+      "label": "Bản dịch giao diện cho câu hỏi Đúng/Sai",
+      "fields": [
+        {
+          "label": "Nhãn nút Đúng",
+          "default": "Đúng"
+        },
+        {
+          "label": "Nhãn nút Sai",
+          "default": "Sai"
+        },
+        {
+          "label": "Văn bản nhận xét",
+          "default": "Bạn đạt @score trên @total điểm",
+          "description": "Văn bản nhận xét, có thể dùng biến @score và @total. Ví dụ: 'Bạn đạt @score trên @total điểm'"
+        },
+        {
+          "label": "Nhãn nút \"Kiểm tra\"",
+          "default": "Kiểm tra"
+        },
+        {
+          "label": "Nhãn nút \"Nộp bài\"",
+          "default": "Nộp bài"
+        },
+        {
+          "label": "Nhãn nút \"Xem đáp án\"",
+          "default": "Xem đáp án"
+        },
+        {
+          "label": "Nhãn nút \"Làm lại\"",
+          "default": "Làm lại"
+        },
+        {
+          "label": "Đáp án sai",
+          "default": "Sai rồi"
+        },
+        {
+          "label": "Đáp án đúng",
+          "default": "Đúng rồi"
+        },
+        {
+          "label": "Câu đọc điểm số cho phần mềm đọc màn hình",
+          "default": "Bạn đạt :num trên :total điểm"
+        },
+        {
+          "label": "Mô tả hỗ trợ tiếp cận cho nút \"Kiểm tra\"",
+          "default": "Kiểm tra đáp án. Các phương án sẽ được đánh dấu đúng, sai hoặc chưa trả lời."
+        },
+        {
+          "label": "Mô tả hỗ trợ tiếp cận cho nút \"Xem đáp án\"",
+          "default": "Xem đáp án đúng. Bài tập sẽ được đánh dấu kèm đáp án đúng."
+        },
+        {
+          "label": "Mô tả hỗ trợ tiếp cận cho nút \"Làm lại\"",
+          "default": "Làm lại bài tập. Đặt lại toàn bộ câu trả lời và bắt đầu lại."
+        }
+      ]
+    },
+    {
+      "label": "Thiết lập hành vi",
+      "description": "Các tuỳ chọn này giúp điều khiển cách bài tập hoạt động.",
+      "fields": [
+        {
+          "label": "Bật nút \"Làm lại\""
+        },
+        {
+          "label": "Bật nút \"Xem đáp án\""
+        },
+        {
+          "label": "Bật nút \"Kiểm tra\""
+        },
+        {
+          "label": "Hiện hộp thoại xác nhận khi bấm \"Kiểm tra\""
+        },
+        {
+          "label": "Hiện hộp thoại xác nhận khi bấm \"Làm lại\""
+        },
+        {
+          "label": "Tự động kiểm tra đáp án",
+          "description": "Lưu ý: khả năng hỗ trợ tiếp cận sẽ giảm nếu bật tuỳ chọn này"
+        },
+        {
+          "label": "Nhận xét khi trả lời đúng",
+          "description": "Ghi đè nội dung nhận xét mặc định. Có thể dùng biến @score và @total"
+        },
+        {
+          "label": "Nhận xét khi trả lời sai",
+          "description": "Ghi đè nội dung nhận xét mặc định. Có thể dùng biến @score và @total"
+        }
+      ]
+    },
+    {
+      "label": "Hộp thoại xác nhận khi \"Kiểm tra\"",
+      "fields": [
+        {
+          "label": "Tiêu đề",
+          "default": "Hoàn thành bài?"
+        },
+        {
+          "label": "Nội dung",
+          "default": "Bạn có chắc muốn hoàn thành bài không?"
+        },
+        {
+          "label": "Nhãn nút Huỷ",
+          "default": "Huỷ"
+        },
+        {
+          "label": "Nhãn nút Xác nhận",
+          "default": "Hoàn thành"
+        }
+      ]
+    },
+    {
+      "label": "Hộp thoại xác nhận khi \"Làm lại\"",
+      "fields": [
+        {
+          "label": "Tiêu đề",
+          "default": "Làm lại bài?"
+        },
+        {
+          "label": "Nội dung",
+          "default": "Bạn có chắc muốn làm lại bài không?"
+        },
+        {
+          "label": "Nhãn nút Huỷ",
+          "default": "Huỷ"
+        },
+        {
+          "label": "Nhãn nút Xác nhận",
+          "default": "Xác nhận"
+        }
+      ]
+    }
+  ]
+}

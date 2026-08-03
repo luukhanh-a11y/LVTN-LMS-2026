@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(node *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)",
+      "Bash(sort /tmp/all_audited.txt -o /tmp/all_audited.txt)",
+      "Skill(run)",
+      "Bash(npm run *)",
+      "Bash(tee /tmp/vite-dev.log)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173 --max-time 5)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173 --max-time 3)",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(mkdir -p /tmp/pw-project)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx playwright *)",
+      "Read(//c/tmp/pw-shots//**)",
+      "Bash(find /c -maxdepth 2 -iname \"tmp\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8080/actuator/health --max-time 3)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001 --max-time 3)",
+      "Bash(netstat -ano)",
+      "Bash(mkdir -p /tmp/pw2)"
+    ]
+  }
+}

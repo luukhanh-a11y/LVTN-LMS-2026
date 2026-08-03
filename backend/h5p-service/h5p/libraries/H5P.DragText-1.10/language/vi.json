@@ -1,0 +1,168 @@
+{
+  "semantics": [
+    {
+      "label": "Hình ảnh/Video minh hoạ",
+      "fields": [
+        {
+          "label": "Loại",
+          "description": "Hình ảnh hoặc video hiển thị phía trên câu hỏi (không bắt buộc)."
+        },
+        {
+          "label": "Tắt phóng to ảnh"
+        }
+      ]
+    },
+    {
+      "label": "Mô tả bài tập",
+      "description": "Mô tả cách học sinh làm bài này.",
+      "default": "Kéo các từ vào đúng ô trống"
+    },
+    {
+      "label": "Nội dung",
+      "placeholder": "*Oslo* là thủ đô của Na Uy, *Stockholm* là thủ đô của Thuỵ Điển và *Copenhagen* là thủ đô của Đan Mạch. Cả ba thành phố đều nằm ở bán đảo *Scandinavia:Bắc Âu*.",
+      "important": {
+        "description": "<ul><li>Từ có thể kéo thả được đánh dấu bằng dấu sao (*) ở trước và sau từ/cụm từ đúng.</li><li>Có thể thêm gợi ý bằng dấu hai chấm (:) trước nội dung gợi ý.</li><li>Mỗi ô trống chỉ có đúng một từ đúng.</li><li>Có thể thêm nhận xét hiển thị khi hoàn thành bài. Dùng '\\+' cho nhận xét khi đúng và '\\-' cho nhận xét khi sai.</li></ul>",
+        "example": "Nội dung H5P có thể chỉnh sửa bằng *trình duyệt:Đây là loại chương trình gì?*. <br /> Nội dung H5P có tính *tương tác\\+Chính xác! \\-Chưa đúng, thử lại nhé!*"
+      }
+    },
+    {
+      "label": "Từ gây nhiễu",
+      "placeholder": "*Reykjavík* *Helsinki*",
+      "description": "Nhập thêm các từ sai để gây nhiễu. Dùng cùng cú pháp dấu sao (*) như phần Nội dung."
+    },
+    {
+      "label": "Nhận xét tổng kết",
+      "fields": [
+        {
+          "widgets": [
+            {
+              "label": "Mặc định"
+            }
+          ],
+          "label": "Đặt nhận xét riêng theo từng mức điểm",
+          "description": "Bấm \"Thêm khoảng\" để thêm các mức điểm. Ví dụ: 0-20% Cần cố gắng hơn, 21-91% Khá tốt, 91-100% Xuất sắc!",
+          "entity": "khoảng điểm",
+          "field": {
+            "fields": [
+              {
+                "label": "Khoảng điểm"
+              },
+              {},
+              {
+                "label": "Nhận xét cho khoảng điểm này",
+                "placeholder": "Nhập nhận xét"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "Nhãn nút \"Kiểm tra\"",
+      "default": "Kiểm tra"
+    },
+    {
+      "label": "Nhãn nút \"Nộp bài\"",
+      "default": "Nộp bài"
+    },
+    {
+      "label": "Nhãn nút \"Làm lại\"",
+      "default": "Làm lại"
+    },
+    {
+      "label": "Nhãn nút \"Xem đáp án\"",
+      "default": "Xem đáp án"
+    },
+    {
+      "label": "Nhãn ô thả có số thứ tự",
+      "default": "Ô thả @index.",
+      "description": "Nhãn dùng cho hỗ trợ tiếp cận, phần mềm đọc màn hình sẽ đọc số thứ tự ô thả. Biến khả dụng: @index"
+    },
+    {
+      "label": "Nhãn ô thả đang trống",
+      "default": "Ô thả @index đang trống.",
+      "description": "Nhãn dùng cho hỗ trợ tiếp cận, báo ô thả đang trống"
+    },
+    {
+      "label": "Nhãn ô thả đã có từ",
+      "default": "Ô thả @index chứa @draggable.",
+      "description": "Nhãn dùng cho hỗ trợ tiếp cận, báo ô thả đã chứa một từ kéo thả"
+    },
+    {
+      "label": "Nhãn phần tử kéo thả",
+      "default": "Từ @index trên @count.",
+      "description": "Nhãn dùng cho hỗ trợ tiếp cận, báo đây là phần tử có thể kéo thả. Biến khả dụng: @index, @count"
+    },
+    {
+      "label": "Nhãn nút xem gợi ý",
+      "default": "Xem gợi ý",
+      "description": "Nhãn dùng cho hỗ trợ tiếp cận, đọc trước khi đọc nội dung gợi ý"
+    },
+    {
+      "label": "Câu đọc khi trả lời đúng",
+      "default": "Chính xác!"
+    },
+    {
+      "label": "Câu đọc khi trả lời sai",
+      "default": "Chưa đúng!"
+    },
+    {
+      "label": "Tiêu đề hộp thoại xác nhận đặt lại ô thả",
+      "default": "Đặt lại ô thả"
+    },
+    {
+      "label": "Nội dung hộp thoại xác nhận đặt lại ô thả",
+      "default": "Bạn có chắc muốn đặt lại ô thả này không?"
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận khi bắt đầu kéo",
+      "default": "Đã chọn để kéo."
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận khi huỷ kéo",
+      "default": "Đã huỷ kéo thả."
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận báo đây là đáp án đúng",
+      "default": "Đáp án đúng:"
+    },
+    {
+      "label": "Tiêu đề khung nhận xét đúng/sai",
+      "default": "Nhận xét"
+    },
+    {
+      "label": "Thiết lập hành vi",
+      "description": "Các tuỳ chọn này giúp điều khiển cách bài tập hoạt động.",
+      "fields": [
+        {
+          "label": "Bật \"Làm lại\""
+        },
+        {
+          "label": "Bật nút \"Xem đáp án\""
+        },
+        {
+          "label": "Bật nút \"Kiểm tra\""
+        },
+        {
+          "label": "Phản hồi ngay lập tức"
+        }
+      ]
+    },
+    {
+      "label": "Câu đọc điểm số cho phần mềm đọc màn hình",
+      "default": "Bạn đạt :num trên :total điểm"
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận cho nút \"Kiểm tra\"",
+      "default": "Kiểm tra đáp án. Các phương án sẽ được đánh dấu đúng, sai hoặc chưa trả lời."
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận cho nút \"Xem đáp án\"",
+      "default": "Xem đáp án đúng. Bài tập sẽ được đánh dấu kèm đáp án đúng."
+    },
+    {
+      "label": "Nhãn hỗ trợ tiếp cận cho nút \"Làm lại\"",
+      "default": "Làm lại bài tập. Đặt lại toàn bộ câu trả lời và bắt đầu lại."
+    }
+  ]
+}

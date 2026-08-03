@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface PhieuHoTroRepository extends JpaRepository<PhieuHoTro, Long> {
 
-    List<PhieuHoTro> findByNguoiDungLienQuan_NguoiDungid(String id);
-    List<PhieuHoTro> findByNguoiDungTao_NguoiDungid(String id);
+    List<PhieuHoTro> findByNguoiDungLienQuan_NguoiDungId(String id);
+    List<PhieuHoTro> findByNguoiDungTao_NguoiDungId(String id);
 }

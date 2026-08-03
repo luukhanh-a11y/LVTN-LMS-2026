@@ -48,7 +48,7 @@ public class PhieuHoTroService {
         if (!nguoiDungRepository.existsById(idUser))
             throw new AppExceptions(Errorcode.USER_NOT_FOUND);
 
-        return phieuHoTroRepository.findByNguoiDungTao_NguoiDungid(idUser)
+        return phieuHoTroRepository.findByNguoiDungTao_NguoiDungId(idUser)
                 .stream().map(phieuHoTroMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -57,7 +57,7 @@ public class PhieuHoTroService {
         if (!nguoiDungRepository.existsById(idUser))
             throw new AppExceptions(Errorcode.USER_NOT_FOUND);
 
-        return phieuHoTroRepository.findByNguoiDungLienQuan_NguoiDungid(idUser)
+        return phieuHoTroRepository.findByNguoiDungLienQuan_NguoiDungId(idUser)
                 .stream().map(phieuHoTroMapper::toResponse)
                 .collect(Collectors.toList());
     }

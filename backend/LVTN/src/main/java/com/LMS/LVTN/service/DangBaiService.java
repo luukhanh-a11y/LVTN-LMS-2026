@@ -62,11 +62,9 @@ public class DangBaiService {
     public DangBaiResponse createDangBaiHeThong(DangBaiRequest request) {
         DangBai dangBai = new DangBai();
         dangBaiMapper.updateEntityFromRequest(request, dangBai);
-        
-        // Ensure it's marked as created by system
+
         dangBai.setNguonGoc(NguonGoc.HE_THONG);
 
-        // If it's a JSON game, process the combined JSON to split question and answer
         if (request.getLoaiNoiDung() == LoaiNoiDung.JSON_TEXT && request.getDuLieuGame() != null) {
             GameDataSplitResult splitResult = gameService.splitGameData(request.getDuLieuGame());
             dangBai.setDuLieuGame(splitResult.getCauHoiJson());
@@ -83,9 +81,8 @@ public class DangBaiService {
                 .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
                 
         dangBaiMapper.updateEntityFromRequest(request, dangBai);
-        dangBai.setNguonGoc(NguonGoc.HE_THONG); // Ensure it stays as HE_THONG
+        dangBai.setNguonGoc(NguonGoc.HE_THONG);
 
-        // If it's a JSON game, process the combined JSON again
         if (request.getLoaiNoiDung() == LoaiNoiDung.JSON_TEXT && request.getDuLieuGame() != null) {
             GameDataSplitResult splitResult = gameService.splitGameData(request.getDuLieuGame());
             dangBai.setDuLieuGame(splitResult.getCauHoiJson());
@@ -99,8 +96,6 @@ public class DangBaiService {
     public void deleteDangBai(Integer id) {
         if (!dangBaiRepository.existsById(id))
             throw new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND);
-
-
         dangBaiRepository.deleteById(id);
     }
 }

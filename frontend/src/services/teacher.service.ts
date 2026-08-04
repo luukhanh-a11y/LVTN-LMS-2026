@@ -181,8 +181,8 @@ export const teacherService = {
   },
 
   // Giao bài tập mới
-  createAssignment: async (dto: AssignmentCreateDTO): Promise<Assignment> => {
-    const response = await api.post<Assignment>('/assignments', dto);
+  createAssignment: async (dto: any): Promise<any> => {
+    const response = await api.post('/bai-tap', dto);
     return response.data;
   },
 

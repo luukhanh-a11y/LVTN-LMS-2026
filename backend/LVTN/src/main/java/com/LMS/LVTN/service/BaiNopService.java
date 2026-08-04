@@ -28,6 +28,10 @@ public class BaiNopService {
     HoSoHocSinhRepository hoSoHocSinhRepository;
     HuyHieuEvaluationService huyHieuEvaluationService;
 
+    ChiTietBaiTapRepository chiTietBaiTapRepository;
+    GameService gameService;
+    com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     @Transactional
     public BaiNopResponse create(BaiNopRequest request) {
         BaiNop baiNop = baiNopMapper.toEntity(request);
@@ -50,6 +54,40 @@ public class BaiNopService {
             // Check deadline
             if (baiTap.getDeadline() != null && LocalDateTime.now().isAfter(baiTap.getDeadline())) {
                 baiNop.setLaNopTre(true);
+            }
+
+            // Tự động chấm điểm cho bài làm từ Sách Bài Tập / Trò chơi
+            if (baiNop.getChiTietBaiLam() != null && !baiNop.getChiTietBaiLam().isEmpty()) {
+                try {
+                    List<ChiTietBaiTap> chiTietList = chiTietBaiTapRepository.findByBaiTap_BaiTapIdOrderByThuTuAsc(baiTap.getBaiTapId());
+                    if (chiTietList != null && !chiTietList.isEmpty()) {
+                        com.fasterxml.jackson.databind.JsonNode baiLamNode = objectMapper.readTree(baiNop.getChiTietBaiLam());
+                        com.fasterxml.jackson.databind.JsonNode mapBaiLam = baiLamNode.has("dapAnHocSinh") ? baiLamNode.get("dapAnHocSinh") : (baiLamNode.has("baiLamNhieuCau") ? baiLamNode.get("baiLamNhieuCau") : baiLamNode);
+
+                        java.math.BigDecimal tongDiem = java.math.BigDecimal.ZERO;
+                        for (ChiTietBaiTap ct : chiTietList) {
+                            String idCauHoi = ct.getDangBai().getDangBaiId().toString();
+                            String dapAnChuan = ct.getDangBai().getDapAnChuan();
+                            com.fasterxml.jackson.databind.JsonNode baiLamItem = (mapBaiLam != null && mapBaiLam.has(idCauHoi)) ? mapBaiLam.get(idCauHoi) : null;
+                            String subBaiLamJson = (baiLamItem != null) ? (baiLamItem.isTextual() ? "{\"dapAnDungId\":\"" + baiLamItem.asText() + "\"}" : baiLamItem.toString()) : "{}";
+                            java.math.BigDecimal diemSub = gameService.chamDiem(dapAnChuan, subBaiLamJson);
+                            tongDiem = tongDiem.add(diemSub);
+                        }
+                        java.math.BigDecimal diem = tongDiem.divide(new java.math.BigDecimal(chiTietList.size()), 2, java.math.RoundingMode.HALF_UP);
+                        baiNop.setDiemTuDong(diem);
+                        if (baiNop.getTrangThai() == null) {
+                            baiNop.setTrangThai(com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
+                        }
+                    } else if (baiTap.getDangBai() != null && baiTap.getDangBai().getDapAnChuan() != null) {
+                        java.math.BigDecimal diem = gameService.chamDiem(baiTap.getDangBai().getDapAnChuan(), baiNop.getChiTietBaiLam());
+                        baiNop.setDiemTuDong(diem);
+                        if (baiNop.getTrangThai() == null) {
+                            baiNop.setTrangThai(com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log warning and proceed
+                }
             }
         }
 

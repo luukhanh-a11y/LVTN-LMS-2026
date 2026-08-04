@@ -48,7 +48,7 @@ export default function TeacherAssignments() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [quizSubjectId, setQuizSubjectId] = useState<number | ''>('');
   const [quizSlots, setQuizSlots] = useState<any[]>([]);
-  const [selectedDangBaiId, setSelectedDangBaiId] = useState<number | ''>('');
+  const [selectedDangBais, setSelectedDangBais] = useState<{ dangBaiId: number; thuTu: number; cheDoGiaoDien: string }[]>([]);
   const [isLoadingQuizSlots, setIsLoadingQuizSlots] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,9 +114,9 @@ export default function TeacherAssignments() {
       setErrorMsg('Vui lòng chọn học liệu H5P cho bài tập này!');
       return;
     }
-    if (assignmentType === 'TRAC_NGHIEM' && !selectedDangBaiId) {
+    if (assignmentType === 'TRAC_NGHIEM' && selectedDangBais.length === 0) {
       setSubmitStatus('error');
-      setErrorMsg('Vui lòng chọn bài quiz bộ sách cho bài tập này!');
+      setErrorMsg('Vui lòng tích chọn ít nhất một bài quiz bộ sách cho bài tập này!');
       return;
     }
 
@@ -126,21 +126,24 @@ export default function TeacherAssignments() {
 
     try {
       await teacherService.createAssignment({
-        title: taskTitle,
-        description: taskDesc,
-        classId: selectedClassId as number,
-        teacherId: user?.userId ?? 0,
-        type: assignmentType,
-        deadline: new Date(deadline).toISOString(),
-        maxResubmitCount,
-        hocLieuId: assignmentType === 'H5P' ? (selectedHocLieuId as number) : undefined,
-        contentNodeId: assignmentType === 'TRAC_NGHIEM' ? (selectedDangBaiId as number) : undefined,
+        baiTap: {
+          tieuDe: taskTitle,
+          moTa: taskDesc,
+          lopHocId: selectedClassId as number,
+          giaoVienId: user?.userId ?? 1,
+          loaiBaiTap: assignmentType,
+          deadline: new Date(deadline).toISOString(),
+          choNopLai: maxResubmitCount > 0,
+          soLanNopLaiToiDa: maxResubmitCount,
+          trangThai: 'DANG_GIAO'
+        },
+        danhSachChiTiet: assignmentType === 'TRAC_NGHIEM' ? selectedDangBais : []
       });
       setSubmitStatus('success');
       setTaskTitle('');
       setTaskDesc('');
       setDeadline('');
-      setSelectedDangBaiId('');
+      setSelectedDangBais([]);
     } catch (err: any) {
       setSubmitStatus('error');
       setErrorMsg(err.response?.data?.message || 'Giao bài thất bại! Vui lòng thử lại.');
@@ -255,7 +258,7 @@ export default function TeacherAssignments() {
                 <select
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
                   value={quizSubjectId}
-                  onChange={(e) => { setQuizSubjectId(e.target.value ? Number(e.target.value) : ''); setSelectedDangBaiId(''); }}
+                  onChange={(e) => { setQuizSubjectId(e.target.value ? Number(e.target.value) : ''); setSelectedDangBais([]); }}
                 >
                   <option value="">-- Chọn môn học --</option>
                   {subjects.map((s) => (
@@ -264,7 +267,7 @@ export default function TeacherAssignments() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Chọn bài quiz bộ sách</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tích chọn dạng bài & cấu hình giao diện</label>
                 {isLoadingQuizSlots ? (
                   <div className="flex items-center gap-2 text-slate-500 text-sm p-3">
                     <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
@@ -278,16 +281,50 @@ export default function TeacherAssignments() {
                     Chưa có bài quiz nào được soạn cho môn/khối này. Vào "Kho Học Liệu" &gt; "Soạn quiz bộ sách" để soạn trước.
                   </p>
                 ) : (
-                  <select
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
-                    value={selectedDangBaiId}
-                    onChange={(e) => setSelectedDangBaiId(e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">-- Chọn bài --</option>
-                    {quizSlots.map((slot) => (
-                      <option key={slot.id} value={slot.id}>{slot.tenChuDe} - {slot.tenDangBai} ({slot.loai})</option>
-                    ))}
-                  </select>
+                  <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
+                    {quizSlots.map((slot) => {
+                      const selectedItem = selectedDangBais.find(item => item.dangBaiId === slot.id);
+                      return (
+                        <div key={slot.id} className={`flex items-center justify-between p-2.5 bg-white border rounded-lg transition-all ${selectedItem ? 'border-blue-500 shadow-sm ring-1 ring-blue-500/20' : 'border-slate-200 hover:border-slate-300'}`}>
+                          <label className="flex items-center gap-3 cursor-pointer select-none flex-1">
+                            <input
+                              type="checkbox"
+                              checked={!!selectedItem}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedDangBais([...selectedDangBais, { dangBaiId: slot.id, thuTu: selectedDangBais.length + 1, cheDoGiaoDien: 'MAC_DINH' }]);
+                                } else {
+                                  setSelectedDangBais(selectedDangBais.filter(item => item.dangBaiId !== slot.id));
+                                }
+                              }}
+                              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-slate-700">
+                              {slot.tenChuDe} - {slot.tenDangBai} <span className="text-xs text-slate-400 font-normal">({slot.loai})</span>
+                            </span>
+                          </label>
+                          {selectedItem && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-slate-500 font-medium">Giao diện:</span>
+                              <select
+                                value={selectedItem.cheDoGiaoDien}
+                                onChange={(e) => {
+                                  const newMode = e.target.value;
+                                  setSelectedDangBais(selectedDangBais.map(item =>
+                                    item.dangBaiId === slot.id ? { ...item, cheDoGiaoDien: newMode } : item
+                                  ));
+                                }}
+                                className="px-2 py-1 bg-blue-50 border border-blue-300 text-blue-700 rounded font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                              >
+                                <option value="MAC_DINH">Mặc định (Quizzes)</option>
+                                <option value="TRO_CHOI">Trò chơi (Game hóa)</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>

@@ -1,6 +1,7 @@
 package com.LMS.LVTN.controller;
 
 import com.LMS.LVTN.dto.request.BaiTapRequest;
+import com.LMS.LVTN.dto.request.TaoBaiTapRequest;
 import com.LMS.LVTN.dto.response.ApiResponse;
 import com.LMS.LVTN.dto.response.BaiTapResponse;
 import com.LMS.LVTN.service.BaiTapService;
@@ -20,9 +21,9 @@ public class BaiTapController {
     BaiTapService baiTapService;
 
     @PostMapping
-    public ApiResponse<BaiTapResponse> create(@RequestBody BaiTapRequest request) {
+    public ApiResponse<BaiTapResponse> create(@RequestBody TaoBaiTapRequest request) {
         return ApiResponse.<BaiTapResponse>builder()
-                .data(baiTapService.create(request))
+                .data(baiTapService.create(request.getBaiTap(), request.getDanhSachChiTiet()))
                 .build();
     }
 

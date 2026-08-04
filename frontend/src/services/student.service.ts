@@ -458,15 +458,37 @@ export const studentService = {
           chiTietBaiLam: JSON.stringify(baiLam)
         };
 
-        const response = await api.post('/lich-su-tu-hoc/nop-bai', payload);
+        // Kiểm tra xem học sinh đã có lịch sử làm bài này trước đó chưa
+        let existingTuHocId: number | null = null;
+        try {
+          const checkRes = await api.get(`/lich-su-tu-hoc/dang-bai/${dangBaiId}`, {
+            params: { maHocSinh: hoSo.hocSinhId }
+          });
+          const historyList = checkRes.data.data || checkRes.data;
+          if (Array.isArray(historyList) && historyList.length > 0) {
+            existingTuHocId = historyList[0].tuHocId;
+          }
+        } catch (err) {}
+
+        let response: any;
+        if (existingTuHocId) {
+          // Làm lại bài cũ -> Gọi PUT update (ghi đè lịch sử duy nhất)
+          response = await api.put(`/lich-su-tu-hoc/${existingTuHocId}`, payload);
+        } else {
+          // Làm lần đầu -> Gọi POST nop-bai
+          response = await api.post('/lich-su-tu-hoc/nop-bai', payload);
+        }
         const data = response.data.data || response.data;
 
         const diem = Number(data.diemSo || 0);
         let xpEarned = 0;
-        if (diem === 10) xpEarned = 20;
-        else if (diem >= 7) xpEarned = 15;
-        else if (diem >= 5) xpEarned = 10;
-        else if (diem > 0) xpEarned = 5;
+        // Chỉ tặng XP cho lần làm đầu tiên (tránh gian lận cày XP bằng cách làm lại liên tục)
+        if (!existingTuHocId) {
+          if (diem === 10) xpEarned = 20;
+          else if (diem >= 7) xpEarned = 15;
+          else if (diem >= 5) xpEarned = 10;
+          else if (diem > 0) xpEarned = 5;
+        }
 
         if (xpEarned > 0) {
           try {
@@ -552,8 +574,40 @@ export const studentService = {
   },
 
   getQuizAssignmentDetail: async (assignmentId: number) => {
-    const response = await api.get(`/bai-tap/${assignmentId}`);
-    return response.data;
+    const [btRes, dbRes] = await Promise.all([
+      api.get(`/bai-tap/${assignmentId}`),
+      api.get(`/he-thong/dang-bai/bai-tap/${assignmentId}/hoc-sinh`).catch(() => ({ data: [] }))
+    ]);
+    const baiTap = btRes.data;
+    const dangBais = dbRes.data || [];
+
+    const danhSachCauHoi = dangBais.map((db: any) => {
+      let gameData = {};
+      try {
+        gameData = typeof db.duLieuGame === 'string' ? JSON.parse(db.duLieuGame) : (db.duLieuGame || {});
+      } catch (e) {
+        gameData = {};
+      }
+      return {
+        ...gameData,
+        id: db.dangBaiId?.toString(),
+        kieu: (gameData as any).loai || 'TRAC_NGHIEM',
+        giaoDien: (gameData as any).giaoDien || 'MAC_DINH'
+      };
+    });
+
+    return {
+      ...baiTap,
+      loai: dangBais.length > 1 ? 'NHIEU_CAU' : (danhSachCauHoi[0]?.kieu || 'NHIEU_CAU'),
+      cheDoGiaoDien: danhSachCauHoi[0]?.giaoDien || 'MAC_DINH',
+      cauHinh: {
+        loai: 'NHIEU_CAU',
+        tieuDe: baiTap?.tieuDe,
+        danhSachCauHoi,
+        ...(danhSachCauHoi[0] || {})
+      },
+      danhSachChiTiet: dangBais
+    };
   },
 
   submitQuizAssignment: async (assignmentId: number, baiLam: Record<string, unknown>) => {

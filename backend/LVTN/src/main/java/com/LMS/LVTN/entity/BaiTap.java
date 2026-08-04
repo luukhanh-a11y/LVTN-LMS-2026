@@ -73,6 +73,9 @@ public class BaiTap {
     @OneToMany(mappedBy = "baiTap", fetch = FetchType.LAZY)
     private List<BaiNop> baiNops = new ArrayList<>();
 
+    @OneToMany(mappedBy = "baiTap", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ChiTietBaiTap> chiTietBaiTaps = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         ngayTao = LocalDateTime.now();

@@ -13,7 +13,6 @@ public class BaiTapRequest {
 
     private Long giaoVienId;
     private Long lopHocId;
-    private Integer dangBaiId;
     private Integer hocKyId;
     private String tieuDe;
     private String moTa;

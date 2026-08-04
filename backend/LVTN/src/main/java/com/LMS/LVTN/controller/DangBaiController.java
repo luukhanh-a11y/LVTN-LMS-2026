@@ -44,6 +44,11 @@ public class DangBaiController {
         return ResponseEntity.ok(dangBaiService.getByBaiHocIdForStudent(baiHocId));
     }
 
+    @GetMapping("/bai-tap/{baiTapId}/hoc-sinh")
+    public ResponseEntity<List<DangBaiStudentResponse>> getByBaiTapIdForStudent(@PathVariable Long baiTapId) {
+        return ResponseEntity.ok(dangBaiService.getByBaiTapIdForStudent(baiTapId));
+    }
+
     @PostMapping
     public ResponseEntity<DangBaiResponse> createDangBaiHeThong(@RequestBody DangBaiRequest request) {
         return new ResponseEntity<>(dangBaiService.createDangBaiHeThong(request), HttpStatus.CREATED);

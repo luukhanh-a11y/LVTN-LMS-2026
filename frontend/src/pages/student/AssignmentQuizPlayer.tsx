@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 interface QuizDetail {
   assignmentId: number;
   title: string;
-  loai: 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET';
+  loai: 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET' | 'NHIEU_CAU' | string;
   cauHinh: any;
   allowResubmit: boolean;
   maxResubmitCount: number;
@@ -41,6 +41,8 @@ export default function AssignmentQuizPlayer() {
   const [capChon, setCapChon] = useState<Record<string, string>>({});
   // Điền khuyết
   const [traLoiTheoCho, setTraLoiTheoCho] = useState<Record<string, string>>({});
+  // Bộ đề tổng hợp nhiều câu (Giao từ Sách Bài Tập)
+  const [dapAnNhieuCau, setDapAnNhieuCau] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (!assignmentId) return;
@@ -67,6 +69,13 @@ export default function AssignmentQuizPlayer() {
         return;
       }
       baiLam = { capChon: capArr };
+    } else if (detail.loai === 'NHIEU_CAU' || detail.cauHinh?.danhSachCauHoi) {
+      const ds = detail.cauHinh.danhSachCauHoi || [];
+      if (ds.some((c: any) => !dapAnNhieuCau[c.id])) {
+        toast.error('Vui lòng hoàn thành đầy đủ tất cả các câu hỏi trong bộ đề.');
+        return;
+      }
+      baiLam = { dapAnHocSinh: dapAnNhieuCau };
     } else {
       const cho = detail.cauHinh.danhSachCho || [];
       if (cho.some((c: any) => !traLoiTheoCho[c.id]?.trim())) {
@@ -141,7 +150,9 @@ export default function AssignmentQuizPlayer() {
 
       <div className="flex-1 bg-slate-100 p-6 flex justify-center items-center relative">
         <div className={`w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5 transition-all duration-500 ${result ? 'scale-95 opacity-50 blur-sm' : ''}`}>
-          <p className="text-lg font-bold text-slate-800">{detail.cauHinh.cauHoi}</p>
+          {detail.cauHinh?.cauHoi && (
+            <p className="text-lg font-bold text-slate-800">{detail.cauHinh.cauHoi}</p>
+          )}
 
           {detail.loai === 'TRAC_NGHIEM' && (
             <div className="space-y-2">
@@ -185,6 +196,105 @@ export default function AssignmentQuizPlayer() {
                     onChange={(e) => setTraLoiTheoCho((prev) => ({ ...prev, [c.id]: e.target.value }))}
                   />
                   <span>{c.vanBanSau}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(detail.loai === 'NHIEU_CAU' || (detail.cauHinh && detail.cauHinh.danhSachCauHoi)) && (
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+              {(detail.cauHinh.danhSachCauHoi || []).map((ch: any, idx: number) => (
+                <div key={ch.id || idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+                    <p className="font-bold text-slate-800 text-base flex items-center gap-2">
+                      <span className="w-7 h-7 flex items-center justify-center bg-student-primary/10 text-student-primary rounded-full text-sm font-black">{idx + 1}</span>
+                      <span>{ch.noiDung || `Câu hỏi số ${idx + 1}`} <span className="text-xs text-slate-500 font-normal">{ch.kieu ? `(${ch.kieu === 'NOI_CAP' ? 'Nối cặp' : ch.kieu === 'DIEN_KHUYET' ? 'Điền từ' : 'Trắc nghiệm'})` : ''}</span></span>
+                    </p>
+                    {ch.giaoDien === 'TRO_CHOI' ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm animate-pulse">
+                        🎮 Chế độ Trò Chơi
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        📝 Quizzes Chuẩn
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* 1. TRẮC NGHIỆM */}
+                  {(!ch.kieu || ch.kieu === 'TRAC_NGHIEM') && ch.luaChon && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {(ch.luaChon || []).map((lc: any) => {
+                        const isSelected = dapAnNhieuCau[ch.id] === lc.id || dapAnNhieuCau[ch.id]?.dapAnDungId === lc.id;
+                        return (
+                          <label key={lc.id} className={`flex items-center gap-3 p-3.5 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-student-primary bg-student-primary/5 font-bold text-student-primary shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'}`}>
+                            <input type="radio" name={`cauHoi_${ch.id}`} checked={isSelected} onChange={() => setDapAnNhieuCau(prev => ({ ...prev, [ch.id]: lc.id }))} className="hidden" />
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-student-primary' : 'border-slate-300'}`}>
+                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-student-primary" />}
+                            </div>
+                            <span className="flex-1 text-sm">{lc.noiDung}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 2. NỐI CẶP */}
+                  {ch.kieu === 'NOI_CAP' && (
+                    <div className="space-y-3 pt-2">
+                      {(ch.cotTrai || []).map((t: any) => {
+                        const currentCap = (dapAnNhieuCau[ch.id]?.capDung || []).find((c: any) => c.traiId === t.id)?.phaiId || '';
+                        return (
+                          <div key={t.id} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
+                            <span className="flex-1 font-medium text-slate-700">{t.noiDung}</span>
+                            <select
+                              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-student-primary text-sm"
+                              value={currentCap}
+                              onChange={(e) => {
+                                const newPhai = e.target.value;
+                                const oldCap = dapAnNhieuCau[ch.id]?.capDung || [];
+                                const filtered = oldCap.filter((c: any) => c.traiId !== t.id);
+                                if (newPhai) filtered.push({ traiId: t.id, phaiId: newPhai });
+                                setDapAnNhieuCau(prev => ({ ...prev, [ch.id]: { capDung: filtered } }));
+                              }}
+                            >
+                              <option value="">-- Chọn đáp án nối --</option>
+                              {(ch.cotPhai || []).map((p: any) => (
+                                <option key={p.id} value={p.id}>{p.noiDung}</option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 3. ĐIỀN KHUYẾT */}
+                  {ch.kieu === 'DIEN_KHUYET' && (
+                    <div className="space-y-3 pt-2 bg-white p-4 rounded-xl border border-slate-200">
+                      {(ch.danhSachCho || []).map((c: any) => {
+                        const currentVal = dapAnNhieuCau[ch.id]?.dapAnTheoCho?.[c.id] || '';
+                        return (
+                          <div key={c.id} className="flex flex-wrap items-center gap-2 text-slate-700">
+                            <span>{c.vanBanTruoc}</span>
+                            <input
+                              className="w-32 px-3 py-1.5 border-2 border-slate-300 rounded-lg outline-none focus:border-student-primary text-sm text-center font-bold text-student-primary"
+                              placeholder="Điền từ..."
+                              value={currentVal}
+                              onChange={(e) => {
+                                const oldMap = dapAnNhieuCau[ch.id]?.dapAnTheoCho || {};
+                                setDapAnNhieuCau(prev => ({
+                                  ...prev,
+                                  [ch.id]: { dapAnTheoCho: { ...oldMap, [c.id]: e.target.value } }
+                                }));
+                              }}
+                            />
+                            <span>{c.vanBanSau}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

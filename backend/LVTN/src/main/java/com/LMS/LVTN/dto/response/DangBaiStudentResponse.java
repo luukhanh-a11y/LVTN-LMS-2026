@@ -13,7 +13,7 @@ public class DangBaiStudentResponse {
 
     private Integer dangBaiId;
     private Integer baiHocId;
-    private String tenBaiHoc; // Flattened
+    private String tenBaiHoc;
     private Integer bookIndexIdNgoai;
     private String tenDangBai;
     private String slug;
@@ -22,10 +22,9 @@ public class DangBaiStudentResponse {
     private LoaiNoiDung loaiNoiDung;
     private NguonGoc nguonGoc;
     private Long giaoVienId;
-    private String tenGiaoVien; // Flattened
+    private String tenGiaoVien;
     private String h5pNoiDungId;
     private Short xpThuong;
-    private String duLieuGame; // JSON string for UI
-    // LƯU Ý: ĐÃ TƯỚC BỎ TRƯỜNG dapAnChuan để bảo vệ tính công phu và công bằng của bài thi cho Học sinh!
+    private String duLieuGame;
     private LocalDateTime ngayTao;
 }

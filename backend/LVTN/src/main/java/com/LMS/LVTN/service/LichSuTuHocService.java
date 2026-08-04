@@ -39,6 +39,7 @@ public class LichSuTuHocService {
 
         if(!dangBaiRepository.isSachGiaoKhoa(request.getDangBaiId()))
             throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
+
         if (lichSuTuHocRepository
                 .existsByHocSinh_HocSinhIdAndDangBai_DangBaiId(request.getHocSinhId(), request.getDangBaiId()))
             throw new AppExceptions(Errorcode.DATA_EXISTED);
@@ -132,7 +133,12 @@ public class LichSuTuHocService {
         lichSuTuHocMapper.updateLichSuTuHoc(request, lichSuTuHoc);
         lichSuTuHoc.setDiemSo(diem);
 
-        return lichSuTuHocMapper.toResponse(lichSuTuHocRepository.save(lichSuTuHoc));
+        LichSuTuHoc saved = lichSuTuHocRepository.save(lichSuTuHoc);
+        try {
+            tienDoHocSinhService.updateProgress(hocSinh.getHocSinhId(), dangBai.getBaiHoc().getBaiHocId());
+        } catch (Exception e) {
+        }
+        return lichSuTuHocMapper.toResponse(saved);
     }
 
     public void delete(Long lichSuID){

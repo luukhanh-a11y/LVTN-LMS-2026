@@ -15,11 +15,5 @@ public class BaiNopRequest {
     private Long hocSinhId;
     private String noiDungText;
     private String fileDinhKem;
-    private BigDecimal diemTuDong;
-    private Short xpNhanDuoc;
-    private String chiTietBaiLam;  // JSON string
-    private Short soLanLam;
-    private TrangThaiBaiNop trangThai;
-    private Boolean laNopTre;
-    private LocalDateTime thoiDiemNop;
+    private String chiTietBaiLam;
 }

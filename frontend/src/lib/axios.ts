@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useAcademicStore } from '../stores/useAcademicStore';
 
 export const api = axios.create({
   baseURL: 'http://localhost:8080/api',
@@ -13,10 +14,20 @@ const attachToken = (config: any) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  const selectedNamHoc = useAcademicStore.getState().selectedNamHoc;
+  if (selectedNamHoc) {
+    config.headers['X-Academic-Year'] = selectedNamHoc;
+  }
+  
   return config;
 };
 
-api.interceptors.request.use(attachToken);
+// --- LOGGING INTERCEPTOR (REQUEST) ---
+api.interceptors.request.use((config: any) => {
+  console.log(`[API REQUEST] 🚀 ${config.method?.toUpperCase()} ${config.url}`, config.data || config.params || '');
+  return attachToken(config);
+});
 
 // Client riêng gọi backend H5P (NestJS) — dùng chung JWT với Spring Boot (shared secret)
 export const h5pApi = axios.create({
@@ -28,8 +39,12 @@ export const h5pApi = axios.create({
 
 h5pApi.interceptors.request.use(attachToken);
 
+// --- LOGGING INTERCEPTOR (RESPONSE) ---
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`[API RESPONSE] ✅ ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     if (error.response && error.response.status === 401 && !originalRequest._retry) {

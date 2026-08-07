@@ -3,16 +3,22 @@ package com.LMS.LVTN.service;
 import com.LMS.LVTN.dto.request.BaiNopRequest;
 import com.LMS.LVTN.dto.response.BaiNopResponse;
 import com.LMS.LVTN.entity.*;
+import com.LMS.LVTN.enums.LoaiBaiTap;
+import com.LMS.LVTN.enums.TrangThaiBaiNop;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.BaiNopMapper;
 import com.LMS.LVTN.repository.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,86 +32,88 @@ public class BaiNopService {
     BaiNopMapper baiNopMapper;
     BaiTapRepository baiTapRepository;
     HoSoHocSinhRepository hoSoHocSinhRepository;
-    HuyHieuEvaluationService huyHieuEvaluationService;
 
     ChiTietBaiTapRepository chiTietBaiTapRepository;
     GameService gameService;
-    com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
     @Transactional
     public BaiNopResponse create(BaiNopRequest request) {
-        BaiNop baiNop = baiNopMapper.toEntity(request);
-
-        if (baiNop.getSoLanLam() == null) {
-            baiNop.setSoLanLam((short) 1);
-        }
-        if (baiNop.getXpNhanDuoc() == null) {
-            baiNop.setXpNhanDuoc((short) 0);
-        }
-        if (baiNop.getLaNopTre() == null) {
-            baiNop.setLaNopTre(false);
+        if (request.getBaiTapId() == null || request.getHocSinhId() == null) {
+            throw new AppExceptions(Errorcode.INVALID_DATA);
         }
 
-        if (request.getBaiTapId() != null) {
-            BaiTap baiTap = baiTapRepository.findById(request.getBaiTapId())
-                    .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
-            baiNop.setBaiTap(baiTap);
-            
-            // Check deadline
-            if (baiTap.getDeadline() != null && LocalDateTime.now().isAfter(baiTap.getDeadline())) {
-                baiNop.setLaNopTre(true);
+        BaiTap baiTap = baiTapRepository.findById(request.getBaiTapId())
+                .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+        HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(request.getHocSinhId())
+                .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+
+        if (baiTap.getThoiDiemBatDau() != null && LocalDateTime.now().isBefore(baiTap.getThoiDiemBatDau())) {
+            throw new AppExceptions(Errorcode.BAI_TAP_CHUA_MO);
+        }
+
+        long soLanDaLam = baiNopRepository.countByBaiTap_BaiTapIdAndHocSinh_HocSinhId(baiTap.getBaiTapId(), hocSinh.getHocSinhId());
+        if (baiTap.getSoLanNopLaiToiDa() != null && baiTap.getSoLanNopLaiToiDa() != -1) {
+            long tongSoLanChoPhep = 1 + (baiTap.getSoLanNopLaiToiDa() > 0 ? baiTap.getSoLanNopLaiToiDa() : 0);
+            if (soLanDaLam >= tongSoLanChoPhep) {
+                throw new AppExceptions(Errorcode.VUOT_QUA_SO_LAN_NOP_TOI_DA);
             }
+        }
 
-            // Tự động chấm điểm cho bài làm từ Sách Bài Tập / Trò chơi
+        BaiNop baiNop = baiNopMapper.toEntity(request);
+        baiNop.setBaiTap(baiTap);
+        baiNop.setHocSinh(hocSinh);
+        baiNop.setSoLanLam((short) (soLanDaLam + 1));
+        baiNop.setThoiDiemNop(LocalDateTime.now());
+        baiNop.setLaNopTre(baiTap.getDeadline() != null && baiNop.getThoiDiemNop().isAfter(baiTap.getDeadline()));
+
+        if (baiTap.getLoaiBaiTap() == LoaiBaiTap.TU_LUAN || baiTap.getLoaiBaiTap() == LoaiBaiTap.H5P) {
+            baiNop.setDiemTuDong(null);
+            baiNop.setTrangThai(TrangThaiBaiNop.CHUA_CHAM);
+            baiNop.setXpNhanDuoc((short) 0);
+        } else {
+            baiNop.setTrangThai(TrangThaiBaiNop.DA_CHAM);
             if (baiNop.getChiTietBaiLam() != null && !baiNop.getChiTietBaiLam().isEmpty()) {
                 try {
                     List<ChiTietBaiTap> chiTietList = chiTietBaiTapRepository.findByBaiTap_BaiTapIdOrderByThuTuAsc(baiTap.getBaiTapId());
                     if (chiTietList != null && !chiTietList.isEmpty()) {
-                        com.fasterxml.jackson.databind.JsonNode baiLamNode = objectMapper.readTree(baiNop.getChiTietBaiLam());
-                        com.fasterxml.jackson.databind.JsonNode mapBaiLam = baiLamNode.has("dapAnHocSinh") ? baiLamNode.get("dapAnHocSinh") : (baiLamNode.has("baiLamNhieuCau") ? baiLamNode.get("baiLamNhieuCau") : baiLamNode);
+                       JsonNode baiLamNode = objectMapper.readTree(baiNop.getChiTietBaiLam());
+                       JsonNode mapBaiLam = baiLamNode.has("dapAnHocSinh") ? baiLamNode.get("dapAnHocSinh") : (baiLamNode.has("baiLamNhieuCau") ? baiLamNode.get("baiLamNhieuCau") : baiLamNode);
 
-                        java.math.BigDecimal tongDiem = java.math.BigDecimal.ZERO;
+                        BigDecimal tongDiem = BigDecimal.ZERO;
                         for (ChiTietBaiTap ct : chiTietList) {
                             String idCauHoi = ct.getDangBai().getDangBaiId().toString();
                             String dapAnChuan = ct.getDangBai().getDapAnChuan();
-                            com.fasterxml.jackson.databind.JsonNode baiLamItem = (mapBaiLam != null && mapBaiLam.has(idCauHoi)) ? mapBaiLam.get(idCauHoi) : null;
+                            JsonNode baiLamItem = (mapBaiLam != null && mapBaiLam.has(idCauHoi)) ? mapBaiLam.get(idCauHoi) : null;
                             String subBaiLamJson = (baiLamItem != null) ? (baiLamItem.isTextual() ? "{\"dapAnDungId\":\"" + baiLamItem.asText() + "\"}" : baiLamItem.toString()) : "{}";
-                            java.math.BigDecimal diemSub = gameService.chamDiem(dapAnChuan, subBaiLamJson);
+                            BigDecimal diemSub = gameService.chamDiem(dapAnChuan, subBaiLamJson);
                             tongDiem = tongDiem.add(diemSub);
                         }
-                        java.math.BigDecimal diem = tongDiem.divide(new java.math.BigDecimal(chiTietList.size()), 2, java.math.RoundingMode.HALF_UP);
+                        BigDecimal diem = tongDiem.divide(new BigDecimal(chiTietList.size()), 2, RoundingMode.HALF_UP);
                         baiNop.setDiemTuDong(diem);
-                        if (baiNop.getTrangThai() == null) {
-                            baiNop.setTrangThai(com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
-                        }
                     } else if (baiTap.getDangBai() != null && baiTap.getDangBai().getDapAnChuan() != null) {
-                        java.math.BigDecimal diem = gameService.chamDiem(baiTap.getDangBai().getDapAnChuan(), baiNop.getChiTietBaiLam());
+                        BigDecimal diem = gameService.chamDiem(baiTap.getDangBai().getDapAnChuan(), baiNop.getChiTietBaiLam());
                         baiNop.setDiemTuDong(diem);
-                        if (baiNop.getTrangThai() == null) {
-                            baiNop.setTrangThai(com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
-                        }
                     }
                 } catch (Exception e) {
                     // Log warning and proceed
                 }
             }
-        }
-
-        if (request.getHocSinhId() != null) {
-            HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(request.getHocSinhId())
-                    .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
-            baiNop.setHocSinh(hocSinh);
-        }
-
-        if (baiNop.getThoiDiemNop() == null) {
-            baiNop.setThoiDiemNop(LocalDateTime.now());
+            if (baiNop.getDiemTuDong() == null) {
+                baiNop.setDiemTuDong(BigDecimal.ZERO);
+            }
+            short xp = (short) (baiNop.getDiemTuDong().doubleValue() * 10);
+            baiNop.setXpNhanDuoc(xp > 0 ? xp : (short) 0);
         }
 
         BaiNop savedBaiNop = baiNopRepository.save(baiNop);
         
-        // Kích hoạt kiểm tra huy hiệu sau khi nộp bài
-        if (savedBaiNop.getHocSinh() != null) {
-            huyHieuEvaluationService.evaluate(savedBaiNop.getHocSinh().getHocSinhId());
+        // Cập nhật tổng XP trong HoSoHocSinh thay vì gọi huyHieuEvaluationService
+        if (savedBaiNop.getHocSinh() != null && savedBaiNop.getXpNhanDuoc() != null && savedBaiNop.getXpNhanDuoc() > 0) {
+            HoSoHocSinh hs = savedBaiNop.getHocSinh();
+            int tongXp = (hs.getTongXp() != null ? hs.getTongXp() : 0) + savedBaiNop.getXpNhanDuoc();
+            hs.setTongXp(tongXp);
+            hoSoHocSinhRepository.save(hs);
         }
 
         return baiNopMapper.toResponse(savedBaiNop);
@@ -130,28 +138,6 @@ public class BaiNopService {
 
         baiNopMapper.updateBaiNop(request, baiNop);
 
-        if (baiNop.getSoLanLam() == null) {
-            baiNop.setSoLanLam((short) 1);
-        }
-        if (baiNop.getXpNhanDuoc() == null) {
-            baiNop.setXpNhanDuoc((short) 0);
-        }
-        if (baiNop.getLaNopTre() == null) {
-            baiNop.setLaNopTre(false);
-        }
-
-        if (request.getBaiTapId() != null) {
-            BaiTap baiTap = baiTapRepository.findById(request.getBaiTapId())
-                    .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
-            baiNop.setBaiTap(baiTap);
-        }
-
-        if (request.getHocSinhId() != null) {
-            HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(request.getHocSinhId())
-                    .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
-            baiNop.setHocSinh(hocSinh);
-        }
-
         return baiNopMapper.toResponse(baiNopRepository.save(baiNop));
     }
 
@@ -171,6 +157,12 @@ public class BaiNopService {
 
     public List<BaiNopResponse> getByHocSinhId(Long hocSinhId) {
         return baiNopRepository.findByHocSinh_HocSinhId(hocSinhId).stream()
+                .map(baiNopMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<BaiNopResponse> getAllBaiNopByBaiTapIdAndLopId(Long baiTapId, Long lopId) {
+        return baiNopRepository.findByBaiTap_BaiTapIdAndHocSinh_LopHoc_LopHocId(baiTapId, lopId).stream()
                 .map(baiNopMapper::toResponse)
                 .collect(Collectors.toList());
     }

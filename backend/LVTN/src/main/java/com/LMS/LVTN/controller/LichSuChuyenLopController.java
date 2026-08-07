@@ -26,6 +26,23 @@ public class LichSuChuyenLopController {
                 .build();
     }
 
+    @PostMapping("/chuyen-lop")
+    public ApiResponse<List<LichSuChuyenLopResponse>> chuyenLopHangLoat(@RequestBody List<LichSuChuyenLopRequest> requests) {
+        return ApiResponse.<List<LichSuChuyenLopResponse>>builder()
+                .data(lichSuChuyenLopService.chuyenLopHangLoat(requests))
+                .build();
+    }
+
+    @PostMapping("/bulk-chuyen-lop")
+    public ApiResponse<String> bulkThucHienChuyenLop(
+            @RequestHeader("Authorization") String token,
+            @RequestBody com.LMS.LVTN.dto.request.BulkChuyenLopRequest request) {
+        lichSuChuyenLopService.bulkThucHienChuyenLop(token, request);
+        return ApiResponse.<String>builder()
+                .data("Chuyển lớp hàng loạt thành công!")
+                .build();
+    }
+
     @GetMapping
     public ApiResponse<List<LichSuChuyenLopResponse>> getAll() {
         return ApiResponse.<List<LichSuChuyenLopResponse>>builder()
@@ -37,6 +54,20 @@ public class LichSuChuyenLopController {
     public ApiResponse<LichSuChuyenLopResponse> getById(@PathVariable Long id) {
         return ApiResponse.<LichSuChuyenLopResponse>builder()
                 .data(lichSuChuyenLopService.getById(id))
+                .build();
+    }
+
+    @GetMapping("/hoc-sinh/{hocSinhId}")
+    public ApiResponse<List<LichSuChuyenLopResponse>> getByHocSinhId(@PathVariable Long hocSinhId) {
+        return ApiResponse.<List<LichSuChuyenLopResponse>>builder()
+                .data(lichSuChuyenLopService.getByHocSinhId(hocSinhId))
+                .build();
+    }
+
+    @GetMapping("/nguoi-thuc-hien/{nguoiThucHienId}")
+    public ApiResponse<List<LichSuChuyenLopResponse>> getAllByNguoiThucHienId(@PathVariable String nguoiThucHienId) {
+        return ApiResponse.<List<LichSuChuyenLopResponse>>builder()
+                .data(lichSuChuyenLopService.getAllByNguoiThucHienId(nguoiThucHienId))
                 .build();
     }
 

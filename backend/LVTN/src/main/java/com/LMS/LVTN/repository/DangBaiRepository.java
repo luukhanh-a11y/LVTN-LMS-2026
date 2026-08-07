@@ -16,4 +16,7 @@ public interface DangBaiRepository extends JpaRepository<DangBai, Integer> {
     @Query("SELECT CASE WHEN (d.baiHoc.chuDe.sach.loaiSach = com.LMS.LVTN.enums.LoaiSach.SACH_GIAO_KHOA) THEN true ELSE false END " +
             "FROM DangBai d WHERE d.dangBaiId = :dangBaiId")
     boolean isSachGiaoKhoa(@Param("dangBaiId") Integer dangBaiId);
+
+    List<DangBai> findByBaiHoc_BaiHocIdAndNguonGoc(Integer baiHocId, com.LMS.LVTN.enums.NguonGoc nguonGoc);
 }
+

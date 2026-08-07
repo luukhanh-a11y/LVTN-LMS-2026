@@ -22,6 +22,39 @@ export default function AdminSettings() {
   const [isLoading, setIsLoading] = useState(false);
   const [newGrade, setNewGrade] = useState('');
   const [newSubject, setNewSubject] = useState('');
+  const [cloneForm, setCloneForm] = useState({
+    monHocId: '',
+    khoiLop: '',
+    hocKyOldId: '',
+    hocKyNewId: '',
+    copyChildren: true,
+    chiLayDangBaiHeThong: true,
+  });
+  const [isCloning, setIsCloning] = useState(false);
+
+  const handleCloneSach = async () => {
+    if (!cloneForm.monHocId || !cloneForm.khoiLop || !cloneForm.hocKyOldId || !cloneForm.hocKyNewId) {
+      toast.error('Vui lòng nhập đầy đủ thông tin ID môn học, khối lớp và học kỳ!');
+      return;
+    }
+    setIsCloning(true);
+    try {
+      await adminService.cloneSach({
+        monHocId: Number(cloneForm.monHocId),
+        khoiLop: Number(cloneForm.khoiLop),
+        hocKyOldId: Number(cloneForm.hocKyOldId),
+        hocKyNewId: Number(cloneForm.hocKyNewId),
+        copyChildren: cloneForm.copyChildren,
+        chiLayDangBaiHeThong: cloneForm.chiLayDangBaiHeThong,
+      });
+      toast.success('Nhân bản học liệu cho học kỳ mới thành công!');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi khi nhân bản học liệu');
+    } finally {
+      setIsCloning(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchConfig();
@@ -154,6 +187,126 @@ export default function AdminSettings() {
                 </Badge>
               ))}
             </div>
+          </div>
+        </CardContent>
+     </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quản lý Năm học</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-500">Tạo năm học mới và sao chép danh sách lớp học, học kỳ từ năm học cũ.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Tên năm học mới"
+              placeholder="VD: 2025-2026"
+              id="tenNamHocMoi"
+            />
+            <Input
+              label="Ngày bắt đầu"
+              type="date"
+              id="ngayBatDauNamHoc"
+            />
+            <Input
+              label="Ngày kết thúc"
+              type="date"
+              id="ngayKetThucNamHoc"
+            />
+            <Input
+              label="Nhân bản từ ID Năm học (Tuỳ chọn)"
+              type="number"
+              placeholder="VD: 1"
+              id="cloneTuNamHocId"
+            />
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button onClick={async () => {
+              const tenNamHoc = (document.getElementById('tenNamHocMoi') as HTMLInputElement).value;
+              const ngayBatDau = (document.getElementById('ngayBatDauNamHoc') as HTMLInputElement).value;
+              const ngayKetThuc = (document.getElementById('ngayKetThucNamHoc') as HTMLInputElement).value;
+              const cloneTuNamHocId = (document.getElementById('cloneTuNamHocId') as HTMLInputElement).value;
+              
+              if (!tenNamHoc || !ngayBatDau || !ngayKetThuc) {
+                toast.error('Vui lòng điền đủ Tên, Ngày Bắt Đầu và Ngày Kết Thúc');
+                return;
+              }
+              try {
+                await adminService.createNamHoc({
+                  tenNamHoc, ngayBatDau, ngayKetThuc,
+                  cloneTuNamHocId: cloneTuNamHocId ? Number(cloneTuNamHocId) : undefined
+                });
+                toast.success('Tạo năm học mới thành công!');
+              } catch (err: any) {
+                toast.error(err?.response?.data?.message || 'Có lỗi khi tạo năm học');
+              }
+            }}>
+              Tạo Năm Học Mới
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Nhân bản học liệu cho Học kỳ mới</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-500">
+            Cho phép sao chép nhanh sách, chủ đề, bài học và dạng bài từ học kỳ cũ sang học kỳ mới với các tùy chọn bộ môn.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="ID Môn học"
+              type="number"
+              placeholder="VD: 1"
+              value={cloneForm.monHocId}
+              onChange={(e) => setCloneForm({ ...cloneForm, monHocId: e.target.value })}
+            />
+            <Input
+              label="Khối lớp"
+              type="number"
+              placeholder="VD: 1"
+              value={cloneForm.khoiLop}
+              onChange={(e) => setCloneForm({ ...cloneForm, khoiLop: e.target.value })}
+            />
+            <Input
+              label="ID Học kỳ cũ"
+              type="number"
+              placeholder="VD: 10"
+              value={cloneForm.hocKyOldId}
+              onChange={(e) => setCloneForm({ ...cloneForm, hocKyOldId: e.target.value })}
+            />
+            <Input
+              label="ID Học kỳ mới (Đến)"
+              type="number"
+              placeholder="VD: 11"
+              value={cloneForm.hocKyNewId}
+              onChange={(e) => setCloneForm({ ...cloneForm, hocKyNewId: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={cloneForm.copyChildren}
+                onChange={(e) => setCloneForm({ ...cloneForm, copyChildren: e.target.checked })}
+              />
+              <span className="font-medium">Nhân bản trọn gói (Bao gồm các Chủ đề và Bài học con bên trong)</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={cloneForm.chiLayDangBaiHeThong}
+                onChange={(e) => setCloneForm({ ...cloneForm, chiLayDangBaiHeThong: e.target.checked })}
+              />
+              <span className="font-medium">Chỉ sao chép Dạng bài chuẩn của hệ thống (Bỏ qua dạng bài do giáo viên tự tạo)</span>
+            </label>
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button onClick={handleCloneSach} isLoading={isCloning}>
+              Thực hiện Nhân bản
+            </Button>
           </div>
         </CardContent>
       </Card>

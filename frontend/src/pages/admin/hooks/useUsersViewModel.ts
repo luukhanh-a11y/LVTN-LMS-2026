@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { adminService } from '../../../services/admin.service';
 import { classService } from '../../../services/class.service';
 import toast from 'react-hot-toast';
@@ -19,9 +19,14 @@ const INITIAL_CREATE_FORM = {
 
 export function useUsersViewModel() {
   const [activeTab, setActiveTab] = useState<TabType>('student');
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]); // This will now accumulate pages
   const [classes, setClasses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Pagination states
+  const [page, setPage] = useState(0);
+  const [isLastPage, setIsLastPage] = useState(false);
 
   // Modal visibility
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,49 +49,90 @@ export function useUsersViewModel() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filterClassId, setFilterClassId] = useState('all');
+  const [filterClassId, setFilterClassId] = useState('all'); // used for student and parent
+  const [filterGrade, setFilterGrade] = useState('all'); // used for student
+  const [filterSubject, setFilterSubject] = useState('all'); // used for teacher
+  const [filterTeacherClassId, setFilterTeacherClassId] = useState('all'); // used for teacher
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  // Initial fetch for metadata (classes)
+  useEffect(() => {
+    classService.getAllClasses().then(setClasses).catch(() => {});
+  }, []);
+
+  const fetchUsers = async (pageNumber: number = 0, isAppend: boolean = false) => {
+    if (pageNumber === 0) setIsLoading(true);
+    else setIsLoadingMore(true);
+
     try {
-      const [usersData, classesData] = await Promise.all([
-        adminService.getAllUsers(),
-        classService.getAllClasses(),
-      ]);
-      setUsers(usersData);
-      setClasses(classesData);
+      const roleMap: Record<TabType, string> = {
+        student: 'HOC_SINH',
+        teacher: 'GIAO_VIEN',
+        parent: 'PHU_HUYNH',
+      };
+
+      const searchParams: any = {
+        role: roleMap[activeTab],
+        page: pageNumber,
+        size: 15,
+      };
+
+      if (searchQuery) searchParams.keyword = searchQuery;
+      if (filterStatus !== 'all') searchParams.status = filterStatus;
+      
+      if (activeTab === 'student' || activeTab === 'parent') {
+        if (filterClassId !== 'all') searchParams.classId = filterClassId;
+      }
+      if (activeTab === 'student') {
+        if (filterGrade !== 'all') searchParams.grade = filterGrade;
+      }
+      if (activeTab === 'teacher') {
+        if (filterSubject !== 'all') searchParams.subject = filterSubject;
+        if (filterTeacherClassId !== 'all') searchParams.classId = filterTeacherClassId;
+      }
+
+      const result = await adminService.searchUsers(searchParams);
+      if (isAppend) {
+        setUsers(prev => [...prev, ...result.content]);
+      } else {
+        setUsers(result.content);
+      }
+      setIsLastPage(result.last);
+      setPage(pageNumber);
     } catch {
-      // silent — table will just show empty
+      toast.error('Lỗi khi tải danh sách người dùng');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  // When filters change, reset and fetch page 0
+  useEffect(() => {
+    fetchUsers(0, false);
+  }, [activeTab, searchQuery, filterStatus, filterClassId, filterGrade, filterSubject, filterTeacherClassId]);
 
-  const filteredUsers = useMemo(() => {
-    const roleMap: Record<TabType, string> = {
-      student: 'HOC_SINH',
-      teacher: 'GIAO_VIEN',
-      parent: 'PHU_HUYNH',
-    };
-    return users.filter((u) => {
-      if (u.role !== roleMap[activeTab]) return false;
-      const name = (u.fullName ?? u.username).toLowerCase();
-      if (!name.includes(searchQuery.toLowerCase()) && !u.username.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (filterStatus !== 'all' && u.status !== filterStatus) return false;
-      if ((activeTab === 'student' || activeTab === 'parent') && filterClassId !== 'all') {
-        const classIdNum = parseInt(filterClassId);
-        if (!u.classIds?.includes(classIdNum)) return false;
-      }
-      return true;
-    });
-  }, [users, activeTab, searchQuery, filterStatus, filterClassId]);
+  const loadMore = useCallback(() => {
+    if (!isLastPage && !isLoadingMore && !isLoading) {
+      fetchUsers(page + 1, true);
+    }
+  }, [page, isLastPage, isLoadingMore, isLoading, activeTab, searchQuery, filterStatus, filterClassId, filterGrade, filterSubject, filterTeacherClassId]);
+
+  const subjects = useMemo(() => {
+    return Array.from(new Set(users.filter(u => u.role === 'GIAO_VIEN' && u.boMon).map(u => u.boMon)));
+  }, [users]);
+
+  const grades = useMemo(() => {
+    return Array.from(new Set(users.filter(u => u.role === 'HOC_SINH' && u.khoiLop).map(u => u.khoiLop))).sort((a: any, b: any) => a - b);
+  }, [users]);
 
   const handleToggleStatus = async (userId: number) => {
     try {
-      await adminService.toggleUserStatus(userId);
-      fetchData();
+      const targetUser = users.find(u => u.id === userId || u.userId === userId);
+      if (!targetUser) return;
+      const newStatus = targetUser.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
+      await adminService.toggleUserStatus(userId, newStatus);
+      // Soft update list
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
     } catch {
       toast.error('Có lỗi xảy ra khi đổi trạng thái');
     }
@@ -99,7 +145,7 @@ export function useUsersViewModel() {
       await adminService.transferClass(selectedUser.id, parseInt(transferClassId), transferReason);
       toast.success('Chuyển lớp thành công!');
       setShowTransferModal(false);
-      fetchData();
+      fetchUsers(0, false);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi chuyển lớp');
     } finally {
@@ -110,10 +156,20 @@ export function useUsersViewModel() {
   const handleUpdateUser = async () => {
     setIsUpdating(true);
     try {
-      await adminService.updateUser(selectedUser.id, editFormData);
+      const promises = [];
+      // Update phone if applicable
+      if (activeTab === 'teacher' || activeTab === 'parent') {
+        promises.push(adminService.updateUser(selectedUser.id || selectedUser.userId, { soDienThoai: editFormData.soDienThoai }));
+      }
+      // Update status
+      if (selectedUser.status !== editFormData.trangThai) {
+        promises.push(adminService.toggleUserStatus(selectedUser.id || selectedUser.userId, editFormData.trangThai));
+      }
+      await Promise.all(promises);
+      
       toast.success('Cập nhật tài khoản thành công!');
       setShowEditModal(false);
-      fetchData();
+      fetchUsers(0, false);
     } catch {
       toast.error('Có lỗi xảy ra khi cập nhật');
     } finally {
@@ -133,7 +189,7 @@ export function useUsersViewModel() {
       toast.success('Tạo tài khoản thành công!');
       setShowCreateModal(false);
       setCreateFormData(INITIAL_CREATE_FORM);
-      fetchData();
+      fetchUsers(0, false);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo tài khoản');
     } finally {
@@ -162,8 +218,8 @@ export function useUsersViewModel() {
   return {
     // State
     activeTab, setActiveTab,
-    filteredUsers, classes, isLoading,
-    selectedUser,
+    filteredUsers: users, visibleUsers: users, loadMore, classes, isLoading, isLoadingMore, isLastPage,
+    selectedUser, subjects, grades,
     // Modals
     showCreateModal, setShowCreateModal,
     showEditModal, setShowEditModal,
@@ -180,6 +236,9 @@ export function useUsersViewModel() {
     searchQuery, setSearchQuery,
     filterStatus, setFilterStatus,
     filterClassId, setFilterClassId,
+    filterGrade, setFilterGrade,
+    filterSubject, setFilterSubject,
+    filterTeacherClassId, setFilterTeacherClassId,
     // Handlers
     handleToggleStatus,
     handleTransferClass,

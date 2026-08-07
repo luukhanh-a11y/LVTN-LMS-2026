@@ -26,7 +26,6 @@ public class BaiTapResponse {
     private LoaiBaiTap loaiBaiTap;
     private LocalDateTime thoiDiemBatDau;
     private LocalDateTime deadline;
-    private Boolean choNopLai;
     private Short soLanNopLaiToiDa;
     private TrangThaiBaiTap trangThai;
     private LocalDateTime ngayTao;
@@ -39,7 +38,7 @@ public class BaiTapResponse {
     // Alias getters phục vụ trực tiếp cho Frontend (AssignmentQuizPlayer.tsx)
     public Long getAssignmentId() { return baiTapId; }
     public String getTitle() { return tieuDe; }
-    public Boolean getAllowResubmit() { return choNopLai != null ? choNopLai : false; }
+    public Boolean getAllowResubmit() { return soLanNopLaiToiDa != null && (soLanNopLaiToiDa > 0 || soLanNopLaiToiDa == -1); }
     public Short getMaxResubmitCount() { return soLanNopLaiToiDa != null ? soLanNopLaiToiDa : (short) 0; }
     public Boolean getIsPastDeadline() { return deadline != null && java.time.LocalDateTime.now().isAfter(deadline); }
 }

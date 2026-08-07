@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T22:31:48+0700",
+    date = "2026-08-07T23:40:25+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
@@ -25,14 +25,8 @@ public class BaiNopMapperImpl implements BaiNopMapper {
         BaiNop baiNop = new BaiNop();
 
         baiNop.setChiTietBaiLam( request.getChiTietBaiLam() );
-        baiNop.setDiemTuDong( request.getDiemTuDong() );
         baiNop.setFileDinhKem( request.getFileDinhKem() );
-        baiNop.setLaNopTre( request.getLaNopTre() );
         baiNop.setNoiDungText( request.getNoiDungText() );
-        baiNop.setSoLanLam( request.getSoLanLam() );
-        baiNop.setThoiDiemNop( request.getThoiDiemNop() );
-        baiNop.setTrangThai( request.getTrangThai() );
-        baiNop.setXpNhanDuoc( request.getXpNhanDuoc() );
 
         return baiNop;
     }
@@ -72,29 +66,11 @@ public class BaiNopMapperImpl implements BaiNopMapper {
         if ( request.getChiTietBaiLam() != null ) {
             entity.setChiTietBaiLam( request.getChiTietBaiLam() );
         }
-        if ( request.getDiemTuDong() != null ) {
-            entity.setDiemTuDong( request.getDiemTuDong() );
-        }
         if ( request.getFileDinhKem() != null ) {
             entity.setFileDinhKem( request.getFileDinhKem() );
         }
-        if ( request.getLaNopTre() != null ) {
-            entity.setLaNopTre( request.getLaNopTre() );
-        }
         if ( request.getNoiDungText() != null ) {
             entity.setNoiDungText( request.getNoiDungText() );
-        }
-        if ( request.getSoLanLam() != null ) {
-            entity.setSoLanLam( request.getSoLanLam() );
-        }
-        if ( request.getThoiDiemNop() != null ) {
-            entity.setThoiDiemNop( request.getThoiDiemNop() );
-        }
-        if ( request.getTrangThai() != null ) {
-            entity.setTrangThai( request.getTrangThai() );
-        }
-        if ( request.getXpNhanDuoc() != null ) {
-            entity.setXpNhanDuoc( request.getXpNhanDuoc() );
         }
     }
 

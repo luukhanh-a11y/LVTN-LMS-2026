@@ -5,5 +5,6 @@ public enum TrangThaiBaiNop {
     DA_NOP,
     NOP_TRE,
     YC_LAM_LAI,
-    DA_CHAM
+    DA_CHAM,
+    CHUA_CHAM
 }

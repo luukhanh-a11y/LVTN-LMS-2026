@@ -13,7 +13,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,8 +27,7 @@ public class ChuDeService {
     ChuDeRepository chuDeRepository;
     ChuDeMapper chuDeMapper;
     SachRepository sachRepository;
-
-
+    BaiHocService baiHocService;
 
     public ChuDeResponse create(ChuDeRequest request) {
         ChuDe chuDe = chuDeMapper.toEntity(request);
@@ -80,5 +81,60 @@ public class ChuDeService {
 
         chuDeRepository.deleteAllByChuDeId(id);
         chuDeRepository.deleteById(id);
+    }
+
+    @Transactional
+    public List<ChuDeResponse> nhanBanChuDeKhongBaiHoc(Integer sachCuId, Integer sachMoiId) {
+        Sach sachMoi = sachRepository.findById(sachMoiId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.SACH_NOT_FOUND));
+
+        List<ChuDe> chuDeCuList = chuDeRepository.findBySach_SachId(sachCuId);
+        List<ChuDe> chuDeMoiList = new ArrayList<>();
+
+        for (ChuDe chuDeCu : chuDeCuList) {
+            ChuDe chuDeMoi = new ChuDe();
+            chuDeMoi.setSach(sachMoi);
+            chuDeMoi.setTenChuDe(chuDeCu.getTenChuDe());
+            chuDeMoi.setTieuDe(chuDeCu.getTieuDe());
+            chuDeMoi.setSlug(chuDeCu.getSlug() != null ? chuDeCu.getSlug() + "-s" + sachMoiId : null);
+            chuDeMoi.setSoTrang(chuDeCu.getSoTrang());
+            chuDeMoi.setSoThuTu(chuDeCu.getSoThuTu());
+            chuDeMoi.setBookIndexIdNgoai(chuDeCu.getBookIndexIdNgoai());
+
+            chuDeMoiList.add(chuDeRepository.save(chuDeMoi));
+        }
+
+        return chuDeMoiList.stream()
+                .map(chuDeMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<ChuDeResponse> nhanBanChuDeKemBaiHoc(Integer sachCuId, Integer sachMoiId) {
+        Sach sachMoi = sachRepository.findById(sachMoiId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.SACH_NOT_FOUND));
+
+        List<ChuDe> chuDeCuList = chuDeRepository.findBySach_SachId(sachCuId);
+        List<ChuDe> chuDeMoiList = new ArrayList<>();
+
+        for (ChuDe chuDeCu : chuDeCuList) {
+            ChuDe chuDeMoi = new ChuDe();
+            chuDeMoi.setSach(sachMoi);
+            chuDeMoi.setTenChuDe(chuDeCu.getTenChuDe());
+            chuDeMoi.setTieuDe(chuDeCu.getTieuDe());
+            chuDeMoi.setSlug(chuDeCu.getSlug() != null ? chuDeCu.getSlug() + "-s" + sachMoiId : null);
+            chuDeMoi.setSoTrang(chuDeCu.getSoTrang());
+            chuDeMoi.setSoThuTu(chuDeCu.getSoThuTu());
+            chuDeMoi.setBookIndexIdNgoai(chuDeCu.getBookIndexIdNgoai());
+
+            ChuDe savedChuDeMoi = chuDeRepository.save(chuDeMoi);
+            chuDeMoiList.add(savedChuDeMoi);
+
+            baiHocService.nhanBanBaiHocKemDangBai(chuDeCu.getChuDeId(), savedChuDeMoi.getChuDeId());
+        }
+
+        return chuDeMoiList.stream()
+                .map(chuDeMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }

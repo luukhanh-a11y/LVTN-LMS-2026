@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Clock, CheckCircle, AlertCircle, FileText, Upload, X, Loader2, ClipboardList, Puzzle, ListChecks } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { studentService } from '../../services/student.service';
+import { useAuthStore } from '../../stores/useAuthStore';
 import toast from 'react-hot-toast';
 
 export default function StudentAssignments() {
   const navigate = useNavigate();
+  const user = useAuthStore(state => state.user);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -71,13 +73,17 @@ export default function StudentAssignments() {
 
   const handleSubmitEssay = async (isDraft: boolean) => {
     if (!selectedTask) return;
+    if (!user?.userId) {
+      toast.error('Không tìm thấy thông tin học sinh.');
+      return;
+    }
     if (!essayText.trim()) {
       toast.error('Vui lòng nhập nội dung bài làm.');
       return;
     }
     setIsEssaySubmitting(true);
     try {
-      await studentService.submitEssay(selectedTask.id, { textContent: essayText, isDraft, attachmentUrl });
+      await studentService.submitEssay(selectedTask.id, user.userId, { textContent: essayText, isDraft, attachmentUrl });
       toast.success(isDraft ? 'Đã lưu nháp!' : 'Nộp bài thành công!');
       setIsSubmitModalOpen(false);
       fetchAssignments();

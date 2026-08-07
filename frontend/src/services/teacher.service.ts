@@ -188,31 +188,40 @@ export const teacherService = {
 
   // Lấy danh sách bài nộp theo ID bài tập
   getSubmissions: async (assignmentId: number): Promise<Submission[]> => {
-    const response = await api.get<Submission[]>(`/assignments/${assignmentId}/submissions`);
-    return response.data;
+    const response = await api.get<any>(`/bai-nop/bai-tap/${assignmentId}`);
+    return response.data?.data || response.data || [];
   },
 
   // Lấy chi tiết một bài nộp (nội dung, điểm, đánh giá nếu đã chấm)
   getSubmissionDetail: async (submissionId: number | string): Promise<SubmissionDetail> => {
-    const response = await api.get<SubmissionDetail>(`/submissions/${submissionId}`);
-    return response.data;
+    const response = await api.get<any>(`/bai-nop/${submissionId}`);
+    return response.data?.data || response.data;
   },
 
   // Lấy danh sách bài tập của một lớp
   getAssignmentsByClass: async (classId: number): Promise<Assignment[]> => {
-    const response = await api.get<{ content: Assignment[] }>(`/assignments?classId=${classId}`);
-    return response.data.content;
+    const response = await api.get<any>(`/bai-tap/lop-hoc/${classId}`);
+    return response.data?.data || response.data || [];
   },
 
   evaluateSubmission: async (submissionId: number, dto: EvaluateDTO): Promise<any> => {
-    const response = await api.post(`/submissions/${submissionId}/evaluate`, dto);
-    return response.data;
+    const payload = {
+      baiNopId: submissionId,
+      giaoVienId: dto.teacherId,
+      xepLoai: dto.grade,
+      nhanXet: dto.comment,
+      hanhDong: dto.action,
+      ...dto
+    };
+    const response = await api.post('/danh-gia-bai-lam', payload);
+    return response.data?.data || response.data;
   },
 
   getAllTeachers: async (): Promise<TeacherProfile[]> => {
-    const response = await api.get('/teachers');
-    return response.data;
+    const response = await api.get('/hoso-giaovien');
+    return response.data?.data || response.data || [];
   },
+
 
   getReports: async (classId?: number, semesterId?: number): Promise<any> => {
     const response = await api.get('/teachers/me/reports', { params: { classId, semesterId } });
@@ -319,4 +328,10 @@ export const teacherService = {
     });
     return response.data;
   },
+
+  getDiemTrungBinhMon: async (hocSinhId: number, hocKyId: number = 1): Promise<any[]> => {
+    const response = await api.get(`/thong-ke-diem/hoc-sinh/${hocSinhId}/hoc-ky/${hocKyId}`);
+    return response.data?.data || response.data || [];
+  },
 };
+

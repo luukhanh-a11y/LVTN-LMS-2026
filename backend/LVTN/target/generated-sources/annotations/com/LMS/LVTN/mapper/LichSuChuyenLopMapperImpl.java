@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T22:31:48+0700",
+    date = "2026-08-07T23:40:25+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
@@ -47,10 +47,7 @@ public class LichSuChuyenLopMapperImpl implements LichSuChuyenLopMapper {
         lichSuChuyenLopResponse.setTenLopCu( entityLopCuTenLop( entity ) );
         lichSuChuyenLopResponse.setLopMoiId( entityLopMoiLopHocId( entity ) );
         lichSuChuyenLopResponse.setTenLopMoi( entityLopMoiTenLop( entity ) );
-        String nguoiDungId = entityNguoiThucHienNguoiDungId( entity );
-        if ( nguoiDungId != null ) {
-            lichSuChuyenLopResponse.setNguoiThucHienId( Long.parseLong( nguoiDungId ) );
-        }
+        lichSuChuyenLopResponse.setNguoiThucHienId( entityNguoiThucHienNguoiDungId( entity ) );
         lichSuChuyenLopResponse.setTenNguoiThucHien( entityNguoiThucHienTenDangNhap( entity ) );
         lichSuChuyenLopResponse.setChuyenLopId( entity.getChuyenLopId() );
         lichSuChuyenLopResponse.setGhiChu( entity.getGhiChu() );

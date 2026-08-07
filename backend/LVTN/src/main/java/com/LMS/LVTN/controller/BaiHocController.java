@@ -61,4 +61,23 @@ public class BaiHocController {
                 .data("Bài học đã được xóa thành công")
                 .build();
     }
+
+    @PostMapping("/nhan-ban-khong-dang-bai")
+    public ApiResponse<List<BaiHocResponse>> nhanBanBaiHocKhongDangBai(
+            @RequestParam("chuDeCuId") Integer chuDeCuId,
+            @RequestParam("chuDeMoiId") Integer chuDeMoiId) {
+        return ApiResponse.<List<BaiHocResponse>>builder()
+                .data(baiHocService.nhanBanBaiHocKhongDangBai(chuDeCuId, chuDeMoiId))
+                .build();
+    }
+
+    @PostMapping("/nhan-ban-kem-dang-bai")
+    public ApiResponse<List<BaiHocResponse>> nhanBanBaiHocKemDangBai(
+            @RequestParam("chuDeCuId") Integer chuDeCuId,
+            @RequestParam("chuDeMoiId") Integer chuDeMoiId) {
+        return ApiResponse.<List<BaiHocResponse>>builder()
+                .data(baiHocService.nhanBanBaiHocKemDangBai(chuDeCuId, chuDeMoiId))
+                .build();
+    }
 }
+

@@ -14,6 +14,25 @@ export default function AdminTickets() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
 
+  // Filters
+  const [filterStudent, setFilterStudent] = useState('');
+  const [filterTeacher, setFilterTeacher] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterDate, setFilterDate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const filteredTickets = tickets.filter(t => {
+    if (filterStudent && !t.studentName.toLowerCase().includes(filterStudent.toLowerCase())) return false;
+    if (filterTeacher && !t.teacherName.toLowerCase().includes(filterTeacher.toLowerCase())) return false;
+    if (filterType !== 'all' && t.type !== filterType) return false;
+    if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+    if (filterDate) {
+      const ticketDate = new Date(t.createdAt).toISOString().split('T')[0];
+      if (ticketDate !== filterDate) return false;
+    }
+    return true;
+  });
+
   const fetchTickets = async () => {
     setIsLoading(true);
     try {
@@ -56,7 +75,49 @@ export default function AdminTickets() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">Phiếu Hỗ Trợ (Tickets)</h1>
       
-      <Card>
+      <Card className="border-slate-200/60 shadow-sm">
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <input
+            type="text"
+            placeholder="Tìm theo học sinh..."
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-primary outline-none"
+            value={filterStudent}
+            onChange={(e) => setFilterStudent(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Tìm theo giáo viên..."
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-primary outline-none"
+            value={filterTeacher}
+            onChange={(e) => setFilterTeacher(e.target.value)}
+          />
+          <select
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-primary outline-none bg-white"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="all">Tất cả loại yêu cầu</option>
+            <option value="RESET_MAT_KHAU">Cấp lại mật khẩu</option>
+            <option value="HO_TRO_KY_THUAT">Hỗ trợ kỹ thuật</option>
+            <option value="KHAC">Khác</option>
+          </select>
+          <input
+            type="date"
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-primary outline-none"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+          />
+          <select
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:border-primary outline-none bg-white"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="CHO_DUYET">Chờ duyệt</option>
+            <option value="DA_DUYET">Đã duyệt</option>
+            <option value="TU_CHOI">Từ chối</option>
+          </select>
+        </div>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -77,13 +138,13 @@ export default function AdminTickets() {
                     Đang tải...
                   </TableCell>
                 </TableRow>
-              ) : tickets.length === 0 ? (
+              ) : filteredTickets.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-slate-500">
-                    Không có phiếu hỗ trợ nào đang chờ duyệt
+                    Không tìm thấy phiếu hỗ trợ nào phù hợp
                   </TableCell>
                 </TableRow>
-              ) : tickets.map(ticket => (
+              ) : filteredTickets.map(ticket => (
                 <TableRow key={ticket.id}>
                   <TableCell className="font-medium text-slate-900">#{ticket.id}</TableCell>
                   <TableCell className="font-medium text-slate-800">{ticket.studentName}</TableCell>

@@ -29,7 +29,7 @@ public class LichSuChuyenLop {
     private LopHoc lopCu;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lop_moi_id", nullable = false)
+    @JoinColumn(name = "lop_moi_id")
     private LopHoc lopMoi;
 
     @Column(name = "nam_hoc_cu", length = 10)

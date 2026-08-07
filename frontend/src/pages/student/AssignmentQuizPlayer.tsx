@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, Loader2, Star, Gem, Send } from 'lucide-react';
 import { studentService } from '../../services/student.service';
+import { useAuthStore } from '../../stores/useAuthStore';
 import toast from 'react-hot-toast';
 
 interface QuizDetail {
@@ -28,6 +29,7 @@ interface SubmissionResult {
 export default function AssignmentQuizPlayer() {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
+  const user = useAuthStore(state => state.user);
 
   const [detail, setDetail] = useState<QuizDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,11 +48,11 @@ export default function AssignmentQuizPlayer() {
 
   useEffect(() => {
     if (!assignmentId) return;
-    studentService.getQuizAssignmentDetail(Number(assignmentId))
+    studentService.getQuizAssignmentDetail(Number(assignmentId), user?.userId)
       .then(setDetail)
       .catch((err) => setLoadError(err.response?.data?.message || 'Không tải được bài tập.'))
       .finally(() => setIsLoading(false));
-  }, [assignmentId]);
+  }, [assignmentId, user]);
 
   const handleSubmit = async () => {
     if (!detail || !assignmentId) return;
@@ -85,9 +87,14 @@ export default function AssignmentQuizPlayer() {
       baiLam = { traLoiTheoCho };
     }
 
+    if (!user?.userId) {
+      toast.error('Không tìm thấy thông tin học sinh.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const res = await studentService.submitQuizAssignment(Number(assignmentId), baiLam);
+      const res = await studentService.submitQuizAssignment(Number(assignmentId), user.userId, baiLam);
       setResult(res);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Lỗi khi nộp bài.');

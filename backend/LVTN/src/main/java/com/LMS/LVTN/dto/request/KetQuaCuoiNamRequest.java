@@ -23,4 +23,8 @@ public class KetQuaCuoiNamRequest {
     private Long giaoVienXetId;
     private LocalDate ngayXet;
     private String ghiChu;
+
+    // Trường phục vụ tự động chuyển đổi lớp học khi xét Quyết định cuối năm
+    private Long lopMoiId;
+    private String namHocMoi;
 }

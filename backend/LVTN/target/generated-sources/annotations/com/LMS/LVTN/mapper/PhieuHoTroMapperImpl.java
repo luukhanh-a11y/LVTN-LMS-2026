@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-04T22:31:48+0700",
+    date = "2026-08-07T23:40:25+0700",
     comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
@@ -23,8 +23,10 @@ public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
 
         PhieuHoTro phieuHoTro = new PhieuHoTro();
 
+        phieuHoTro.setGhiChuXuLy( request.getGhiChuXuLy() );
         phieuHoTro.setLoaiYeuCau( request.getLoaiYeuCau() );
         phieuHoTro.setMoTa( request.getMoTa() );
+        phieuHoTro.setTrangThai( request.getTrangThai() );
 
         return phieuHoTro;
     }
@@ -60,8 +62,18 @@ public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
             return;
         }
 
-        entity.setLoaiYeuCau( request.getLoaiYeuCau() );
-        entity.setMoTa( request.getMoTa() );
+        if ( request.getGhiChuXuLy() != null ) {
+            entity.setGhiChuXuLy( request.getGhiChuXuLy() );
+        }
+        if ( request.getLoaiYeuCau() != null ) {
+            entity.setLoaiYeuCau( request.getLoaiYeuCau() );
+        }
+        if ( request.getMoTa() != null ) {
+            entity.setMoTa( request.getMoTa() );
+        }
+        if ( request.getTrangThai() != null ) {
+            entity.setTrangThai( request.getTrangThai() );
+        }
     }
 
     private String entityNguoiDungTaoNguoiDungId(PhieuHoTro phieuHoTro) {

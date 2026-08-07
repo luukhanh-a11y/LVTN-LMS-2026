@@ -133,7 +133,6 @@ export default function TeacherAssignments() {
           giaoVienId: user?.userId ?? 1,
           loaiBaiTap: assignmentType,
           deadline: new Date(deadline).toISOString(),
-          choNopLai: maxResubmitCount > 0,
           soLanNopLaiToiDa: maxResubmitCount,
           trangThai: 'DANG_GIAO'
         },

@@ -15,9 +15,15 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -44,19 +50,38 @@ public class LopHocService {
             lopHoc.setGiaoVienChuNhiem(giaoVien);
         }
 
-        return lopHocMapper.toResponse(lopHocRepository.save(lopHoc));
+        return mapToResponseWithSiSo(lopHocRepository.save(lopHoc));
     }
-
+    @Transactional(readOnly = true)
     public List<LopHocResponse> getAll() {
         return lopHocRepository.findAll().stream()
-                .map(lopHocMapper::toResponse)
+                .map(this::mapToResponseWithSiSo)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public Page<LopHocResponse> searchLopHoc(String keyword, Long namHocId, Integer khoiLop, Pageable pageable) {
+        Specification<LopHoc> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (keyword != null && !keyword.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("tenLop")), "%" + keyword.toLowerCase() + "%"));
+            }
+            if (namHocId != null) {
+                predicates.add(cb.equal(root.get("namHoc").get("namHocId"), namHocId));
+            }
+            if (khoiLop != null) {
+                predicates.add(cb.equal(root.get("khoiLop"), khoiLop));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return lopHocRepository.findAll(spec, pageable).map(this::mapToResponseWithSiSo);
+    }
+
+    @Transactional(readOnly = true)
     public LopHocResponse getById(Long id) {
         LopHoc lopHoc = lopHocRepository.findById(id)
                 .orElseThrow(() -> new AppExceptions(Errorcode.LOP_HOC_NOT_FOUND));
-        return lopHocMapper.toResponse(lopHoc);
+        return mapToResponseWithSiSo(lopHoc);
     }
 
     public LopHocResponse update(Long id, LopHocRequest request) {
@@ -77,7 +102,7 @@ public class LopHocService {
             lopHoc.setGiaoVienChuNhiem(giaoVien);
         }
 
-        return lopHocMapper.toResponse(lopHocRepository.save(lopHoc));
+        return mapToResponseWithSiSo(lopHocRepository.save(lopHoc));
     }
 
     public void delete(Long id) {
@@ -85,5 +110,15 @@ public class LopHocService {
             throw new AppExceptions(Errorcode.LOP_HOC_NOT_FOUND);
         }
         lopHocRepository.deleteById(id);
+    }
+
+    private LopHocResponse mapToResponseWithSiSo(LopHoc lopHoc) {
+        LopHocResponse response = lopHocMapper.toResponse(lopHoc);
+        if (lopHoc.getHoSoHocSinhs() != null) {
+            response.setSiSoHienTai((long) lopHoc.getHoSoHocSinhs().size());
+        } else {
+            response.setSiSoHienTai(0L);
+        }
+        return response;
     }
 }

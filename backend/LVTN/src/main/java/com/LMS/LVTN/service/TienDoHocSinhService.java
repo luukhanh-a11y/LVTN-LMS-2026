@@ -36,7 +36,6 @@ public class TienDoHocSinhService {
         return tienDoHocSinhRepository.findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId)
                 .map(tienDoHocSinhMapper::toResponse)
                 .orElseGet(() -> {
-                    // Trả về DTO ảo trên RAM (Không tạo bản ghi trong CSDL để tránh rác dữ liệu)
                     TienDoHocSinhResponse emptyResp = new TienDoHocSinhResponse();
                     emptyResp.setHocSinhId(hocSinhId);
                     emptyResp.setBaiHocId(baiHocId);

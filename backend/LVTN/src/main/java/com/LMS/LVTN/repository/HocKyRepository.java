@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface HocKyRepository extends JpaRepository<HocKy, Integer> {
     java.util.Optional<HocKy> findByNamHoc_NamHocIdAndSoHocKy(Integer namHocId, Short soHocKy);
+    java.util.List<HocKy> findByNamHoc_NamHocId(Integer namHocId);
 }

@@ -8,8 +8,27 @@ spring:
     url: "jdbc:mysql://localhost:3306/lms1?serverTimezone=Asia/Ho_Chi_Minh&useSSL=false"
     username: root
     password:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your_email@gmail.com   # Thay bằng email gửi đi của hệ thống (ví dụ: mylms@gmail.com)
+    password: your_app_password      # Thay bằng Mật khẩu ứng dụng 16 ký tự từ Google Account
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 jwt:
   signerKey: "3c9v8b7n6m5,1q2w3e4r5t6y7u8i9o0pA$SDFGHJKL:ZXCVBNM<>?|}{POIUYTREWQ"
   valid-duration: 3600 # 1 hour
   refreshable-duration: 86400 # 1 day
+
+app:
+  default:
+    reset-password: "123456"
+  otp:
+    expiration-minutes: 1
+

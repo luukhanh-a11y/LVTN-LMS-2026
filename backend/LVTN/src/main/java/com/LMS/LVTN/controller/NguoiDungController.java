@@ -10,14 +10,20 @@ import com.LMS.LVTN.enums.VaiTro;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.service.AuthenticationService;
+import com.LMS.LVTN.service.NguoiDungExcelService;
 import com.LMS.LVTN.service.NguoiDungService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.ParseException;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/nguoi-dung")
@@ -26,29 +32,49 @@ import java.util.List;
 public class NguoiDungController {
 
     NguoiDungService nguoiDungService;
+    NguoiDungExcelService nguoiDungExcelService;
 
     @GetMapping
-    public ApiResponse<List<NguoiDungResponse>> getAllNguoiDung(@RequestHeader("Authorization") String token) {
-        return ApiResponse.<List<NguoiDungResponse>>builder()
-                .data(nguoiDungService.getAllNguoiDung(token))
+    public ApiResponse<Page<NguoiDungResponse>> getAllNguoiDung(
+            @RequestHeader("Authorization") String token,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return ApiResponse.<Page<NguoiDungResponse>>builder()
+                .data(nguoiDungService.getAllNguoiDung(token, pageable))
+                .build();
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<Page<NguoiDungResponse>> searchNguoiDung(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long classId,
+            @RequestParam(required = false) Integer grade,
+            @RequestParam(required = false) String subject,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return ApiResponse.<Page<NguoiDungResponse>>builder()
+                .data(nguoiDungService.searchNguoiDung(token, role, keyword, status, classId, grade, subject, pageable))
                 .build();
     }
 
     @GetMapping("/trang-thai/{trangThai}")
-    public ApiResponse<List<NguoiDungResponse>> getNguoiDungByTrangThai(
+    public ApiResponse<Page<NguoiDungResponse>> getNguoiDungByTrangThai(
             @RequestHeader("Authorization") String token, 
-            @PathVariable com.LMS.LVTN.enums.TrangThaiNguoiDung trangThai) {
-        return ApiResponse.<List<NguoiDungResponse>>builder()
-                .data(nguoiDungService.getNguoiDungByTrangThai(token, trangThai))
+            @PathVariable com.LMS.LVTN.enums.TrangThaiNguoiDung trangThai,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return ApiResponse.<Page<NguoiDungResponse>>builder()
+                .data(nguoiDungService.getNguoiDungByTrangThai(token, trangThai, pageable))
                 .build();
     }
 
     @GetMapping("/vai-tro/{vaiTro}")
-    public ApiResponse<List<NguoiDungResponse>> getNguoiDungByVaiTro(
+    public ApiResponse<Page<NguoiDungResponse>> getNguoiDungByVaiTro(
             @RequestHeader("Authorization") String token, 
-            @PathVariable com.LMS.LVTN.enums.VaiTro vaiTro) {
-        return ApiResponse.<List<NguoiDungResponse>>builder()
-                .data(nguoiDungService.getNguoiDungByVaiTro(token, vaiTro))
+            @PathVariable com.LMS.LVTN.enums.VaiTro vaiTro,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return ApiResponse.<Page<NguoiDungResponse>>builder()
+                .data(nguoiDungService.getNguoiDungByVaiTro(token, vaiTro, pageable))
                 .build();
     }
 
@@ -105,6 +131,20 @@ public class NguoiDungController {
         nguoiDungService.deleteNguoiDung(id);
         return ApiResponse.<String>builder()
                 .data("Người dùng đã được xóa thành công")
+                .build();
+    }
+
+    @GetMapping("/export-template")
+    public void exportTemplate(jakarta.servlet.http.HttpServletResponse response) {
+        nguoiDungExcelService.exportTemplate(response);
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<String> importUsersFromExcel(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("file") MultipartFile file) {
+        return ApiResponse.<String>builder()
+                .data(nguoiDungExcelService.importUsersFromExcel(token, file))
                 .build();
     }
 }

@@ -40,6 +40,24 @@ public class SachController {
                 .build();
     }
 
+    @GetMapping("/sach-giao-khoa/hoc-sinh/{hocSinhId}/hoc-ky/{hocKyId}")
+    public ApiResponse<List<SachResponse>> getSachGiaoKhoaForStudent(@PathVariable Long hocSinhId, @PathVariable Integer hocKyId) {
+        return ApiResponse.<List<SachResponse>>builder()
+                .data(sachService.getSachGiaoKhoaForStudent(hocSinhId, hocKyId))
+                .build();
+    }
+
+    @GetMapping("/sach-bai-tap/phan-cong")
+    public ApiResponse<List<SachResponse>> getSachBaiTapByPhanCong(
+            @RequestParam("giaoVienId") Long giaoVienId,
+            @RequestParam("lopHocId") Long lopHocId,
+            @RequestParam("monHocId") Integer monHocId,
+            @RequestParam("hocKyId") Integer hocKyId) {
+        return ApiResponse.<List<SachResponse>>builder()
+                .data(sachService.getSachBaiTapByPhanCong(giaoVienId, lopHocId, monHocId, hocKyId))
+                .build();
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<SachResponse> update(@PathVariable Integer id, @RequestBody SachRequest request) {
         return ApiResponse.<SachResponse>builder()
@@ -54,4 +72,38 @@ public class SachController {
                 .data("Sách đã được xóa thành công")
                 .build();
     }
+
+    @PostMapping("/nhan-ban-khong-chu-de")
+    public ApiResponse<List<SachResponse>> nhanBanSachKhongChuDe(
+            @RequestParam("monHocId") Short monHocId,
+            @RequestParam("khoiLop") Short khoiLop,
+            @RequestParam("hocKyCu") Short hocKyCu,
+            @RequestParam("hocKyMoi") Short hocKyMoi) {
+        return ApiResponse.<List<SachResponse>>builder()
+                .data(sachService.nhanBanSachKhongChuDe(monHocId, khoiLop, hocKyCu, hocKyMoi))
+                .build();
+    }
+
+    @PostMapping("/nhan-ban-kem-chu-de")
+    public ApiResponse<List<SachResponse>> nhanBanSachKemChuDe(
+            @RequestParam("monHocId") Short monHocId,
+            @RequestParam("khoiLop") Short khoiLop,
+            @RequestParam("hocKyCu") Short hocKyCu,
+            @RequestParam("hocKyMoi") Short hocKyMoi) {
+        return ApiResponse.<List<SachResponse>>builder()
+                .data(sachService.nhanBanSachKemChuDe(monHocId, khoiLop, hocKyCu, hocKyMoi))
+                .build();
+    }
+
+    @PostMapping("/nhan-ban")
+    public ApiResponse<List<SachResponse>> nhanBanSachTheoHocKy(
+            @RequestParam("monHocId") Short monHocId,
+            @RequestParam("khoiLop") Short khoiLop,
+            @RequestParam("hocKyCu") Short hocKyCu,
+            @RequestParam("hocKyMoi") Short hocKyMoi) {
+        return ApiResponse.<List<SachResponse>>builder()
+                .data(sachService.nhanBanSachTheoHocKy(monHocId, khoiLop, hocKyCu, hocKyMoi))
+                .build();
+    }
 }
+

@@ -25,4 +25,10 @@ public class BaiNopResponse {
     private TrangThaiBaiNop trangThai;
     private Boolean laNopTre;
     private LocalDateTime thoiDiemNop;
+
+    // Alias getters phục vụ trực tiếp cho Frontend (AssignmentQuizPlayer.tsx / SubmissionResult)
+    public BigDecimal getScore() { return diemTuDong != null ? diemTuDong : BigDecimal.ZERO; }
+    public Short getXpEarned() { return xpNhanDuoc != null ? xpNhanDuoc : 0; }
+    public Boolean getIsLate() { return laNopTre != null ? laNopTre : false; }
+    public String getStatus() { return trangThai != null ? trangThai.name() : ""; }
 }

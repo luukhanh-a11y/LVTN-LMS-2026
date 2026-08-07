@@ -1,4 +1,5 @@
 import { Search, Filter, Upload } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -20,6 +21,28 @@ const TABS: { key: TabType; label: string }[] = [
 
 export default function AdminUsers() {
   const vm = useUsersViewModel();
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          vm.loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [vm.loadMore]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -83,6 +106,53 @@ export default function AdminUsers() {
               </select>
             </div>
           )}
+          
+          {vm.activeTab === 'student' && (
+            <div className="flex items-center space-x-2 bg-white border border-slate-200/80 rounded-[14px] px-3 shadow-sm h-11">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <select
+                className="py-2 outline-none bg-transparent text-sm font-medium text-slate-700 w-[110px]"
+                value={vm.filterGrade}
+                onChange={(e) => vm.setFilterGrade(e.target.value)}
+              >
+                <option value="all">Tất cả khối</option>
+                {vm.grades.map((grade) => (
+                  <option key={grade} value={grade.toString()}>Khối {grade}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {vm.activeTab === 'teacher' && (
+            <>
+              <div className="flex items-center space-x-2 bg-white border border-slate-200/80 rounded-[14px] px-3 shadow-sm h-11">
+                <Filter className="h-4 w-4 text-slate-400" />
+                <select
+                  className="py-2 outline-none bg-transparent text-sm font-medium text-slate-700 w-[140px]"
+                  value={vm.filterSubject}
+                  onChange={(e) => vm.setFilterSubject(e.target.value)}
+                >
+                  <option value="all">Tất cả bộ môn</option>
+                  {vm.subjects.map((subject) => (
+                    <option key={subject} value={subject}>{subject}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center space-x-2 bg-white border border-slate-200/80 rounded-[14px] px-3 shadow-sm h-11">
+                <Filter className="h-4 w-4 text-slate-400" />
+                <select
+                  className="py-2 outline-none bg-transparent text-sm font-medium text-slate-700 w-[140px]"
+                  value={vm.filterTeacherClassId}
+                  onChange={(e) => vm.setFilterTeacherClassId(e.target.value)}
+                >
+                  <option value="all">Tất cả các lớp</option>
+                  {vm.classes.map((c) => (
+                    <option key={c.lopHocId} value={c.lopHocId.toString()}>{c.tenLop}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           <select
             className="px-4 border border-slate-200/80 rounded-[14px] outline-none bg-white text-sm font-medium text-slate-700 focus:border-primary shadow-sm h-11"
@@ -100,44 +170,65 @@ export default function AdminUsers() {
             <TableHeader className="bg-slate-50/80">
               <TableRow>
                 <TableHead className="py-4">Họ và tên</TableHead>
-                <TableHead>Tên đăng nhập</TableHead>
-                {vm.activeTab === 'teacher' && <TableHead>Bảo mật</TableHead>}
-                {vm.activeTab === 'student' && <TableHead>Email</TableHead>}
-                {vm.activeTab === 'parent' && <TableHead>Số điện thoại</TableHead>}
+                {vm.activeTab === 'student' && (
+                  <>
+                    <TableHead>Mã học sinh</TableHead>
+                    <TableHead>Lớp học</TableHead>
+                    <TableHead>Khối</TableHead>
+                    <TableHead>Email</TableHead>
+                  </>
+                )}
+                {vm.activeTab === 'parent' && (
+                  <>
+                    <TableHead>Tên con</TableHead>
+                    <TableHead>Lớp của con</TableHead>
+                    <TableHead>Số điện thoại</TableHead>
+                  </>
+                )}
+                {vm.activeTab === 'teacher' && (
+                  <>
+                    <TableHead>Mã giáo viên</TableHead>
+                    <TableHead>Bộ môn phụ trách</TableHead>
+                    <TableHead>Lớp giảng dạy</TableHead>
+                  </>
+                )}
                 <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vm.filteredUsers.map((user) => (
-                <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors">
+              {vm.visibleUsers.map((user) => (
+                <TableRow 
+                  key={user.id} 
+                  className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                  onClick={() => vm.openDetailModal(user)}
+                >
                   <TableCell className="font-semibold text-slate-800">{user.fullName || user.username}</TableCell>
-                  <TableCell className="text-slate-600 font-medium">{user.username}</TableCell>
-                  {vm.activeTab === 'teacher' && (
-                    <TableCell>
-                      {user.requirePasswordChange
-                        ? <Badge variant="warning">Mặc định</Badge>
-                        : <Badge variant="success">Đã đổi MK</Badge>}
-                    </TableCell>
-                  )}
                   {vm.activeTab === 'student' && (
-                    <TableCell><span className="text-sm text-slate-500 font-medium">{user.email || 'Chưa có'}</span></TableCell>
+                    <>
+                      <TableCell className="font-medium">{user.maHocSinh || '---'}</TableCell>
+                      <TableCell>{user.tenLop || '---'}</TableCell>
+                      <TableCell>{user.khoiLop ? `Khối ${user.khoiLop}` : '---'}</TableCell>
+                      <TableCell><span className="text-sm text-slate-500 font-medium">{user.email || '---'}</span></TableCell>
+                    </>
                   )}
                   {vm.activeTab === 'parent' && (
-                    <TableCell className="text-slate-600 font-medium">{user.phone || 'Chưa có'}</TableCell>
+                    <>
+                      <TableCell className="font-medium text-slate-700">{user.tenCon || '---'}</TableCell>
+                      <TableCell>{user.lopCuaCon || '---'}</TableCell>
+                      <TableCell className="text-slate-600 font-medium">{user.phone || '---'}</TableCell>
+                    </>
+                  )}
+                  {vm.activeTab === 'teacher' && (
+                    <>
+                      <TableCell className="font-medium">{user.maGiaoVien || '---'}</TableCell>
+                      <TableCell>{user.boMon || '---'}</TableCell>
+                      <TableCell className="text-slate-600">{user.lopGiangDay || '---'}</TableCell>
+                    </>
                   )}
                   <TableCell>
                     <Badge variant={user.status === 'ACTIVE' ? 'success' : 'danger'}>
                       {user.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => vm.openDetailModal(user)} className="h-8 px-3 text-xs">Chi tiết</Button>
-                    {vm.activeTab === 'student' && (
-                      <Button variant="outline" size="sm" onClick={() => vm.openTransferModal(user)} className="h-8 px-3 text-xs">Chuyển lớp</Button>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => vm.handleToggleStatus(user.id)} className="h-8 px-3 text-xs">Trạng thái</Button>
-                    <Button variant="ghost" size="sm" onClick={() => vm.openEditModal(user)} className="h-8 px-3 text-xs">Sửa</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -150,6 +241,13 @@ export default function AdminUsers() {
               )}
             </TableBody>
           </Table>
+          
+          {/* Intersection Observer Target */}
+          {!vm.isLastPage && !vm.isLoading && (
+            <div ref={observerTarget} className="h-10 w-full flex items-center justify-center text-slate-400 text-sm py-4">
+              {vm.isLoadingMore ? 'Đang tải thêm...' : 'Cuộn để tải thêm'}
+            </div>
+          )}
         </CardContent>
       </Card>
 

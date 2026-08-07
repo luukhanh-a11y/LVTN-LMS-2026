@@ -73,24 +73,55 @@ export const studentService = {
         }
       }
       
+      let currentHocKyId = 1;
+      try {
+        const hkRes = await api.get('/hoc-ky');
+        const listHk = hkRes.data?.data || hkRes.data || [];
+        if (listHk.length > 0) {
+          const hk = listHk.find((k: any) => k.soHocKy === 1 || k.hocKyId === 1) || listHk[0];
+          currentHocKyId = hk.hocKyId || hk.id || 1;
+        }
+      } catch (err) {}
+
       let enrolledSubjects: any[] = [];
-      if (hoSo.lopHocId) {
+      const hocSinhId = hoSo.hocSinhId || hoSo.id || hoSo.nguoiDungId;
+      if (hocSinhId || hoSo.lopHocId) {
         try {
-          const lopRes = await api.get(`/lophoc/${hoSo.lopHocId}`);
-          const lop = lopRes.data.data || lopRes.data;
-          if (lop.khoiLop) {
-            const sachRes = await api.get(`/sach`);
-            const allBooks = sachRes.data.data || sachRes.data || [];
-            const myBooks = allBooks.filter((s: any) => s.khoiLop === lop.khoiLop);
-            enrolledSubjects = myBooks.map((s: any) => ({
-              id: s.sachId,
-              name: s.tenSach || s.tieuDe || "Môn học",
-              desc: "Khám phá tri thức mới",
-              icon: (s.tenSach || "").includes("Toán") ? "3d-math" : "3d-vietnamese",
-              progress: 0
-            }));
+          let myBooks: any[] = [];
+          if (hocSinhId) {
+            try {
+              const sachRes = await api.get(`/sach/sach-giao-khoa/hoc-sinh/${hocSinhId}/hoc-ky/${currentHocKyId}`);
+              myBooks = sachRes.data.data || sachRes.data || [];
+            } catch (e) {
+              myBooks = [];
+            }
           }
+
+          if (!myBooks || myBooks.length === 0) {
+            if (hoSo.lopHocId) {
+              const lopRes = await api.get(`/lophoc/${hoSo.lopHocId}`);
+              const lop = lopRes.data.data || lopRes.data;
+              if (lop?.khoiLop) {
+                const sachRes = await api.get(`/sach`);
+                const allBooks = sachRes.data.data || sachRes.data || [];
+                myBooks = allBooks.filter((s: any) => 
+                  s.khoiLop === lop.khoiLop && 
+                  (!s.loaiSach || s.loaiSach === 'SACH_GIAO_KHOA') &&
+                  (!s.hocKy || s.hocKy === 1)
+                );
+              }
+            }
+          }
+
+          enrolledSubjects = myBooks.map((s: any) => ({
+            id: s.sachId || s.id,
+            name: s.tenSach || s.tieuDe || "Môn học",
+            desc: s.moTa || `Sách giáo khoa - Học kỳ ${s.hocKy || 1}`,
+            icon: (s.tenSach || "").includes("Toán") ? "3d-math" : "3d-vietnamese",
+            progress: 0
+          }));
         } catch (err) {
+          console.error("Failed to fetch subjects for dashboard:", err);
         }
       }
       
@@ -573,10 +604,13 @@ export const studentService = {
     return response.data;
   },
 
-  getQuizAssignmentDetail: async (assignmentId: number) => {
+  getQuizAssignmentDetail: async (assignmentId: number, studentId?: number) => {
     const [btRes, dbRes] = await Promise.all([
       api.get(`/bai-tap/${assignmentId}`),
-      api.get(`/he-thong/dang-bai/bai-tap/${assignmentId}/hoc-sinh`).catch(() => ({ data: [] }))
+      api.get(`/he-thong/dang-bai/bai-tap/${assignmentId}/hoc-sinh`, { params: studentId ? { hocSinhId: studentId } : undefined }).catch((err) => {
+        if (err.response?.data?.message) throw err;
+        return { data: [] };
+      })
     ]);
     const baiTap = btRes.data;
     const dangBais = dbRes.data || [];
@@ -610,8 +644,13 @@ export const studentService = {
     };
   },
 
-  submitQuizAssignment: async (assignmentId: number, baiLam: Record<string, unknown>) => {
-    const response = await api.post(`/bai-nop`, baiLam);
+  submitQuizAssignment: async (assignmentId: number, studentId: number, baiLam: Record<string, unknown>) => {
+    const payload = {
+      baiTapId: assignmentId,
+      hocSinhId: studentId,
+      chiTietBaiLam: JSON.stringify(baiLam)
+    };
+    const response = await api.post(`/bai-nop`, payload);
     return response.data;
   },
 
@@ -620,8 +659,14 @@ export const studentService = {
     return response.data;
   },
 
-  submitEssay: async (assignmentId: number, payload: { textContent: string; isDraft: boolean; attachmentUrl?: string | null }) => {
-    const response = await api.post(`/bai-nop`, payload);
+  submitEssay: async (assignmentId: number, studentId: number, payload: { textContent: string; isDraft?: boolean; attachmentUrl?: string | null }) => {
+    const requestData = {
+      baiTapId: assignmentId,
+      hocSinhId: studentId,
+      noiDungText: payload.textContent,
+      fileDinhKem: payload.attachmentUrl || null
+    };
+    const response = await api.post(`/bai-nop`, requestData);
     return response.data;
   },
 

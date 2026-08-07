@@ -10,6 +10,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/lophoc")
@@ -27,9 +30,13 @@ public class LopHocController {
     }
 
     @GetMapping
-    public ApiResponse<List<LopHocResponse>> getAll() {
-        return ApiResponse.<List<LopHocResponse>>builder()
-                .data(lopHocService.getAll())
+    public ApiResponse<Page<LopHocResponse>> getAll(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long namHocId,
+            @RequestParam(required = false) Integer khoiLop,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return ApiResponse.<Page<LopHocResponse>>builder()
+                .data(lopHocService.searchLopHoc(keyword, namHocId, khoiLop, pageable))
                 .build();
     }
 

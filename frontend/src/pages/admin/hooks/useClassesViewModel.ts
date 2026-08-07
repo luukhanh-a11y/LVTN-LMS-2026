@@ -69,7 +69,9 @@ export function useClassesViewModel() {
 
   const handleToggleStatus = async (id: number) => {
     try {
-      await classService.toggleStatus(id);
+      const cls = classes.find(c => c.lopHocId === id);
+      if (!cls) return;
+      await classService.toggleStatus(id, cls.trangThai);
       toast.success('Cập nhật trạng thái thành công!');
       fetchData();
     } catch (err: any) {

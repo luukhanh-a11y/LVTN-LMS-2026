@@ -61,4 +61,23 @@ public class ChuDeController {
                 .data("Chủ đề đã được xóa thành công")
                 .build();
     }
+
+    @PostMapping("/nhan-ban-khong-bai-hoc")
+    public ApiResponse<List<ChuDeResponse>> nhanBanChuDeKhongBaiHoc(
+            @RequestParam("sachCuId") Integer sachCuId,
+            @RequestParam("sachMoiId") Integer sachMoiId) {
+        return ApiResponse.<List<ChuDeResponse>>builder()
+                .data(chuDeService.nhanBanChuDeKhongBaiHoc(sachCuId, sachMoiId))
+                .build();
+    }
+
+    @PostMapping("/nhan-ban-kem-bai-hoc")
+    public ApiResponse<List<ChuDeResponse>> nhanBanChuDeKemBaiHoc(
+            @RequestParam("sachCuId") Integer sachCuId,
+            @RequestParam("sachMoiId") Integer sachMoiId) {
+        return ApiResponse.<List<ChuDeResponse>>builder()
+                .data(chuDeService.nhanBanChuDeKemBaiHoc(sachCuId, sachMoiId))
+                .build();
+    }
 }
+

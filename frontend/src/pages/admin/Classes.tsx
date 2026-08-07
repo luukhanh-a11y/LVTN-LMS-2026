@@ -52,7 +52,6 @@ export default function AdminClasses() {
                 <TableHead>GVCN</TableHead>
                 <TableHead>Sĩ số</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,7 +64,11 @@ export default function AdminClasses() {
                   <TableCell colSpan={6} className="text-center py-8 text-slate-500">Không tìm thấy lớp học nào.</TableCell>
                 </TableRow>
               ) : vm.filteredClasses.map((cls) => (
-                <TableRow key={cls.lopHocId}>
+                <TableRow 
+                  key={cls.lopHocId}
+                  className="cursor-pointer hover:bg-slate-50/50"
+                  onClick={() => window.location.href = `/admin/classes/${cls.lopHocId}`}
+                >
                   <TableCell className="font-medium text-primary">{cls.tenLop}</TableCell>
                   <TableCell>{cls.khoiLop}</TableCell>
                   <TableCell className="font-medium">
@@ -76,17 +79,8 @@ export default function AdminClasses() {
                   <TableCell>{cls.siSoHienTai || 0} / {cls.siSoToiDa}</TableCell>
                   <TableCell>
                     <Badge variant={cls.trangThai === 'ACTIVE' ? 'success' : 'outline'}>
-                      {cls.trangThai === 'ACTIVE' ? 'Đang học' : 'Đóng băng'}
+                      {cls.trangThai === 'ACTIVE' ? 'Đang giảng dạy' : 'Đóng băng'}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Link to={`/admin/classes/${cls.lopHocId}`}>
-                      <Button variant="ghost" size="sm">Chi tiết</Button>
-                    </Link>
-                    <Button variant="outline" size="sm" onClick={() => vm.handleToggleStatus(cls.lopHocId)}>
-                      {cls.trangThai === 'ACTIVE' ? 'Đóng băng' : 'Mở khóa'}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => vm.openEditModal(cls)}>Sửa</Button>
                   </TableCell>
                 </TableRow>
               ))}

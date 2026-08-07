@@ -12,10 +12,11 @@ import java.time.LocalDateTime;
 public class LoImportResponse {
 
     private Long loId;
-    private Long nguoiThucHienId;
+    private String nguoiThucHienId;
     private String tenNguoiThucHien; // Flattened
     private LoaiImport loaiImport;
     private String tenFile;
+
     private TrangThaiImport trangThai;
     private Integer soThanhCong;
     private String chiTietLoi; // JSON string

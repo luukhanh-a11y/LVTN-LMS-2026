@@ -5,9 +5,14 @@ import com.LMS.LVTN.dto.response.PhieuHoTroResponse;
 import com.LMS.LVTN.entity.PhieuHoTro;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(
+    componentModel = "spring",
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+)
 public interface PhieuHoTroMapper {
 
     PhieuHoTro toEntity(PhieuHoTroRequest request);

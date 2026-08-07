@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, ArrowRightLeft, History } from 'lucide-react';
+import { ArrowLeft, Users, ArrowRightLeft, History, Plus, Trash2, BookOpen } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
@@ -31,18 +31,61 @@ export default function ClassDetails() {
   const [transferHistory, setTransferHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
+  const [phanCongs, setPhanCongs] = useState<any[]>([]);
+  const [showPhanCongModal, setShowPhanCongModal] = useState(false);
+  const [pcMonHocId, setPcMonHocId] = useState('');
+  const [pcGiaoVienId, setPcGiaoVienId] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const handleCreatePhanCong = async () => {
+    if (!id || !pcMonHocId || !pcGiaoVienId) {
+      toast.error('Vui lòng nhập đầy đủ ID Môn học và ID Giáo viên!');
+      return;
+    }
+    setIsAssigning(true);
+    try {
+      await classService.createPhanCong({
+        giaoVienId: pcGiaoVienId,
+        monHocId: Number(pcMonHocId),
+        lopHocId: Number(id)
+      });
+      toast.success('Đã thêm phân công giảng dạy!');
+      setShowPhanCongModal(false);
+      setPcMonHocId('');
+      setPcGiaoVienId('');
+      classService.getPhanCongByLop(parseInt(id)).then(setPhanCongs).catch(() => {});
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Lỗi khi tạo phân công giảng dạy');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleDeletePhanCong = async (pcId: number) => {
+    if (!id) return;
+    try {
+      await classService.deletePhanCong(pcId);
+      toast.success('Đã hủy phân công');
+      classService.getPhanCongByLop(parseInt(id)).then(setPhanCongs).catch(() => {});
+    } catch {
+      toast.error('Không thể hủy phân công');
+    }
+  };
+
   const fetchData = async () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const [cls, stus, clsList] = await Promise.all([
+      const [cls, stus, clsList, pcs] = await Promise.all([
         classService.getClassById(parseInt(id)),
         classService.getStudentsByClass(parseInt(id)),
-        classService.getAllClasses()
+        classService.getAllClasses(),
+        classService.getPhanCongByLop(parseInt(id)).catch(() => [])
       ]);
       setClassData(cls);
       setStudents(stus);
       setAllClasses(clsList);
+      setPhanCongs(pcs || []);
     } catch (err) {
       toast.error('Không thể tải dữ liệu lớp học');
       console.error(err);
@@ -173,6 +216,50 @@ export default function ClassDetails() {
         </CardContent>
       </Card>
 
+      <Card>
+        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+          <div className="flex items-center space-x-2 text-slate-700 font-medium">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <span>Phân công giảng dạy bộ môn ({phanCongs.length})</span>
+          </div>
+          <Button size="sm" onClick={() => setShowPhanCongModal(true)}>
+            <Plus className="h-4 w-4 mr-1.5" /> Thêm Phân công
+          </Button>
+        </div>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Môn học</TableHead>
+                <TableHead>Giáo viên phụ trách</TableHead>
+                <TableHead>Năm học</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {phanCongs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-slate-500">Chưa có phân công bộ môn nào cho lớp này.</TableCell>
+                </TableRow>
+              ) : (
+                phanCongs.map((pc: any) => (
+                  <TableRow key={pc.phanCongId || pc.id}>
+                    <TableCell className="font-medium text-slate-800">{pc.tenMonHoc || `Môn ID: ${pc.monHocId}`}</TableCell>
+                    <TableCell>{pc.tenGiaoVien || `GV ID: ${pc.giaoVienId}`}</TableCell>
+                    <TableCell>{pc.namHoc || classData?.namHoc?.tenNamHoc || '---'}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleDeletePhanCong(pc.phanCongId || pc.id)} className="text-pro-destructive hover:bg-pro-destructive/10">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       {/* Chuyển lớp Modal */}
       <Modal
         isOpen={showTransferModal}
@@ -241,6 +328,40 @@ export default function ClassDetails() {
 
           <div className="pt-2 flex justify-end border-t border-slate-100">
             <Button type="button" variant="outline" onClick={() => setShowHistoryModal(false)}>Đóng</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Phân công giảng dạy Modal */}
+      <Modal
+        isOpen={showPhanCongModal}
+        onClose={() => setShowPhanCongModal(false)}
+        title="Thêm Phân công Giảng dạy"
+      >
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">ID Môn học</label>
+            <input
+              type="number"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
+              placeholder="VD: 1 (Toán), 2 (Tiếng Việt)..."
+              value={pcMonHocId}
+              onChange={(e) => setPcMonHocId(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">ID / Mã Giáo viên</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
+              placeholder="Nhập ID hoặc UUID của Giáo viên"
+              value={pcGiaoVienId}
+              onChange={(e) => setPcGiaoVienId(e.target.value)}
+            />
+          </div>
+          <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-2">
+            <Button type="button" variant="outline" onClick={() => setShowPhanCongModal(false)}>Hủy bỏ</Button>
+            <Button onClick={handleCreatePhanCong} isLoading={isAssigning}>Xác nhận phân công</Button>
           </div>
         </div>
       </Modal>

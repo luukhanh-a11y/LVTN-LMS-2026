@@ -20,4 +20,5 @@ public class LopHocResponse {
     private Short siSoToiDa;
     private TrangThaiLopHoc trangThai;
     private LocalDateTime ngayTao;
+    private Long siSoHienTai;
 }

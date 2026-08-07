@@ -54,6 +54,13 @@ public class BaiNopController {
                 .build();
     }
 
+    @GetMapping("/bai-tap/{baiTapId}/lop-hoc/{lopId}")
+    public ApiResponse<List<BaiNopResponse>> getAllBaiNopByBaiTapIdAndLopId(@PathVariable Long baiTapId, @PathVariable Long lopId) {
+        return ApiResponse.<List<BaiNopResponse>>builder()
+                .data(baiNopService.getAllBaiNopByBaiTapIdAndLopId(baiTapId, lopId))
+                .build();
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<BaiNopResponse> update(@PathVariable Long id, @RequestBody BaiNopRequest request) {
         return ApiResponse.<BaiNopResponse>builder()

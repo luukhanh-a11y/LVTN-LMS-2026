@@ -40,6 +40,13 @@ public class KetQuaCuoiNamController {
                 .build();
     }
 
+    @GetMapping("/hoc-sinh/{hocSinhId}/nam-hoc")
+    public ApiResponse<KetQuaCuoiNamResponse> getByHocSinhIdAndNamHoc(@PathVariable Long hocSinhId, @RequestParam("namHoc") String namHoc) {
+        return ApiResponse.<KetQuaCuoiNamResponse>builder()
+                .data(ketQuaCuoiNamService.getByHocSinhIdAndNamHoc(hocSinhId, namHoc))
+                .build();
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<KetQuaCuoiNamResponse> update(@PathVariable Long id, @RequestBody KetQuaCuoiNamRequest request) {
         return ApiResponse.<KetQuaCuoiNamResponse>builder()
@@ -51,7 +58,15 @@ public class KetQuaCuoiNamController {
     public ApiResponse<String> delete(@PathVariable Long id) {
         ketQuaCuoiNamService.delete(id);
         return ApiResponse.<String>builder()
-                .data("Kết quả cuối năm đã được xóa thành công")
+                .data("Xóa kết quả cuối năm thành công!")
+                .build();
+    }
+
+    @PostMapping("/thong-bao-mo-danh-gia")
+    public ApiResponse<String> thongBaoMoDanhGia(@RequestParam String namHoc) {
+        ketQuaCuoiNamService.thongBaoMoDanhGia(namHoc);
+        return ApiResponse.<String>builder()
+                .data("Đã gửi thông báo mở đợt đánh giá cho tất cả Giáo viên chủ nhiệm.")
                 .build();
     }
 }

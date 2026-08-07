@@ -22,6 +22,7 @@ export default function ParentGrades() {
   const [isLoading, setIsLoading] = useState(true);
   const [badges, setBadges] = useState<any[]>([]);
   const [ketQuaCuoiNam, setKetQuaCuoiNam] = useState<any[]>([]);
+  const [diemTB, setDiemTB] = useState<any[]>([]);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const selectedChild = useParentContextStore((state) => state.selectedChild);
   const printableRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,14 @@ export default function ParentGrades() {
       .getKetQuaCuoiNam(selectedChild.id)
       .then(setKetQuaCuoiNam)
       .catch((err) => console.error('Failed to fetch ket qua cuoi nam', err));
+  }, [selectedChild]);
+
+  useEffect(() => {
+    if (!selectedChild) return;
+    parentService
+      .getDiemTrungBinhMon(selectedChild.id, 1)
+      .then(setDiemTB)
+      .catch((err) => console.error('Failed to fetch diem trung binh mon', err));
   }, [selectedChild]);
 
   const handleExportPdf = async () => {
@@ -121,38 +130,70 @@ export default function ParentGrades() {
               <CardTitle>Kết quả đánh giá thường xuyên</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Học sinh</TableHead>
+                      <TableHead>Môn học</TableHead>
+                      <TableHead>Bài tập</TableHead>
+                      <TableHead>Hình thức</TableHead>
+                      <TableHead>Ngày nộp</TableHead>
+                      <TableHead className="text-right">Đánh giá</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {grades.length > 0 ? grades.map(grade => (
+                      <TableRow key={grade.id}>
+                        <TableCell className="font-medium text-pro-primary">{grade.studentName}</TableCell>
+                        <TableCell className="font-medium text-slate-800">{grade.subject}</TableCell>
+                        <TableCell>{grade.assignment}</TableCell>
+                        <TableCell>
+                          <Badge variant={grade.type === 'H5P' ? 'default' : 'outline'}>{grade.type}</Badge>
+                        </TableCell>
+                        <TableCell>{grade.date}</TableCell>
+                        <TableCell className="text-right">
+                          {grade.score ? (
+                            <Badge variant="success">{grade.score}</Badge>
+                          ) : (
+                            <span className="text-slate-400 italic">Chưa có</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow>
+                          <TableCell colSpan={6} className="text-center py-6 text-slate-500">Chưa có dữ liệu đánh giá nào.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Điểm trung bình các môn học (Học kỳ 1)</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Học sinh</TableHead>
                     <TableHead>Môn học</TableHead>
-                    <TableHead>Bài tập</TableHead>
-                    <TableHead>Hình thức</TableHead>
-                    <TableHead>Ngày nộp</TableHead>
-                    <TableHead className="text-right">Đánh giá</TableHead>
+                    <TableHead className="text-center">TB Bài tập</TableHead>
+                    <TableHead className="text-center">TB Tự học</TableHead>
+                    <TableHead className="text-right font-bold text-primary">TB Chung</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {grades.length > 0 ? grades.map(grade => (
-                    <TableRow key={grade.id}>
-                      <TableCell className="font-medium text-pro-primary">{grade.studentName}</TableCell>
-                      <TableCell className="font-medium text-slate-800">{grade.subject}</TableCell>
-                      <TableCell>{grade.assignment}</TableCell>
-                      <TableCell>
-                        <Badge variant={grade.type === 'H5P' ? 'default' : 'outline'}>{grade.type}</Badge>
-                      </TableCell>
-                      <TableCell>{grade.date}</TableCell>
-                      <TableCell className="text-right">
-                        {grade.score ? (
-                          <Badge variant="success">{grade.score}</Badge>
-                        ) : (
-                          <span className="text-slate-400 italic">Chưa có</span>
-                        )}
-                      </TableCell>
+                  {diemTB.length > 0 ? diemTB.map((dtb: any) => (
+                    <TableRow key={dtb.monHocId || dtb.tenMon}>
+                      <TableCell className="font-medium text-slate-800">{dtb.tenMon || `Môn #${dtb.monHocId}`}</TableCell>
+                      <TableCell className="text-center">{dtb.diemTrungBinhBaiTap ? dtb.diemTrungBinhBaiTap.toFixed(1) : '—'}</TableCell>
+                      <TableCell className="text-center">{dtb.diemTrungBinhTuHoc ? dtb.diemTrungBinhTuHoc.toFixed(1) : '—'}</TableCell>
+                      <TableCell className="text-right font-bold text-primary">{dtb.diemTrungBinhChung ? dtb.diemTrungBinhChung.toFixed(1) : '—'}</TableCell>
                     </TableRow>
                   )) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center py-6 text-slate-500">Chưa có dữ liệu đánh giá nào.</TableCell>
+                      <TableCell colSpan={4} className="text-center py-6 text-slate-500">Chưa có dữ liệu điểm trung bình theo môn.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>

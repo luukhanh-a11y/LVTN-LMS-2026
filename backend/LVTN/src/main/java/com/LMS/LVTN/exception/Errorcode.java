@@ -35,14 +35,20 @@ public enum Errorcode {
     DATA_NOT_FOUND(1022, "Dữ liệu không tồn tại", HttpStatus.NOT_FOUND),
     INVALID_DATA(1023, "Dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
     LICH_SU_TU_HOC_NOT_FOUND(1024, "Lịch sử tự học không tồn tại", HttpStatus.NOT_FOUND),
-    HOC_KY_NOT_FOUND(1024, "Học kỳ không tồn tại", HttpStatus.NOT_FOUND);
+    HOC_KY_NOT_FOUND(1024, "Học kỳ không tồn tại", HttpStatus.NOT_FOUND),
+    BAI_TAP_CHUA_MO(1025, "Bài tập chưa đến thời gian mở", HttpStatus.BAD_REQUEST),
+    BAI_TAP_DA_HET_HAN(1026, "Bài tập đã vượt quá hạn chót (deadline)", HttpStatus.BAD_REQUEST),
+    VUOT_QUA_SO_LAN_NOP_TOI_DA(1027, "Học sinh đã sử dụng hết số lần làm bài tối đa cho phép", HttpStatus.BAD_REQUEST),
+    EMAIL_NOT_FOUND(1028, "Email không tồn tại trong hệ thống", HttpStatus.NOT_FOUND),
 
-
-
-
-
+    OTP_INVALID(1029, "Mã OTP không chính xác", HttpStatus.BAD_REQUEST),
+    OTP_EXPIRED(1030, "Mã OTP đã hết hạn", HttpStatus.BAD_REQUEST),
+    SEND_EMAIL_FAILED(1031, "Không thể gửi email, vui lòng kiểm tra lại cấu hình", HttpStatus.INTERNAL_SERVER_ERROR),
+    ACCESS_DENIED(1031, "bạn đã bị từ chối", HttpStatus.INTERNAL_SERVER_ERROR),
+    LICH_SU_CHUYEN_LOP_EXISTED(1032, "Học sinh này đã được chuyển lớp trong năm học mới", HttpStatus.CONFLICT);
 
     private int code;
+
     private String message;
     private HttpStatus status;
 

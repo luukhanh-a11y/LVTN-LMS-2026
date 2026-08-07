@@ -12,15 +12,15 @@ interface Props {
 
 export const StudentProgressModal = memo(function StudentProgressModal({ studentId, studentName, onClose }: Props) {
   const [data, setData] = useState<any>(null);
+  const [diemTB, setDiemTB] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsLoading(true);
-    teacherService
-      .getStudentProgress(studentId)
-      .then(setData)
-      .catch((err) => console.error('Failed to fetch student progress', err))
-      .finally(() => setIsLoading(false));
+    Promise.all([
+      teacherService.getStudentProgress(studentId).then(setData).catch(() => null),
+      teacherService.getDiemTrungBinhMon(studentId, 1).then(setDiemTB).catch(() => setDiemTB([]))
+    ]).finally(() => setIsLoading(false));
   }, [studentId]);
 
   const subjectProgress = data?.subjectProgress ?? [];
@@ -78,6 +78,36 @@ export const StudentProgressModal = memo(function StudentProgressModal({ student
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h4 className="font-bold text-slate-700 text-sm mb-2">Điểm trung bình các môn học (Học kỳ 1)</h4>
+              {diemTB.length === 0 ? (
+                <p className="text-sm text-slate-400 italic">Chưa có dữ liệu điểm trung bình môn.</p>
+              ) : (
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-700 border-b">
+                      <tr>
+                        <th className="py-2 px-3 text-left font-semibold">Môn học</th>
+                        <th className="py-2 px-3 text-center font-semibold">TB Bài tập</th>
+                        <th className="py-2 px-3 text-center font-semibold">TB Tự học</th>
+                        <th className="py-2 px-3 text-center font-bold text-primary">TB Chung</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {diemTB.map((dtb: any) => (
+                        <tr key={dtb.monHocId || dtb.tenMon} className="hover:bg-slate-50/50">
+                          <td className="py-2 px-3 font-medium text-slate-800">{dtb.tenMon || `Môn #${dtb.monHocId}`}</td>
+                          <td className="py-2 px-3 text-center text-slate-600">{dtb.diemTrungBinhBaiTap ? dtb.diemTrungBinhBaiTap.toFixed(1) : '—'}</td>
+                          <td className="py-2 px-3 text-center text-slate-600">{dtb.diemTrungBinhTuHoc ? dtb.diemTrungBinhTuHoc.toFixed(1) : '—'}</td>
+                          <td className="py-2 px-3 text-center font-bold text-primary">{dtb.diemTrungBinhChung ? dtb.diemTrungBinhChung.toFixed(1) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

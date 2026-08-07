@@ -25,7 +25,7 @@ public class DanhGiaBaiLamService {
     DanhGiaBaiLamMapper danhGiaBaiLamMapper;
     BaiNopRepository baiNopRepository;
     HoSoGiaoVienRepository hoSoGiaoVienRepository;
-    HuyHieuEvaluationService huyHieuEvaluationService;
+    HoSoHocSinhRepository hoSoHocSinhRepository;
 
     @Transactional
     public DanhGiaBaiLamResponse create(DanhGiaBaiLamRequest request) {
@@ -53,10 +53,8 @@ public class DanhGiaBaiLamService {
 
         DanhGiaBaiLam savedDanhGia = danhGiaBaiLamRepository.save(danhGia);
         
-        // Kích hoạt kiểm tra huy hiệu sau khi có điểm mới
-        if (savedDanhGia.getBaiNop() != null && savedDanhGia.getBaiNop().getHocSinh() != null) {
-            huyHieuEvaluationService.evaluate(savedDanhGia.getBaiNop().getHocSinh().getHocSinhId());
-        }
+        // Đồng bộ sang BaiNop và cập nhật tổng XP cho HoSoHocSinh thay vì gọi huyHieuEvaluationService
+        syncBaiNopAndStudentXp(savedDanhGia);
 
         return danhGiaBaiLamMapper.toResponse(savedDanhGia);
     }
@@ -94,7 +92,32 @@ public class DanhGiaBaiLamService {
             danhGia.setGiaoVien(giaoVien);
         }
 
-        return danhGiaBaiLamMapper.toResponse(danhGiaBaiLamRepository.save(danhGia));
+        DanhGiaBaiLam updatedDanhGia = danhGiaBaiLamRepository.save(danhGia);
+        syncBaiNopAndStudentXp(updatedDanhGia);
+        return danhGiaBaiLamMapper.toResponse(updatedDanhGia);
+    }
+
+    private void syncBaiNopAndStudentXp(DanhGiaBaiLam danhGia) {
+        if (danhGia.getBaiNop() != null) {
+            BaiNop baiNop = danhGia.getBaiNop();
+            baiNop.setTrangThai(com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
+
+            short xpMoi = 0;
+            if (danhGia.getDiemSo() != null) {
+                xpMoi = (short) (danhGia.getDiemSo().doubleValue() * 10);
+            }
+            short xpCu = baiNop.getXpNhanDuoc() != null ? baiNop.getXpNhanDuoc() : 0;
+            baiNop.setXpNhanDuoc(xpMoi > 0 ? xpMoi : (short) 0);
+            baiNopRepository.save(baiNop);
+
+            if (baiNop.getHocSinh() != null && (xpMoi - xpCu) != 0) {
+                HoSoHocSinh hocSinh = baiNop.getHocSinh();
+                int tongXpHienTai = hocSinh.getTongXp() != null ? hocSinh.getTongXp() : 0;
+                int tongXpMoi = tongXpHienTai + (xpMoi - xpCu);
+                hocSinh.setTongXp(Math.max(0, tongXpMoi));
+                hoSoHocSinhRepository.save(hocSinh);
+            }
+        }
     }
 
     @Transactional

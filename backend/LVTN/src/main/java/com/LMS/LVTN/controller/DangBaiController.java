@@ -45,8 +45,10 @@ public class DangBaiController {
     }
 
     @GetMapping("/bai-tap/{baiTapId}/hoc-sinh")
-    public ResponseEntity<List<DangBaiStudentResponse>> getByBaiTapIdForStudent(@PathVariable Long baiTapId) {
-        return ResponseEntity.ok(dangBaiService.getByBaiTapIdForStudent(baiTapId));
+    public ResponseEntity<List<DangBaiStudentResponse>> getByBaiTapIdForStudent(
+            @PathVariable Long baiTapId,
+            @RequestParam(required = false) Long hocSinhId) {
+        return ResponseEntity.ok(dangBaiService.getByBaiTapIdForStudent(baiTapId, hocSinhId));
     }
 
     @PostMapping
@@ -65,5 +67,12 @@ public class DangBaiController {
     public ResponseEntity<Void> deleteDangBai(@PathVariable Integer id) {
         dangBaiService.deleteDangBai(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/nhan-ban")
+    public ResponseEntity<List<DangBaiResponse>> nhanBanDangBai(
+            @RequestParam("baiHocCuId") Integer baiHocCuId,
+            @RequestParam("baiHocMoiId") Integer baiHocMoiId) {
+        return ResponseEntity.ok(dangBaiService.nhanBanDangBai(baiHocCuId, baiHocMoiId));
     }
 }

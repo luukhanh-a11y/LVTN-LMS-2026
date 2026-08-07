@@ -19,7 +19,6 @@ public class BaiTapRequest {
     private LoaiBaiTap loaiBaiTap;
     private LocalDateTime thoiDiemBatDau;
     private LocalDateTime deadline;
-    private Boolean choNopLai;
     private Short soLanNopLaiToiDa;
     private TrangThaiBaiTap trangThai;
 }

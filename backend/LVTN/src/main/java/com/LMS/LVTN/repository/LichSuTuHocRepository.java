@@ -26,4 +26,11 @@ public interface LichSuTuHocRepository extends JpaRepository<LichSuTuHoc, Long> 
     // Tính điểm trung bình lịch sử tự học của một học sinh trong một bài học
     @Query("SELECT AVG(l.diemSo) FROM LichSuTuHoc l WHERE l.hocSinh.hocSinhId = :hocSinhId AND l.dangBai.baiHoc.baiHocId = :baiHocId")
     Optional<BigDecimal> tinhDiemTrungBinhTuHocTrongBaiHoc(@Param("hocSinhId") Long hocSinhId, @Param("baiHocId") Integer baiHocId);
+
+    // Tính điểm trung bình của bài học học sinh tự làm theo môn trong 1 học kỳ
+    @Query("SELECT AVG(l.diemSo) FROM LichSuTuHoc l " +
+           "WHERE l.hocSinh.hocSinhId = :hocSinhId " +
+           "AND l.dangBai.baiHoc.chuDe.sach.monHoc.monHocId = :monHocId " +
+           "AND (l.dangBai.baiHoc.chuDe.sach.hocKy = :hocKy OR l.dangBai.baiHoc.chuDe.sach.hocKy IS NULL OR l.dangBai.baiHoc.chuDe.sach.hocKy = 0)")
+    Optional<BigDecimal> tinhDiemTrungBinhTuHocTheoMonAndHocKy(@Param("hocSinhId") Long hocSinhId, @Param("monHocId") Short monHocId, @Param("hocKy") Short hocKy);
 }

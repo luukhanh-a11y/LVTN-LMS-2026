@@ -48,14 +48,16 @@ public class handleExceptions {
     @ExceptionHandler(value = AppExceptions.class)
     ResponseEntity<ApiResponse> xulyAppexception (AppExceptions exception)
     {
-        Errorcode errorCode=exception.getErrorCode();
+        Errorcode errorCode = exception.getErrorCode();
+        String message = exception.getCustomMessage() != null ? exception.getCustomMessage() : errorCode.getMessage();
         return ResponseEntity.status(errorCode.getStatus()).body(
                 ApiResponse.builder()
                         .code(errorCode.getCode())
-                        .message(errorCode.getMessage())
+                        .message(message)
                         .build()
         );
     }
+
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     ResponseEntity<ApiResponse> xulyValidation(MethodArgumentNotValidException exception) {

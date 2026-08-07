@@ -56,9 +56,6 @@ public class BaiTap {
     @Column(name = "deadline", nullable = false)
     private LocalDateTime deadline;
 
-    @Column(name = "cho_nop_lai", nullable = false)
-    private Boolean choNopLai = false;
-
     @Column(name = "so_lan_nop_lai_toi_da", nullable = false)
     private Short soLanNopLaiToiDa = 1;
 

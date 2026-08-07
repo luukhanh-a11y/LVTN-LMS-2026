@@ -87,4 +87,61 @@ public class BaiHocService {
         baiHocRepository.deleteAllByBaiHocId(id);
         baiHocRepository.deleteById(id);
     }
+
+    @Transactional
+    public List<BaiHocResponse> nhanBanBaiHocKhongDangBai(Integer chuDeCuId, Integer chuDeMoiId) {
+        ChuDe chuDeMoi = chuDeRepository.findById(chuDeMoiId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.CHU_DE_NOT_FOUND));
+
+        List<BaiHoc> baiHocCuList = baiHocRepository.findByChuDe_ChuDeId(chuDeCuId);
+        List<BaiHoc> baiHocMoiList = new java.util.ArrayList<>();
+
+        for (BaiHoc baiHocCu : baiHocCuList) {
+            BaiHoc baiHocMoi = new BaiHoc();
+            baiHocMoi.setChuDe(chuDeMoi);
+            baiHocMoi.setTenBaiHoc(baiHocCu.getTenBaiHoc());
+            baiHocMoi.setTieuDe(baiHocCu.getTieuDe());
+            baiHocMoi.setSlug(baiHocCu.getSlug() != null ? baiHocCu.getSlug() + "-cd" + chuDeMoiId : null);
+            baiHocMoi.setSoTrang(baiHocCu.getSoTrang());
+            baiHocMoi.setSoThuTu(baiHocCu.getSoThuTu());
+            baiHocMoi.setBookIndexIdNgoai(baiHocCu.getBookIndexIdNgoai());
+
+            baiHocMoiList.add(baiHocRepository.save(baiHocMoi));
+        }
+
+        return baiHocMoiList.stream()
+                .map(baiHocMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<BaiHocResponse> nhanBanBaiHocKemDangBai(Integer chuDeCuId, Integer chuDeMoiId) {
+        ChuDe chuDeMoi = chuDeRepository.findById(chuDeMoiId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.CHU_DE_NOT_FOUND));
+
+        List<BaiHoc> baiHocCuList = baiHocRepository.findByChuDe_ChuDeId(chuDeCuId);
+        List<BaiHoc> baiHocMoiList = new java.util.ArrayList<>();
+
+        for (BaiHoc baiHocCu : baiHocCuList) {
+            BaiHoc baiHocMoi = new BaiHoc();
+            baiHocMoi.setChuDe(chuDeMoi);
+            baiHocMoi.setTenBaiHoc(baiHocCu.getTenBaiHoc());
+            baiHocMoi.setTieuDe(baiHocCu.getTieuDe());
+            baiHocMoi.setSlug(baiHocCu.getSlug() != null ? baiHocCu.getSlug() + "-cd" + chuDeMoiId : null);
+            baiHocMoi.setSoTrang(baiHocCu.getSoTrang());
+            baiHocMoi.setSoThuTu(baiHocCu.getSoThuTu());
+            baiHocMoi.setBookIndexIdNgoai(baiHocCu.getBookIndexIdNgoai());
+
+            BaiHoc savedBaiHocMoi = baiHocRepository.save(baiHocMoi);
+            baiHocMoiList.add(savedBaiHocMoi);
+
+            // Gọi qua DangBaiService để nhân bản Dạng bài (chỉ lấy dạng bài Hệ thống)
+            dangBaiService.nhanBanDangBai(baiHocCu.getBaiHocId(), savedBaiHocMoi.getBaiHocId());
+        }
+
+        return baiHocMoiList.stream()
+                .map(baiHocMapper::toResponse)
+                .collect(Collectors.toList());
+    }
 }
+

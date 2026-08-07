@@ -10,6 +10,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping("/api/phieuhotro")
@@ -27,9 +30,13 @@ public class PhieuHoTroController {
     }
 
     @GetMapping
-    public ApiResponse<List<PhieuHoTroResponse>> getAll() {
-        return ApiResponse.<List<PhieuHoTroResponse>>builder()
-                .data(phieuHoTroService.getAll())
+    public ApiResponse<Page<PhieuHoTroResponse>> getAll(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String loaiYeuCau,
+            @RequestParam(required = false) String trangThai,
+            @PageableDefault(size = 15) Pageable pageable) {
+        return ApiResponse.<Page<PhieuHoTroResponse>>builder()
+                .data(phieuHoTroService.searchPhieuHoTro(keyword, loaiYeuCau, trangThai, pageable))
                 .build();
     }
 
@@ -55,17 +62,24 @@ public class PhieuHoTroController {
                 .build();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/nhan-nguoi-dung/{id}")
     public ApiResponse<List<PhieuHoTroResponse>> getAllByIdUserReceive(@PathVariable String id){
         return ApiResponse.<List<PhieuHoTroResponse>>builder()
-
+                .data(phieuHoTroService.getAllByIdUserReceive(id))
                 .build();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/gui-nguoi-dung/{id}")
     public ApiResponse<List<PhieuHoTroResponse>> getAllByIdUserSend(@PathVariable String id){
         return ApiResponse.<List<PhieuHoTroResponse>>builder()
+                .data(phieuHoTroService.getAllByIdUserSend(id))
+                .build();
+    }
 
+    @PutMapping("/{id}/xu-ly")
+    public ApiResponse<PhieuHoTroResponse> xuLyPhieu(@PathVariable Long id, @RequestBody PhieuHoTroRequest request) {
+        return ApiResponse.<PhieuHoTroResponse>builder()
+                .data(phieuHoTroService.xuLyPhieu(id, request))
                 .build();
     }
 }

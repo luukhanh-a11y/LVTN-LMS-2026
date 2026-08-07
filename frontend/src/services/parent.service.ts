@@ -57,5 +57,11 @@ export const parentService = {
   resetChildPassword: async (childId: number, newPassword: string) => {
     const response = await api.post(`/parents/me/children/${childId}/reset-password`, { newPassword });
     return response.data;
+  },
+
+  getDiemTrungBinhMon: async (childId: number, hocKyId: number = 1) => {
+    const response = await api.get(`/thong-ke-diem/hoc-sinh/${childId}/hoc-ky/${hocKyId}`);
+    return response.data?.data || response.data || [];
   }
 };
+

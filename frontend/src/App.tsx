@@ -18,6 +18,7 @@ import AdminImport from './pages/admin/ExcelImport';
 import AdminClasses from './pages/admin/Classes';
 import ClassDetails from './pages/admin/ClassDetails';
 import AdminSettings from './pages/admin/Settings';
+import AdminCurriculum from './pages/admin/Curriculum';
 
 // Pages - Teacher
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -100,6 +101,7 @@ function App() {
           <Route path="classes" element={<AdminClasses />} />
           <Route path="classes/:id" element={<ClassDetails />} />
           <Route path="quiz-authoring" element={<QuizAuthoring />} />
+          <Route path="curriculum" element={<AdminCurriculum />} />
           <Route path="ket-qua-cuoi-nam" element={<AdminKetQuaCuoiNam />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

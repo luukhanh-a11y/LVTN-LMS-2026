@@ -1,4 +1,4 @@
-import { Upload, FileType, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileType, CheckCircle, AlertCircle, Loader2, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
@@ -14,7 +14,12 @@ export default function ExcelImport() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Nhập danh sách Học sinh & Phụ huynh</CardTitle>
+          <CardTitle className="flex justify-between items-center w-full">
+            <span>Nhập danh sách Học sinh & Phụ huynh</span>
+            <Button variant="outline" size="sm" onClick={() => window.open('http://localhost:8080/api/nguoi-dung/export-template', '_blank')}>
+              <Download className="w-4 h-4 mr-2" /> Tải biểu mẫu mẫu
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div
@@ -23,9 +28,37 @@ export default function ExcelImport() {
           >
             <FileType className="w-12 h-12 text-slate-400 mb-4" />
             <h3 className="text-lg font-medium text-slate-700">Tải file Excel (.xlsx) lên đây</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Mẫu file gồm 7 cột: Lớp, Mã HS, Tên HS, Ngày sinh, Tên PH, SĐT PH, Email PH
-            </p>
+            <div className="mb-6 w-full max-w-4xl border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+              <div className="bg-amber-50 border-b border-slate-200 p-2 text-sm text-amber-800 font-medium text-center">
+                Cấu trúc file mẫu bắt buộc (Tải file mẫu ở góc phải trên)
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-100 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-2 border-r border-slate-200">TenLop</th>
+                      <th className="px-4 py-2 border-r border-slate-200">MaHocSinh</th>
+                      <th className="px-4 py-2 border-r border-slate-200">TenHocSinh</th>
+                      <th className="px-4 py-2 border-r border-slate-200">NgaySinh</th>
+                      <th className="px-4 py-2 border-r border-slate-200">TenPhuHuynh</th>
+                      <th className="px-4 py-2 border-r border-slate-200">SDTPhuHuynh</th>
+                      <th className="px-4 py-2 border-r border-slate-200">EmailPhuHuynh</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white text-slate-500 italic">
+                    <tr>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">10A1</td>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">HS001</td>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">Nguyễn Văn A</td>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">2010-01-01</td>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">Nguyễn Văn B</td>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">0912345678</td>
+                      <td className="px-4 py-2 border-r border-slate-200 border-t">phuhuynh@gmail.com</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
             <input
               type="file"
               accept=".xlsx, .xls"

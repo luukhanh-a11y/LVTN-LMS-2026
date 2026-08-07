@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoImportRequest {
 
-    private Long nguoiThucHienId;
+    private String nguoiThucHienId;
     private LoaiImport loaiImport;
     private String tenFile;
 }
+

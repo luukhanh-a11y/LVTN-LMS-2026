@@ -2,6 +2,8 @@ package com.LMS.LVTN.service;
 
 import com.LMS.LVTN.dto.request.NamHocRequest;
 import com.LMS.LVTN.dto.response.NamHocResponse;
+import com.LMS.LVTN.entity.HocKy;
+import com.LMS.LVTN.entity.LopHoc;
 import com.LMS.LVTN.entity.NamHoc;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
@@ -15,6 +17,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.LMS.LVTN.repository.LopHocRepository;
+import com.LMS.LVTN.repository.HocKyRepository;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -22,13 +28,46 @@ public class NamHocService {
 
     NamHocRepository namHocRepository;
     NamHocMapper namHocMapper;
+    LopHocRepository lopHocRepository;
+    HocKyRepository hocKyRepository;
 
+    @Transactional
     public NamHocResponse create(NamHocRequest request) {
         if (namHocRepository.existsByTenNamHoc(request.getTenNamHoc()))
             throw new AppExceptions(Errorcode.DATA_EXISTED);
 
         NamHoc namHoc = namHocMapper.toEntity(request);
-        return namHocMapper.toResponse(namHocRepository.save(namHoc));
+        NamHoc savedNamHoc = namHocRepository.save(namHoc);
+
+        if (request.getCloneTuNamHocId() != null) {
+            NamHoc oldNamHoc = namHocRepository.findById(request.getCloneTuNamHocId())
+                    .orElseThrow(() -> new AppExceptions(Errorcode.NAM_HOC_NOT_FOUND));
+
+            // Clone HocKy
+            List<HocKy> oldHocKys = hocKyRepository.findByNamHoc_NamHocId(oldNamHoc.getNamHocId());
+            for (HocKy oldHk : oldHocKys) {
+                HocKy newHk = new HocKy();
+                newHk.setNamHoc(savedNamHoc);
+                newHk.setSoHocKy(oldHk.getSoHocKy());
+                // Assuming start and end dates can be null or we leave them null for now
+                hocKyRepository.save(newHk);
+            }
+
+            // Clone LopHoc
+            List<LopHoc> oldLopHocs = lopHocRepository.findByNamHoc_TenNamHoc(oldNamHoc.getTenNamHoc());
+            for (LopHoc oldLop : oldLopHocs) {
+                LopHoc newLop = new LopHoc();
+                newLop.setTenLop(oldLop.getTenLop());
+                newLop.setKhoiLop(oldLop.getKhoiLop());
+                newLop.setSiSoToiDa(oldLop.getSiSoToiDa());
+                newLop.setTrangThai(oldLop.getTrangThai());
+                newLop.setNamHoc(savedNamHoc);
+                // GiaoVienChuNhiem is left null for the new year
+                lopHocRepository.save(newLop);
+            }
+        }
+
+        return namHocMapper.toResponse(savedNamHoc);
     }
 
     public List<NamHocResponse> getAll() {

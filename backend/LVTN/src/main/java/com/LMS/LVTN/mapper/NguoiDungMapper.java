@@ -9,6 +9,7 @@ import com.LMS.LVTN.entity.NguoiDung;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
+import org.mapstruct.AfterMapping;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface NguoiDungMapper {
@@ -24,4 +25,5 @@ public interface NguoiDungMapper {
     void updateTrangThaiUser(UpdateTrangThaiUser request, @MappingTarget NguoiDung entity);
 
     void updateRoleUser(UpDateRoleUserRequest request, @MappingTarget NguoiDung entity);
+
 }

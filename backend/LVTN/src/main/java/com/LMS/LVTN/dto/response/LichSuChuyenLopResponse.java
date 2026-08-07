@@ -21,7 +21,7 @@ public class LichSuChuyenLopResponse {
     private String namHocMoi;
     private LyDoChuyenLop lyDo;
     private String ghiChu;
-    private Long nguoiThucHienId;
+    private String nguoiThucHienId;
     private String tenNguoiThucHien; // Flattened
     private LocalDateTime thoiDiemChuyen;
 }

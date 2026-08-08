@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
@@ -23,10 +23,10 @@ public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
 
         PhieuHoTro phieuHoTro = new PhieuHoTro();
 
-        phieuHoTro.setGhiChuXuLy( request.getGhiChuXuLy() );
         phieuHoTro.setLoaiYeuCau( request.getLoaiYeuCau() );
         phieuHoTro.setMoTa( request.getMoTa() );
         phieuHoTro.setTrangThai( request.getTrangThai() );
+        phieuHoTro.setGhiChuXuLy( request.getGhiChuXuLy() );
 
         return phieuHoTro;
     }
@@ -45,13 +45,13 @@ public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
         phieuHoTroResponse.setTenNguoiDungLienQuan( entityNguoiDungLienQuanTenDangNhap( entity ) );
         phieuHoTroResponse.setAdminXuLyId( entityAdminXuLyNguoiDungId( entity ) );
         phieuHoTroResponse.setTenAdminXuLy( entityAdminXuLyTenDangNhap( entity ) );
-        phieuHoTroResponse.setGhiChuXuLy( entity.getGhiChuXuLy() );
+        phieuHoTroResponse.setPhieuId( entity.getPhieuId() );
         phieuHoTroResponse.setLoaiYeuCau( entity.getLoaiYeuCau() );
         phieuHoTroResponse.setMoTa( entity.getMoTa() );
+        phieuHoTroResponse.setTrangThai( entity.getTrangThai() );
+        phieuHoTroResponse.setGhiChuXuLy( entity.getGhiChuXuLy() );
         phieuHoTroResponse.setNgayTao( entity.getNgayTao() );
         phieuHoTroResponse.setNgayXuLy( entity.getNgayXuLy() );
-        phieuHoTroResponse.setPhieuId( entity.getPhieuId() );
-        phieuHoTroResponse.setTrangThai( entity.getTrangThai() );
 
         return phieuHoTroResponse;
     }
@@ -62,9 +62,6 @@ public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
             return;
         }
 
-        if ( request.getGhiChuXuLy() != null ) {
-            entity.setGhiChuXuLy( request.getGhiChuXuLy() );
-        }
         if ( request.getLoaiYeuCau() != null ) {
             entity.setLoaiYeuCau( request.getLoaiYeuCau() );
         }
@@ -73,6 +70,9 @@ public class PhieuHoTroMapperImpl implements PhieuHoTroMapper {
         }
         if ( request.getTrangThai() != null ) {
             entity.setTrangThai( request.getTrangThai() );
+        }
+        if ( request.getGhiChuXuLy() != null ) {
+            entity.setGhiChuXuLy( request.getGhiChuXuLy() );
         }
     }
 

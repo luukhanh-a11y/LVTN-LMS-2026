@@ -75,4 +75,17 @@ public class CauHinhHeThongService {
         }
         cauHinhHeThongRepository.deleteById(id);
     }
+
+    // Đổi riêng trạng thái đợt đánh giá cuối năm — không đi qua mapper cập nhật chung
+    // để tránh SET_TO_NULL các field khác (tenTruong, logoUrl...) khi request chỉ có 2 field này.
+    @Transactional
+    public CauHinhHeThongResponse setDotDanhGia(Short id, boolean dangMo, String namHoc) {
+        CauHinhHeThong cauHinh = cauHinhHeThongRepository.findById(id)
+                .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+
+        cauHinh.setDanhGiaCuoiNamDangMo(dangMo);
+        cauHinh.setNamHocDanhGia(namHoc);
+
+        return cauHinhHeThongMapper.toResponse(cauHinhHeThongRepository.save(cauHinh));
+    }
 }

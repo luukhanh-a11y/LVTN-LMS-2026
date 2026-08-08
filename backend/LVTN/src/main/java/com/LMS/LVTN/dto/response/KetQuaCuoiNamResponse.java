@@ -27,4 +27,5 @@ public class KetQuaCuoiNamResponse {
     private String tenGiaoVienXet; // Flattened
     private LocalDate ngayXet;
     private String ghiChu;
+    private Boolean daDuyet;
 }

@@ -14,6 +14,7 @@ public interface SachMapper {
 
     @Mapping(source = "monHoc.monHocId", target = "monHocId")
     @Mapping(source = "monHoc.tenMon", target = "tenMonHoc")
+    @Mapping(source = "hocKyCuThe.hocKyId", target = "hocKyCuTheId")
     SachResponse toResponse(Sach entity);
 
     void updateSach(SachRequest request, @org.mapstruct.MappingTarget Sach entity);

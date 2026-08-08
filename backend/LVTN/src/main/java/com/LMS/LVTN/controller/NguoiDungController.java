@@ -52,9 +52,10 @@ public class NguoiDungController {
             @RequestParam(required = false) Long classId,
             @RequestParam(required = false) Integer grade,
             @RequestParam(required = false) String subject,
+            @RequestParam(required = false) Integer namHocId,
             @PageableDefault(size = 15) Pageable pageable) {
         return ApiResponse.<Page<NguoiDungResponse>>builder()
-                .data(nguoiDungService.searchNguoiDung(token, role, keyword, status, classId, grade, subject, pageable))
+                .data(nguoiDungService.searchNguoiDung(token, role, keyword, status, classId, grade, subject, namHocId, pageable))
                 .build();
     }
 

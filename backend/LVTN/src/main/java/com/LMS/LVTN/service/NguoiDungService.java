@@ -41,7 +41,7 @@ public class NguoiDungService {
     AuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
-    public Page<NguoiDungResponse> searchNguoiDung(String token, String role, String keyword, String status, Long classId, Integer grade, String subject, Pageable pageable) {
+    public Page<NguoiDungResponse> searchNguoiDung(String token, String role, String keyword, String status, Long classId, Integer grade, String subject, Integer namHocId, Pageable pageable) {
         try {
             String nguoiDungId = authenticationService.getMaNguoiDungFromToken(token);
             NguoiDung admin = nguoiDungRepository.findById(nguoiDungId).orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
@@ -68,6 +68,58 @@ public class NguoiDungService {
                 predicates.add(cb.or(tenDangNhap, cb.like(cb.lower(root.get("email")), kw)));
             }
 
+            if (classId != null) {
+                if ("HOC_SINH".equals(role)) {
+                    Join<Object, Object> hs = root.join("hoSoHocSinh", JoinType.LEFT);
+                    Join<Object, Object> lop = hs.join("lopHoc", JoinType.LEFT);
+                    predicates.add(cb.equal(lop.get("lopHocId"), classId));
+                } else if ("PHU_HUYNH".equals(role)) {
+                    Join<Object, Object> ph = root.join("hoSoPhuHuynh", JoinType.LEFT);
+                    Join<Object, Object> phhs = ph.join("phuHuynhHocSinhs", JoinType.LEFT);
+                    Join<Object, Object> hs = phhs.join("hocSinh", JoinType.LEFT);
+                    Join<Object, Object> lop = hs.join("lopHoc", JoinType.LEFT);
+                    predicates.add(cb.equal(lop.get("lopHocId"), classId));
+                } else if ("GIAO_VIEN".equals(role)) {
+                    Join<Object, Object> gv = root.join("hoSoGiaoVien", JoinType.LEFT);
+                    Join<Object, Object> pc = gv.join("phanCongGiangDays", JoinType.LEFT);
+                    Join<Object, Object> lop = pc.join("lopHoc", JoinType.LEFT);
+                    predicates.add(cb.equal(lop.get("lopHocId"), classId));
+                }
+            }
+            if (grade != null && "HOC_SINH".equals(role)) {
+                Join<Object, Object> hs = root.join("hoSoHocSinh", JoinType.LEFT);
+                Join<Object, Object> lop = hs.join("lopHoc", JoinType.LEFT);
+                predicates.add(cb.equal(lop.get("khoiLop"), grade));
+            }
+            if (subject != null && !subject.isEmpty() && !subject.equals("all") && "GIAO_VIEN".equals(role)) {
+                Join<Object, Object> gv = root.join("hoSoGiaoVien", JoinType.LEFT);
+                predicates.add(cb.equal(gv.get("boMon"), subject));
+            }
+
+            // Lọc theo năm học đang xem — học sinh/phụ huynh/giáo viên gắn năm học gián tiếp qua Lớp học.
+            if (namHocId != null) {
+                if ("HOC_SINH".equals(role)) {
+                    Join<Object, Object> hs = root.join("hoSoHocSinh", JoinType.LEFT);
+                    Join<Object, Object> lop = hs.join("lopHoc", JoinType.LEFT);
+                    Join<Object, Object> nh = lop.join("namHoc", JoinType.LEFT);
+                    predicates.add(cb.equal(nh.get("namHocId"), namHocId));
+                } else if ("PHU_HUYNH".equals(role)) {
+                    Join<Object, Object> ph = root.join("hoSoPhuHuynh", JoinType.LEFT);
+                    Join<Object, Object> phhs = ph.join("phuHuynhHocSinhs", JoinType.LEFT);
+                    Join<Object, Object> hs = phhs.join("hocSinh", JoinType.LEFT);
+                    Join<Object, Object> lop = hs.join("lopHoc", JoinType.LEFT);
+                    Join<Object, Object> nh = lop.join("namHoc", JoinType.LEFT);
+                    predicates.add(cb.equal(nh.get("namHocId"), namHocId));
+                } else if ("GIAO_VIEN".equals(role)) {
+                    Join<Object, Object> gv = root.join("hoSoGiaoVien", JoinType.LEFT);
+                    Join<Object, Object> pc = gv.join("phanCongGiangDays", JoinType.LEFT);
+                    Join<Object, Object> lop = pc.join("lopHoc", JoinType.LEFT);
+                    Join<Object, Object> nh = lop.join("namHoc", JoinType.LEFT);
+                    predicates.add(cb.equal(nh.get("namHocId"), namHocId));
+                }
+            }
+
+            query.distinct(true);
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 

@@ -1,10 +1,12 @@
 import { X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { ticketService } from '../../services/ticket.service';
+import { academicService, type NamHoc } from '../../services/academic.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 import toast from 'react-hot-toast';
 
 export default function AdminTickets() {
@@ -13,6 +15,25 @@ export default function AdminTickets() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
+  const [namHocs, setNamHocs] = useState<NamHoc[]>([]);
+  const selectedNamHoc = useAcademicStore((s) => s.selectedNamHoc);
+
+  useEffect(() => {
+    academicService.getNamHocs().then(setNamHocs).catch(() => setNamHocs([]));
+  }, []);
+
+  // Phiếu hỗ trợ không gắn năm học trong DB — lọc theo khoảng ngày: từ ngày bắt đầu năm
+  // học đang xem tới ngày bắt đầu năm học kế tiếp (tránh khoảng trống giữa 2 năm học).
+  const namHocDateRange = useMemo(() => {
+    if (!selectedNamHoc || namHocs.length === 0) return null;
+    const sorted = [...namHocs].sort((a, b) => new Date(a.ngayBatDau).getTime() - new Date(b.ngayBatDau).getTime());
+    const idx = sorted.findIndex((nh) => nh.tenNamHoc === selectedNamHoc);
+    if (idx === -1) return null;
+    return {
+      start: new Date(sorted[idx].ngayBatDau),
+      end: idx + 1 < sorted.length ? new Date(sorted[idx + 1].ngayBatDau) : null,
+    };
+  }, [selectedNamHoc, namHocs]);
 
   // Filters
   const [filterStudent, setFilterStudent] = useState('');
@@ -29,6 +50,11 @@ export default function AdminTickets() {
     if (filterDate) {
       const ticketDate = new Date(t.createdAt).toISOString().split('T')[0];
       if (ticketDate !== filterDate) return false;
+    }
+    if (namHocDateRange) {
+      const createdAt = new Date(t.createdAt);
+      if (createdAt < namHocDateRange.start) return false;
+      if (namHocDateRange.end && createdAt >= namHocDateRange.end) return false;
     }
     return true;
   });

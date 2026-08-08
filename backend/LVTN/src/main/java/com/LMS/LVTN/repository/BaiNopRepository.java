@@ -13,7 +13,8 @@ import java.util.Optional;
 public interface BaiNopRepository extends JpaRepository<BaiNop, Long> {
     List<BaiNop> findByBaiTap_BaiTapId(Long baiTapId);
     List<BaiNop> findByHocSinh_HocSinhId(Long hocSinhId);
-    
+    List<BaiNop> findByHocSinh_HocSinhIdIn(List<Long> hocSinhIds);
+
     long countByHocSinh_HocSinhId(Long hocSinhId);
     long countByHocSinh_HocSinhIdAndLaNopTreFalse(Long hocSinhId);
     long countByBaiTap_BaiTapIdAndHocSinh_HocSinhId(Long baiTapId, Long hocSinhId);

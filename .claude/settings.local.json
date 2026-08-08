@@ -141,7 +141,12 @@
       "Bash(powershell -Command \"Get-Process -Id 21720,18896 | Select-Object Id,ProcessName,Path\")",
       "Bash(powershell -Command \"Stop-Process -Id 18896,21720 -Force\")",
       "Bash(powershell -Command \"Get-Process -Id 6236 | Select-Object Id,ProcessName,Path\")",
-      "Bash(powershell -Command \"Stop-Process -Id 6236 -Force\")"
+      "Bash(powershell -Command \"Stop-Process -Id 6236 -Force\")",
+      "Bash(./mvnw.cmd -q -o compile)",
+      "Bash(echo \"RESULT=$?\")",
+      "Bash(echo \"BACKEND_RESULT=$?\")",
+      "Bash(echo \"BACKEND=$?\")",
+      "Bash(\"/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe\" -uroot -proot -h127.0.0.1 -P3306 lms1 --default-character-set=utf8mb4 -e \"DESCRIBE sach;\")"
     ]
   }
 }

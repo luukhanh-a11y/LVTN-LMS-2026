@@ -45,7 +45,10 @@ public enum Errorcode {
     OTP_EXPIRED(1030, "Mã OTP đã hết hạn", HttpStatus.BAD_REQUEST),
     SEND_EMAIL_FAILED(1031, "Không thể gửi email, vui lòng kiểm tra lại cấu hình", HttpStatus.INTERNAL_SERVER_ERROR),
     ACCESS_DENIED(1031, "bạn đã bị từ chối", HttpStatus.INTERNAL_SERVER_ERROR),
-    LICH_SU_CHUYEN_LOP_EXISTED(1032, "Học sinh này đã được chuyển lớp trong năm học mới", HttpStatus.CONFLICT);
+    LICH_SU_CHUYEN_LOP_EXISTED(1032, "Học sinh này đã được chuyển lớp trong năm học mới", HttpStatus.CONFLICT),
+    BAI_NOP_NOT_FOUND(1033, "Bài nộp không tồn tại", HttpStatus.NOT_FOUND),
+    GOI_Y_AI_NHAN_XET_NOT_FOUND(1034, "Gợi ý nhận xét không tồn tại", HttpStatus.NOT_FOUND),
+    LOP_HOC_CHU_NHIEM_NOT_FOUND(1035, "Bạn chưa là giáo viên chủ nhiệm của lớp nào để xem báo cáo", HttpStatus.NOT_FOUND);
 
     private int code;
 

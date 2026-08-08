@@ -57,7 +57,9 @@ com\LMS\LVTN\repository\LichSuChuyenLopRepository.class
 com\LMS\LVTN\repository\BaiHocRepository.class
 com\LMS\LVTN\repository\MonHocRepository.class
 com\LMS\LVTN\mapper\ChuDeMapper.class
+com\LMS\LVTN\dto\response\GoiYAiNhanXetResponse$GoiYAiNhanXetResponseBuilder.class
 com\LMS\LVTN\enums\LoaiBaiTap.class
+com\LMS\LVTN\controller\BaoCaoAiBuoiSangController.class
 com\LMS\LVTN\repository\ThongBaoRepository.class
 com\LMS\LVTN\entity\HopThuThongBao.class
 com\LMS\LVTN\dto\response\TienDoHocSinhResponse.class
@@ -76,6 +78,7 @@ com\LMS\LVTN\mapper\HocKyMapper.class
 com\LMS\LVTN\service\PhuHuynhHocSinhService.class
 com\LMS\LVTN\enums\NguonGoc.class
 com\LMS\LVTN\controller\HoSoPhuHuynhController.class
+com\LMS\LVTN\dto\response\BaoCaoAiBuoiSangResponse$BaoCaoAiBuoiSangResponseBuilder.class
 com\LMS\LVTN\dto\response\HoSoHocSinhResponse.class
 com\LMS\LVTN\entity\HoSoGiaoVien.class
 com\LMS\LVTN\mapper\BaiHocMapper.class
@@ -103,6 +106,7 @@ com\LMS\LVTN\dto\response\CauHinhHeThongResponse.class
 com\LMS\LVTN\repository\KetQuaCuoiNamRepository.class
 com\LMS\LVTN\dto\response\DangBaiStudentResponse.class
 com\LMS\LVTN\mapper\HoSoGiaoVienMapper.class
+com\LMS\LVTN\service\GoiYAiBaiTapService.class
 com\LMS\LVTN\repository\HuyHieuRepository.class
 com\LMS\LVTN\service\CauHinhHeThongService.class
 com\LMS\LVTN\dto\request\HoSoGiaoVienRequest.class
@@ -110,12 +114,14 @@ com\LMS\LVTN\dto\response\PhanCongGiangDayResponse.class
 com\LMS\LVTN\mapper\HopThuThongBaoMapper.class
 com\LMS\LVTN\dto\response\HoSoGiaoVienResponse.class
 com\LMS\LVTN\dto\request\BaiNopRequest.class
+com\LMS\LVTN\controller\GoiYAiNhanXetController.class
 com\LMS\LVTN\mapper\PhanCongGiangDayMapper.class
 com\LMS\LVTN\entity\CauHinhHeThong.class
 com\LMS\LVTN\enums\LoaiNoiDung.class
 com\LMS\LVTN\dto\request\UpdateTrangThaiUser.class
 com\LMS\LVTN\dto\response\IntrospectResponse$IntrospectResponseBuilder.class
 com\LMS\LVTN\dto\request\NamHocRequest.class
+com\LMS\LVTN\dto\response\BaoCaoAiBuoiSangResponse.class
 com\LMS\LVTN\enums\LoaiImport.class
 com\LMS\LVTN\mapper\LoImportMapperImpl.class
 com\LMS\LVTN\service\HoSoPhuHuynhService.class
@@ -139,6 +145,7 @@ com\LMS\LVTN\controller\CauHinhHeThongController.class
 com\LMS\LVTN\controller\ThongBaoController.class
 com\LMS\LVTN\service\HoSoGiaoVienService.class
 com\LMS\LVTN\entity\PhieuHoTro.class
+com\LMS\LVTN\repository\GoiYAiNhanXetRepository.class
 com\LMS\LVTN\dto\request\LogoutRequest$LogoutRequestBuilder.class
 com\LMS\LVTN\enums\GioiTinh.class
 com\LMS\LVTN\repository\NamHocRepository.class
@@ -170,6 +177,7 @@ com\LMS\LVTN\mapper\LoImportMapper.class
 com\LMS\LVTN\enums\LoaiHuyHieu.class
 com\LMS\LVTN\controller\HoSoGiaoVienController.class
 com\LMS\LVTN\dto\response\BaiHocResponse.class
+com\LMS\LVTN\dto\request\GoiYAiBaiTapRequest.class
 com\LMS\LVTN\repository\HoSoHocSinhRepository.class
 com\LMS\LVTN\repository\BaiTapRepository.class
 com\LMS\LVTN\controller\KetQuaCuoiNamController.class
@@ -194,6 +202,7 @@ com\LMS\LVTN\repository\DanhGiaBaiLamRepository.class
 com\LMS\LVTN\service\BaiHocService.class
 com\LMS\LVTN\dto\request\IntrospectRequest.class
 com\LMS\LVTN\service\KetQuaCuoiNamService.class
+com\LMS\LVTN\repository\BaoCaoAiBuoiSangRepository.class
 com\LMS\LVTN\service\SachService.class
 com\LMS\LVTN\mapper\TienDoHocSinhMapper.class
 com\LMS\LVTN\dto\response\ApiResponse.class
@@ -214,8 +223,10 @@ com\LMS\LVTN\dto\request\HuyHieuRequest.class
 com\LMS\LVTN\dto\request\PhanCongGiangDayRequest.class
 com\LMS\LVTN\dto\response\PhuHuynhHocSinhResponse.class
 com\LMS\LVTN\service\ChuDeService.class
+com\LMS\LVTN\service\BaoCaoAiBuoiSangService.class
 com\LMS\LVTN\mapper\HoSoHocSinhMapperImpl.class
 com\LMS\LVTN\mapper\TienDoHocSinhMapperImpl.class
+com\LMS\LVTN\dto\request\KetQuaCuoiNamDuyetRequest.class
 com\LMS\LVTN\repository\NguoiDungRepository.class
 com\LMS\LVTN\service\TokenCleanupService.class
 com\LMS\LVTN\repository\DangBaiRepository.class
@@ -236,6 +247,7 @@ com\LMS\LVTN\enums\TrangThaiGoiY.class
 com\LMS\LVTN\repository\HopThuThongBaoRepository.class
 com\LMS\LVTN\dto\request\KhenThuongHocSinhRequest.class
 com\LMS\LVTN\service\DanhGiaBaiLamService.class
+com\LMS\LVTN\entity\BaoCaoAiBuoiSang.class
 com\LMS\LVTN\enums\LyDoChuyenLop.class
 com\LMS\LVTN\enums\VaiTro.class
 com\LMS\LVTN\entity\LichSuTuHoc.class
@@ -263,6 +275,7 @@ com\LMS\LVTN\mapper\PhuHuynhHocSinhMapper.class
 com\LMS\LVTN\dto\request\LogoutRequest.class
 com\LMS\LVTN\enums\LoaiSach.class
 com\LMS\LVTN\exception\handleExceptions.class
+com\LMS\LVTN\service\GoiYAiNhanXetService.class
 com\LMS\LVTN\dto\game\specialized\NoiDungNoiCap.class
 com\LMS\LVTN\dto\response\LichSuChuyenLopResponse.class
 com\LMS\LVTN\mapper\ChuDeMapperImpl.class
@@ -270,14 +283,19 @@ com\LMS\LVTN\entity\HoSoHocSinh.class
 com\LMS\LVTN\exception\Errorcode.class
 com\LMS\LVTN\dto\request\MonHocRequest.class
 com\LMS\LVTN\dto\response\ChuDeResponse.class
+com\LMS\LVTN\service\OllamaClient.class
+com\LMS\LVTN\dto\response\GoiYAiNhanXetResponse.class
 com\LMS\LVTN\controller\BaiTapController.class
 com\LMS\LVTN\enums\TrangThaiBaiNop.class
+com\LMS\LVTN\controller\GoiYAiBaiTapController.class
+com\LMS\LVTN\entity\GoiYAiNhanXet.class
 com\LMS\LVTN\service\GameService.class
 com\LMS\LVTN\controller\ChuDeController.class
 com\LMS\LVTN\controller\SachController.class
 com\LMS\LVTN\entity\DanhGiaBaiLam.class
 com\LMS\LVTN\mapper\KhenThuongHocSinhMapperImpl.class
 com\LMS\LVTN\dto\response\SachResponse.class
+com\LMS\LVTN\dto\response\GoiYAiBaiTapResponse.class
 com\LMS\LVTN\mapper\BaiNopMapperImpl.class
 com\LMS\LVTN\controller\LichSuChuyenLopController.class
 com\LMS\LVTN\entity\PhuHuynhHocSinh.class

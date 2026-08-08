@@ -31,6 +31,11 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
 
   // Lý thuyết & Tự luận
   const [noiDung, setNoiDung] = useState('');
+  
+  // Media chung
+  const [hinhAnh, setHinhAnh] = useState('');
+  const [amThanh, setAmThanh] = useState('');
+  const [video, setVideo] = useState('');
 
   // Trắc nghiệm (Đào Vàng, Đuổi bắt, etc)
   const [cauHoi, setCauHoi] = useState('');
@@ -82,6 +87,10 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
           setGiaoDien(parsed.giaoDien || 'MAC_DINH');
         }
 
+        setHinhAnh(parsed.hinhAnh || '');
+        setAmThanh(parsed.amThanh || '');
+        setVideo(parsed.video || '');
+
         if (type === 'LY_THUYET' || type === 'TU_LUAN') {
           setNoiDung(parsed.noiDung || '');
         } else if (type === 'TRAC_NGHIEM') {
@@ -110,6 +119,9 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
       setTitle('');
       setCauHoi('');
       setNoiDung('');
+      setHinhAnh('');
+      setAmThanh('');
+      setVideo('');
       setGiaoDien('MAC_DINH');
       setLoai('TRAC_NGHIEM');
       setXp(10);
@@ -131,6 +143,9 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
       
       setNoiDung('');
       setCauHoi('');
+      setHinhAnh('');
+      setAmThanh('');
+      setVideo('');
       setLuaChon([{ id: uid(), noiDung: '' }, { id: uid(), noiDung: '' }]);
       setDapAnDungId('');
       setCotTrai([{ id: uid(), noiDung: '' }]);
@@ -145,37 +160,19 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
     let dapAnChuan = {};
 
     if (loai === 'LY_THUYET' || loai === 'TU_LUAN') {
-      duLieuGame = {
-        loai: loai,
-        noiDung
-      };
+      duLieuGame = { loai, noiDung, hinhAnh, amThanh, video };
       dapAnChuan = {};
     } else if (loai === 'TRAC_NGHIEM') {
-      duLieuGame = {
-        loai: 'TRAC_NGHIEM',
-        cauHoi,
-        giaoDien,
-        danhSachLuaChon: luaChon
-      };
+      duLieuGame = { loai: 'TRAC_NGHIEM', cauHoi, giaoDien, hinhAnh, amThanh, video, danhSachLuaChon: luaChon };
       dapAnChuan = { dapAnDungId };
     } else if (loai === 'NOI_CAP') {
-      duLieuGame = {
-        loai: 'NOI_CAP',
-        cauHoi: title,
-        giaoDien,
-        cotTrai,
-        cotPhai
-      };
+      duLieuGame = { loai: 'NOI_CAP', cauHoi: title, giaoDien, hinhAnh, amThanh, video, cotTrai, cotPhai };
       dapAnChuan = { danhSachCapDung: capDung };
     } else if (loai === 'DIEN_KHUYET') {
       duLieuGame = {
-        loai: 'DIEN_KHUYET',
-        cauHoi: title,
-        giaoDien,
+        loai: 'DIEN_KHUYET', cauHoi: title, giaoDien, hinhAnh, amThanh, video,
         danhSachCho: danhSachCho.map(c => ({
-          id: c.id,
-          vanBanTruoc: c.vanBanTruoc,
-          vanBanSau: c.vanBanSau
+          id: c.id, vanBanTruoc: c.vanBanTruoc, vanBanSau: c.vanBanSau
         }))
       };
       dapAnChuan = {
@@ -222,6 +219,14 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
   };
 
   // --- Render Functions cho từng Loại ---
+  const renderMediaFields = () => (
+    <div className="grid grid-cols-3 gap-4 mb-6">
+      <Input label="URL Hình ảnh (Tùy chọn)" placeholder="https://..." value={hinhAnh} onChange={(e) => setHinhAnh(e.target.value)} />
+      <Input label="URL Âm thanh (Tùy chọn)" placeholder="https://..." value={amThanh} onChange={(e) => setAmThanh(e.target.value)} />
+      <Input label="URL Video (Tùy chọn)" placeholder="https://..." value={video} onChange={(e) => setVideo(e.target.value)} />
+    </div>
+  );
+
   const renderHocLieuThuan = () => (
     <div className="space-y-4">
       <div className="space-y-3">
@@ -554,6 +559,7 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
           <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
             Cấu hình Nội dung: {loai}
           </h3>
+          {renderMediaFields()}
           {(loai === 'LY_THUYET' || loai === 'TU_LUAN') && renderHocLieuThuan()}
           {loai === 'TRAC_NGHIEM' && renderTracNghiem()}
           {loai === 'NOI_CAP' && renderNoiCap()}

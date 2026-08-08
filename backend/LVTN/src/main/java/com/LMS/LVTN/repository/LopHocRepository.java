@@ -12,4 +12,5 @@ import org.springframework.data.domain.Pageable;
 public interface LopHocRepository extends JpaRepository<LopHoc, Long>, JpaSpecificationExecutor<LopHoc> {
     Page<LopHoc> findAll(Pageable pageable);
     java.util.List<LopHoc> findByNamHoc_TenNamHoc(String tenNamHoc);
+    java.util.List<LopHoc> findByGiaoVienChuNhiem_GiaoVienId(Long giaoVienId);
 }

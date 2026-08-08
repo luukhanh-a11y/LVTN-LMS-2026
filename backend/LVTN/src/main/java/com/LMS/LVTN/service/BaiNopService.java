@@ -3,6 +3,7 @@ package com.LMS.LVTN.service;
 import com.LMS.LVTN.dto.request.BaiNopRequest;
 import com.LMS.LVTN.dto.response.BaiNopResponse;
 import com.LMS.LVTN.entity.*;
+import com.LMS.LVTN.enums.HanhDongDanhGia;
 import com.LMS.LVTN.enums.LoaiBaiTap;
 import com.LMS.LVTN.enums.TrangThaiBaiNop;
 import com.LMS.LVTN.exception.AppExceptions;
@@ -32,6 +33,7 @@ public class BaiNopService {
     BaiNopMapper baiNopMapper;
     BaiTapRepository baiTapRepository;
     HoSoHocSinhRepository hoSoHocSinhRepository;
+    DanhGiaBaiLamRepository danhGiaBaiLamRepository;
 
     ChiTietBaiTapRepository chiTietBaiTapRepository;
     GameService gameService;
@@ -54,7 +56,9 @@ public class BaiNopService {
 
         long soLanDaLam = baiNopRepository.countByBaiTap_BaiTapIdAndHocSinh_HocSinhId(baiTap.getBaiTapId(), hocSinh.getHocSinhId());
         if (baiTap.getSoLanNopLaiToiDa() != null && baiTap.getSoLanNopLaiToiDa() != -1) {
-            long tongSoLanChoPhep = 1 + (baiTap.getSoLanNopLaiToiDa() > 0 ? baiTap.getSoLanNopLaiToiDa() : 0);
+            long soLuotYeuCauLamLai = danhGiaBaiLamRepository.countByBaiNop_BaiTap_BaiTapIdAndBaiNop_HocSinh_HocSinhIdAndHanhDong(
+                    baiTap.getBaiTapId(), hocSinh.getHocSinhId(), HanhDongDanhGia.YC_LAM_LAI);
+            long tongSoLanChoPhep = 1 + (baiTap.getSoLanNopLaiToiDa() > 0 ? baiTap.getSoLanNopLaiToiDa() : 0) + soLuotYeuCauLamLai;
             if (soLanDaLam >= tongSoLanChoPhep) {
                 throw new AppExceptions(Errorcode.VUOT_QUA_SO_LAN_NOP_TOI_DA);
             }

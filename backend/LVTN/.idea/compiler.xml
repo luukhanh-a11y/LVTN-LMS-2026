@@ -9,8 +9,9 @@
         <outputRelativeToContentRoot value="true" />
       </profile>
       <profile name="Annotation profile for LVTN" enabled="true">
-        <sourceOutputDir name="../generated-sources/annotations" />
-        <sourceTestOutputDir name="../generated-test-sources/test-annotations" />
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok-mapstruct-binding/0.2.0/lombok-mapstruct-binding-0.2.0.jar" />
@@ -18,6 +19,7 @@
         </processorPath>
         <module name="LVTN.main" />
         <module name="LVTN.test" />
+        <module name="LVTN" />
       </profile>
     </annotationProcessing>
   </component>

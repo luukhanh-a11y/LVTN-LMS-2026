@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Settings, BookOpen,
-  FileText, Award, Bell, Upload, ShieldCheck, MessageSquare, Repeat, ListChecks, GraduationCap, ChevronLeft, ChevronRight,
+  FileText, Award, Bell, Upload, ShieldCheck, MessageSquare, Repeat, GraduationCap, ChevronLeft, ChevronRight,
   type LucideIcon
 } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
@@ -10,6 +10,7 @@ import { useParentContextStore } from '../stores/useParentContextStore';
 import { userService } from '../services/user.service';
 import { ticketService } from '../services/ticket.service';
 import { cn } from '../lib/utils';
+import SchoolFooter from '../components/layout/SchoolFooter';
 
 type Role = 'admin' | 'teacher' | 'parent';
 
@@ -111,21 +112,17 @@ export default function DashboardLayout({ role }: { role: Role }) {
       { name: 'Phiếu hỗ trợ', path: '/admin/tickets', icon: Bell, badge: pendingTicketsCount },
       { name: 'Lớp học', path: '/admin/classes', icon: BookOpen },
       { name: 'Chương trình học', path: '/admin/curriculum', icon: FileText },
-      { name: 'Nhập liệu', path: '/admin/import', icon: Upload },
-      { name: 'Kết quả cuối năm', path: '/admin/ket-qua-cuoi-nam', icon: GraduationCap },
-      { name: 'Cấu hình chung', path: '/admin/settings', icon: Settings },
+      { name: 'Học vụ', path: '/admin/settings', icon: Settings },
     ],
     teacher: [
       { name: 'Tổng quan', path: '/teacher', icon: LayoutDashboard },
       { name: 'Lớp học', path: '/teacher/classes', icon: Users },
       { name: 'Bảng tin', path: '/teacher/announcements', icon: Bell },
       { name: 'Kho học liệu', path: '/teacher/materials', icon: BookOpen },
-      { name: 'Soạn quiz bộ sách', path: '/teacher/quiz-authoring', icon: ListChecks },
       { name: 'Xét lên lớp', path: '/teacher/ket-qua-cuoi-nam', icon: GraduationCap },
-      { name: 'Giao bài tập', path: '/teacher/assignments', icon: FileText },
       { name: 'Chấm bài', path: '/teacher/grading', icon: Award },
       { name: 'Sổ điểm', path: '/teacher/reports', icon: FileText },
-      { name: 'Phiếu hỗ trợ', path: '/teacher/tickets', icon: MessageSquare, badge: teacherTicketsCount },
+      { name: 'Hỗ trợ', path: '/teacher/tickets', icon: MessageSquare, badge: teacherTicketsCount },
     ],
     parent: [
       { name: 'Tổng quan', path: '/parent', icon: LayoutDashboard },
@@ -247,13 +244,16 @@ export default function DashboardLayout({ role }: { role: Role }) {
       {/* Main Content Area */}
       <main className={cn("flex-1 min-w-0 min-h-[100dvh] relative flex flex-col transition-all duration-300", isCollapsed ? "ml-20" : "ml-72")}>
         {/* Global Academic Year Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-end px-8 sticky top-0 z-30 shadow-sm">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-end px-8 sticky top-0 z-30 shadow-sm gap-4">
+           {role === 'parent' && <ChildSelector />}
            <AcademicYearSelector />
         </header>
 
         <div className="p-10 max-w-[1400px] w-full mx-auto flex-1">
           <Outlet />
         </div>
+
+        {role === 'teacher' && <SchoolFooter />}
       </main>
     </div>
   );
@@ -261,22 +261,33 @@ export default function DashboardLayout({ role }: { role: Role }) {
 
 // Global Component for Academic Year Dropdown
 import { useAcademicStore } from '../stores/useAcademicStore';
-import { academicService } from '../services/academic.service';
+import { academicService, type NamHoc } from '../services/academic.service';
 import { Calendar } from 'lucide-react';
 
 function AcademicYearSelector() {
-  const { selectedNamHoc, setNamHoc, currentNamHoc, isReadOnly } = useAcademicStore();
-  const [namHocs, setNamHocs] = useState<any[]>([]);
+  const { selectedNamHocId, setNamHoc, isReadOnly } = useAcademicStore();
+  const [namHocs, setNamHocs] = useState<NamHoc[]>([]);
 
   useEffect(() => {
-    academicService.getNamHocs().then(data => {
-      setNamHocs(data);
-      // Auto set current year if not set
-      if (data.length > 0 && !currentNamHoc) {
-        useAcademicStore.getState().setCurrentNamHoc(data[0].tenNamHoc);
-      }
+    academicService.getNamHocs().then((list) => {
+      setNamHocs(list);
+      // Nguồn thật duy nhất cho "năm học / học kỳ hiện tại" là Cấu hình hệ thống —
+      // CauHinhHeThong chỉ trả tên nên phải khớp lại với danh sách để lấy id + ngày bắt đầu.
+      academicService.getCauHinhHeThong().then(cauHinh => {
+        const current = list.find((nh) => nh.tenNamHoc === cauHinh.tenNamHocHienTai);
+        if (current) {
+          useAcademicStore.getState().setCurrentNamHoc(current.tenNamHoc, current.namHocId, current.ngayBatDau);
+        }
+        useAcademicStore.getState().setCurrentHocKy(cauHinh.hocKyHienTaiId);
+      }).catch(console.error);
     }).catch(console.error);
-  }, [currentNamHoc]);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = Number(e.target.value);
+    const nh = namHocs.find((n) => n.namHocId === id);
+    if (nh) setNamHoc(nh.tenNamHoc, nh.namHocId, nh.ngayBatDau);
+  };
 
   return (
     <div className="flex items-center space-x-3">
@@ -287,17 +298,50 @@ function AcademicYearSelector() {
       )}
       <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
         <Calendar className="w-4 h-4 text-slate-500 mr-2" />
-        <select 
+        <select
           className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 cursor-pointer"
-          value={selectedNamHoc}
-          onChange={(e) => setNamHoc(e.target.value)}
+          value={selectedNamHocId ?? ''}
+          onChange={handleChange}
         >
           {namHocs.map(nh => (
-            <option key={nh.namHocId} value={nh.tenNamHoc}>{nh.tenNamHoc}</option>
+            <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}</option>
           ))}
-          {namHocs.length === 0 && <option value="2024-2025">2024-2025</option>}
         </select>
       </div>
+    </div>
+  );
+}
+
+import { parentService } from '../services/parent.service';
+
+function ChildSelector() {
+  const { selectedChild, setSelectedChild } = useParentContextStore();
+  const [children, setChildren] = useState<any[]>([]);
+
+  useEffect(() => {
+    parentService.getChildren().then(data => {
+      setChildren(data);
+    }).catch(console.error);
+  }, []);
+
+  if (children.length === 0) return null;
+
+  return (
+    <div className="flex items-center bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-1.5 shadow-sm">
+      <Users className="w-4 h-4 text-indigo-500 mr-2" />
+      <select 
+        className="bg-transparent border-none outline-none text-sm font-bold text-indigo-700 cursor-pointer"
+        value={selectedChild?.id || ''}
+        onChange={(e) => {
+          const child = children.find(c => c.id.toString() === e.target.value);
+          if (child) setSelectedChild({ id: child.id, name: child.name, className: child.className });
+        }}
+      >
+        <option value="" disabled>-- Chọn con --</option>
+        {children.map(child => (
+          <option key={child.id} value={child.id}>{child.name}</option>
+        ))}
+      </select>
     </div>
   );
 }

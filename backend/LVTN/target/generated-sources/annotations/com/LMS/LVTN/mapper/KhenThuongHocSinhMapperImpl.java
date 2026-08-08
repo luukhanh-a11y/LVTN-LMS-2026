@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class KhenThuongHocSinhMapperImpl implements KhenThuongHocSinhMapper {
@@ -25,8 +25,8 @@ public class KhenThuongHocSinhMapperImpl implements KhenThuongHocSinhMapper {
 
         KhenThuongHocSinh khenThuongHocSinh = new KhenThuongHocSinh();
 
-        khenThuongHocSinh.setNguonCap( request.getNguonCap() );
         khenThuongHocSinh.setThuKhen( request.getThuKhen() );
+        khenThuongHocSinh.setNguonCap( request.getNguonCap() );
 
         return khenThuongHocSinh;
     }
@@ -45,11 +45,11 @@ public class KhenThuongHocSinhMapperImpl implements KhenThuongHocSinhMapper {
         khenThuongHocSinhResponse.setTenHuyHieu( entityHuyHieuTenHuyHieu( entity ) );
         khenThuongHocSinhResponse.setGiaoVienId( entityGiaoVienGiaoVienId( entity ) );
         khenThuongHocSinhResponse.setTenGiaoVien( entityGiaoVienHoTen( entity ) );
-        khenThuongHocSinhResponse.setDaGuiEmail( entity.getDaGuiEmail() );
         khenThuongHocSinhResponse.setKhenThuongId( entity.getKhenThuongId() );
+        khenThuongHocSinhResponse.setThuKhen( entity.getThuKhen() );
         khenThuongHocSinhResponse.setNguonCap( entity.getNguonCap() );
         khenThuongHocSinhResponse.setThoiDiemTrao( entity.getThoiDiemTrao() );
-        khenThuongHocSinhResponse.setThuKhen( entity.getThuKhen() );
+        khenThuongHocSinhResponse.setDaGuiEmail( entity.getDaGuiEmail() );
 
         return khenThuongHocSinhResponse;
     }
@@ -60,8 +60,8 @@ public class KhenThuongHocSinhMapperImpl implements KhenThuongHocSinhMapper {
             return;
         }
 
-        entity.setNguonCap( request.getNguonCap() );
         entity.setThuKhen( request.getThuKhen() );
+        entity.setNguonCap( request.getNguonCap() );
     }
 
     private Long entityHocSinhHocSinhId(KhenThuongHocSinh khenThuongHocSinh) {

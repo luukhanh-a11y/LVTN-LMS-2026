@@ -1,5 +1,5 @@
 import { Search, Filter, Upload } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
@@ -11,6 +11,7 @@ import { CreateUserModal } from './components/CreateUserModal';
 import { EditUserModal } from './components/EditUserModal';
 import { TransferClassModal } from './components/TransferClassModal';
 import { UserDetailModal } from './components/UserDetailModal';
+import { ExcelImportBoard } from './components/ExcelImportBoard';
 import { useUsersViewModel, type TabType } from './hooks/useUsersViewModel';
 
 const TABS: { key: TabType; label: string }[] = [
@@ -21,28 +22,23 @@ const TABS: { key: TabType; label: string }[] = [
 
 export default function AdminUsers() {
   const vm = useUsersViewModel();
-  const observerTarget = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
+  const [isImportMode, setIsImportMode] = useState(false);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (vm.isLoading || vm.isLoadingMore) return;
+      if (observer.current) observer.current.disconnect();
+      
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !vm.isLastPage) {
           vm.loadMore();
         }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
-  }, [vm.loadMore]);
+      }, { threshold: 0.1 });
+      
+      if (node) observer.current.observe(node);
+    },
+    [vm.isLoading, vm.isLoadingMore, vm.isLastPage, vm.loadMore]
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -53,16 +49,23 @@ export default function AdminUsers() {
         </div>
         <div className="flex space-x-3">
           <Button onClick={() => vm.setShowCreateModal(true)}>+ Tạo tài khoản</Button>
-          <Link to="/admin/import">
-            <Button variant="secondary">
-              <Upload className="h-4 w-4 mr-2" /> Import Excel
-            </Button>
-          </Link>
+          <Button variant="secondary" onClick={() => setIsImportMode(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Import Excel
+          </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-1 bg-slate-200/50 p-1.5 rounded-xl w-fit">
+      {isImportMode ? (
+        <ExcelImportBoard 
+          onBack={() => setIsImportMode(false)} 
+          onSuccess={() => {
+             vm.loadMore();
+          }} 
+        />
+      ) : (
+        <>
+          {/* Tabs */}
+          <div className="flex space-x-1 bg-slate-200/50 p-1.5 rounded-xl w-fit">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
@@ -244,12 +247,14 @@ export default function AdminUsers() {
           
           {/* Intersection Observer Target */}
           {!vm.isLastPage && !vm.isLoading && (
-            <div ref={observerTarget} className="h-10 w-full flex items-center justify-center text-slate-400 text-sm py-4">
+            <div ref={lastElementRef} className="h-10 w-full flex items-center justify-center text-slate-400 text-sm py-4">
               {vm.isLoadingMore ? 'Đang tải thêm...' : 'Cuộn để tải thêm'}
             </div>
           )}
         </CardContent>
       </Card>
+      </>
+      )}
 
       {vm.showTransferModal && vm.selectedUser && (
         <TransferClassModal
@@ -266,6 +271,9 @@ export default function AdminUsers() {
           formData={vm.editFormData} setFormData={vm.setEditFormData}
           onConfirm={vm.handleUpdateUser} onClose={() => vm.setShowEditModal(false)}
           isUpdating={vm.isUpdating}
+          parentChildren={vm.parentChildren}
+          onAddChild={vm.handleAddChild}
+          onRemoveChild={vm.handleRemoveChild}
         />
       )}
       {vm.showCreateModal && (
@@ -276,7 +284,14 @@ export default function AdminUsers() {
         />
       )}
       {vm.showDetailModal && vm.selectedUser && (
-        <UserDetailModal user={vm.selectedUser} onClose={() => vm.setShowDetailModal(false)} />
+        <UserDetailModal 
+          user={vm.selectedUser} 
+          onClose={() => vm.setShowDetailModal(false)}
+          onEdit={() => {
+            vm.setShowDetailModal(false);
+            vm.openEditModal(vm.selectedUser);
+          }} 
+        />
       )}
     </div>
   );

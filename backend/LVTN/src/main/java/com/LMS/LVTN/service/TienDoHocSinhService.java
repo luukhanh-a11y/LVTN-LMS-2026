@@ -31,9 +31,31 @@ public class TienDoHocSinhService {
     DangBaiRepository dangBaiRepository;
     TienDoHocSinhMapper tienDoHocSinhMapper;
 
+    // Học sinh có thể học lại đúng 1 bài học ở học kỳ/năm học khác (ở lại lớp) — tiến độ
+    // phải tách riêng theo hocKyId hiện tại của học sinh, không được dùng chung với năm cũ.
+    private HocKy resolveHocKyHienTai(HoSoHocSinh hocSinh, BaiHoc baiHoc) {
+        LopHoc lopHoc = hocSinh.getLopHoc();
+        if (lopHoc == null) {
+            throw new AppExceptions(Errorcode.INVALID_DATA);
+        }
+
+        Integer namHocId = lopHoc.getNamHoc().getNamHocId();
+        Short soHocKySach = baiHoc.getChuDe().getSach().getHocKy();
+
+        return hocKyRepository.findByNamHoc_NamHocIdAndSoHocKy(namHocId, soHocKySach)
+                .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+    }
+
     @Transactional(readOnly = true)
     public TienDoHocSinhResponse getByHocSinhIdAndBaiHocId(Long hocSinhId, Integer baiHocId) {
-        return tienDoHocSinhRepository.findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId)
+        HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(hocSinhId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+        BaiHoc baiHoc = baiHocRepository.findById(baiHocId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.BAI_HOC_NOT_FOUND));
+        HocKy hocKy = resolveHocKyHienTai(hocSinh, baiHoc);
+
+        return tienDoHocSinhRepository.findByHocSinh_HocSinhIdAndBaiHoc_BaiHocIdAndHocKy_HocKyId(
+                        hocSinhId, baiHocId, hocKy.getHocKyId())
                 .map(tienDoHocSinhMapper::toResponse)
                 .orElseGet(() -> {
                     TienDoHocSinhResponse emptyResp = new TienDoHocSinhResponse();
@@ -54,16 +76,7 @@ public class TienDoHocSinhService {
         BaiHoc baiHoc = baiHocRepository.findById(baiHocId)
                 .orElseThrow(() -> new AppExceptions(Errorcode.BAI_HOC_NOT_FOUND));
 
-        LopHoc lopHoc = hocSinh.getLopHoc();
-        if (lopHoc == null) {
-            throw new AppExceptions(Errorcode.INVALID_DATA); 
-        }
-        
-        Integer namHocId = lopHoc.getNamHoc().getNamHocId();
-        Short soHocKySach = baiHoc.getChuDe().getSach().getHocKy();
-
-        HocKy hocKy = hocKyRepository.findByNamHoc_NamHocIdAndSoHocKy(namHocId, soHocKySach)
-                .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+        HocKy hocKy = resolveHocKyHienTai(hocSinh, baiHoc);
 
         TienDoHocSinh tienDo = new TienDoHocSinh();
         tienDo.setHocSinh(hocSinh);
@@ -79,8 +92,14 @@ public class TienDoHocSinhService {
 
     @Transactional
     public TienDoHocSinh getOrCreateTienDo(Long hocSinhId, Integer baiHocId) {
+        HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(hocSinhId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+        BaiHoc baiHoc = baiHocRepository.findById(baiHocId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.BAI_HOC_NOT_FOUND));
+        HocKy hocKy = resolveHocKyHienTai(hocSinh, baiHoc);
+
         return tienDoHocSinhRepository
-                .findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId)
+                .findByHocSinh_HocSinhIdAndBaiHoc_BaiHocIdAndHocKy_HocKyId(hocSinhId, baiHocId, hocKy.getHocKyId())
                 .orElseGet(() -> createTienDo(hocSinhId, baiHocId));
     }
 
@@ -107,7 +126,14 @@ public class TienDoHocSinhService {
 
     @Transactional
     public void unmarkProgress(Long hocSinhId, Integer baiHocId) {
-        tienDoHocSinhRepository.findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(hocSinhId, baiHocId)
+        HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(hocSinhId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+        BaiHoc baiHoc = baiHocRepository.findById(baiHocId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.BAI_HOC_NOT_FOUND));
+        HocKy hocKy = resolveHocKyHienTai(hocSinh, baiHoc);
+
+        tienDoHocSinhRepository.findByHocSinh_HocSinhIdAndBaiHoc_BaiHocIdAndHocKy_HocKyId(
+                        hocSinhId, baiHocId, hocKy.getHocKyId())
                 .ifPresent(tienDo -> {
                     tienDo.setDaHoanThanh(false);
                     tienDo.setPhanTramHoanThanh((short) 0);

@@ -1,4 +1,6 @@
 import { api } from '../lib/axios';
+import { classService } from './class.service';
+import { useAcademicStore } from '../stores/useAcademicStore';
 
 // ===== Interfaces (Types phản ánh cấu trúc JSON từ Backend) =====
 
@@ -11,6 +13,8 @@ export interface ClassRoom {
   status?: string;
   role?: string;
   students?: number;
+  // Các môn giáo viên được phân công dạy ở đúng lớp này (dùng khi giao bài tập — Assignments.tsx)
+  monHocList?: { monHocId: number; tenMon: string; hocKyId: number }[];
 }
 
 export interface Material {
@@ -28,41 +32,6 @@ export interface Material {
   grade: number | null;
   subjectId: number | null;
   subjectName: string | null;
-}
-
-export interface BoSachContentItem {
-  id: number;
-  tenDangBai: string;
-  loai: 'LY_THUYET' | 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET' | null;
-  hasContent: boolean;
-  xpThuong: number;
-  baiHocId: number;
-  tenBaiHoc: string;
-  tenChuDe: string;
-  tenSach: string;
-  khoiLop: number;
-  hocKy: number | null;
-  monHocId: number;
-  tenMon: string;
-}
-
-export interface BaiHocDetailItem {
-  id: number;
-  tenDangBai: string;
-  loai: 'LY_THUYET' | 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET' | null;
-  xpThuong: number;
-  cauHinh: any;
-  dapAnChuan: any;
-}
-
-export interface BaiHocDetail {
-  baiHocId: number;
-  tenBaiHoc: string;
-  tenChuDe: string;
-  tenSach: string;
-  khoiLop: number;
-  tenMon: string;
-  items: BaiHocDetailItem[];
 }
 
 export interface Subject {
@@ -144,10 +113,55 @@ export interface EvaluateDTO {
 // ===== Service =====
 
 export const teacherService = {
-  // Lấy danh sách lớp của giáo viên hiện tại (chỉ lớp mình chủ nhiệm)
+  // Hồ sơ giáo viên đang đăng nhập — nguồn giaoVienId THẬT cho mọi request khác
+  // (khác với user.userId, vốn là id đăng nhập/nguoiDungId, không phải giaoVienId).
+  getMyTeacherProfile: async (): Promise<{ giaoVienId: number; maGiaoVien: string | null; hoTen: string; boMon: string | null }> => {
+    const response = await api.get('/hoso-giaovien/my-profile');
+    return response.data?.data || response.data;
+  },
+
+  // Danh sách lớp giáo viên được phân công giảng dạy, lọc theo học kỳ hiện tại (useAcademicStore)
   getClasses: async (): Promise<ClassRoom[]> => {
-    const response = await api.get<ClassRoom[]>('/teachers/me/classes');
-    return response.data;
+    const profile = await teacherService.getMyTeacherProfile();
+    const phanCongs = await classService.getPhanCongByGiaoVien(profile.giaoVienId);
+    const currentHocKyId = useAcademicStore.getState().currentHocKyId;
+    const filtered = currentHocKyId ? phanCongs.filter((p: any) => p.hocKyId === currentHocKyId) : phanCongs;
+
+    // Gộp theo lopHocId vì 1 lớp có thể có nhiều bản ghi phân công (mỗi bản ghi 1 môn)
+    const byLop = new Map<number, any>();
+    filtered.forEach((p: any) => {
+      if (!byLop.has(p.lopHocId)) {
+        byLop.set(p.lopHocId, { lopHocId: p.lopHocId, tenLop: p.tenLop, monHocList: [] as any[] });
+      }
+      byLop.get(p.lopHocId).monHocList.push({ monHocId: p.monHocId, tenMon: p.tenMon, hocKyId: p.hocKyId });
+    });
+
+    return Promise.all(
+      Array.from(byLop.values()).map(async (item): Promise<ClassRoom> => {
+        try {
+          const detail = await classService.getClassById(item.lopHocId);
+          return {
+            id: item.lopHocId,
+            name: item.tenLop,
+            grade: detail.khoiLop,
+            academicYear: detail.namHoc?.tenNamHoc ?? '',
+            maxCapacity: detail.siSoToiDa,
+            status: detail.trangThai,
+            students: detail.siSoHienTai,
+            role: detail.giaoVienChuNhiem?.giaoVienId === profile.giaoVienId ? 'Chủ nhiệm' : 'Giáo viên bộ môn',
+            monHocList: item.monHocList,
+          };
+        } catch {
+          return { id: item.lopHocId, name: item.tenLop, grade: 0, academicYear: '', monHocList: item.monHocList };
+        }
+      })
+    );
+  },
+
+  // Danh sách môn học toàn hệ thống (dùng cho các trang chưa nằm trong phạm vi chỉnh lần này)
+  getSubjects: async (): Promise<Subject[]> => {
+    const response = await api.get('/monhoc');
+    return response.data?.data || response.data || [];
   },
 
   // Lấy danh sách học liệu (Kho học liệu). Truyền giaoVienId để lọc "kho cá nhân của tôi".
@@ -175,9 +189,48 @@ export const teacherService = {
     return response.data;
   },
 
-  getSubjects: async (): Promise<Subject[]> => {
-    const response = await api.get<Subject[]>('/subjects');
-    return response.data;
+  // === Sách bài tập đúng bộ môn/lớp/học kỳ giáo viên được phân công (Giao bài tập) ===
+  getSachBaiTapTheoPhanCong: async (params: { giaoVienId: number; lopHocId: number; monHocId: number; hocKyId: number }): Promise<any[]> => {
+    const response = await api.get('/sach/sach-bai-tap/phan-cong', { params });
+    return response.data?.data || response.data || [];
+  },
+
+  getChuDeBySach: async (sachId: number): Promise<any[]> => {
+    const response = await api.get(`/chude/sach/${sachId}`);
+    return response.data?.data || response.data || [];
+  },
+
+  getBaiHocByChuDe: async (chuDeId: number): Promise<any[]> => {
+    const response = await api.get(`/bai-hoc/chu-de/${chuDeId}`);
+    return response.data?.data || response.data || [];
+  },
+
+  getDangBaiByBaiHoc: async (baiHocId: number): Promise<any[]> => {
+    const response = await api.get(`/he-thong/dang-bai/bai-hoc/${baiHocId}`);
+    return response.data?.data || response.data || [];
+  },
+
+  // === Xét kết quả cuối năm (đề xuất — Admin duyệt lần cuối mới thật sự chuyển lớp) ===
+  // /nguoi-dung không trả hocSinhId (chỉ nguoiDungId) nên phải lấy qua /hoso-hocsinh.
+  getHocSinhByLop: async (lopHocId: number): Promise<{ hocSinhId: number; hoTen: string; maHocSinh: string }[]> => {
+    const response = await api.get('/hoso-hocsinh');
+    const all = response.data?.data || response.data || [];
+    return all.filter((hs: any) => hs.lopHocId === lopHocId);
+  },
+
+  getKetQuaCuoiNam: async (hocSinhId: number, namHoc: string): Promise<any> => {
+    const response = await api.get(`/ket-qua-cuoi-nam/hoc-sinh/${hocSinhId}/nam-hoc`, { params: { namHoc } });
+    return response.data?.data || response.data;
+  },
+
+  createKetQuaCuoiNam: async (data: any): Promise<any> => {
+    const response = await api.post('/ket-qua-cuoi-nam', data);
+    return response.data?.data || response.data;
+  },
+
+  updateKetQuaCuoiNam: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/ket-qua-cuoi-nam/${id}`, data);
+    return response.data?.data || response.data;
   },
 
   // Giao bài tập mới
@@ -214,6 +267,19 @@ export const teacherService = {
       ...dto
     };
     const response = await api.post('/danh-gia-bai-lam', payload);
+    return response.data?.data || response.data;
+  },
+
+  // Sửa lại 1 đánh giá đã chấm trước đó (backend chặn POST trùng bai_nop_id — phải PUT theo id đánh giá)
+  updateEvaluation: async (danhGiaId: number, dto: EvaluateDTO): Promise<any> => {
+    const payload = {
+      giaoVienId: dto.teacherId,
+      xepLoai: dto.grade,
+      nhanXet: dto.comment,
+      hanhDong: dto.action,
+      ...dto
+    };
+    const response = await api.put(`/danh-gia-bai-lam/${danhGiaId}`, payload);
     return response.data?.data || response.data;
   },
 
@@ -291,30 +357,6 @@ export const teacherService = {
     await api.put(`/teachers/me/classes/${classId}/students/${hocSinhId}/ket-qua-cuoi-nam`, dto);
   },
 
-  getThuVienGocLibrary: async (): Promise<BoSachContentItem[]> => {
-    const response = await api.get<BoSachContentItem[]>('/dang-bai/thu-vien-goc');
-    return response.data;
-  },
-
-  getBaiHocDetail: async (baiHocId: number): Promise<BaiHocDetail> => {
-    const response = await api.get<BaiHocDetail>(`/dang-bai/bai-hoc/${baiHocId}`);
-    return response.data;
-  },
-
-  getQuizSlots: async (subjectId: number, grade: number): Promise<any[]> => {
-    const response = await api.get('/dang-bai/quiz-slots', { params: { subjectId, grade } });
-    return response.data;
-  },
-
-  getQuizContent: async (dangBaiId: number): Promise<any> => {
-    const response = await api.get(`/dang-bai/${dangBaiId}/noi-dung`);
-    return response.data;
-  },
-
-  saveQuizContent: async (dangBaiId: number, payload: { loai: string; cauHinh: any; dapAnChuan: any }): Promise<void> => {
-    await api.put(`/dang-bai/${dangBaiId}/noi-dung`, payload);
-  },
-
   getMorningReport: async (classId?: number): Promise<{
     id: number;
     classId: number;
@@ -334,4 +376,3 @@ export const teacherService = {
     return response.data?.data || response.data || [];
   },
 };
-

@@ -1,5 +1,5 @@
 import { Plus, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -8,15 +8,18 @@ import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { GRADES } from '../../constants';
 import { useClassesViewModel } from './hooks/useClassesViewModel';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function AdminClasses() {
   const vm = useClassesViewModel();
+  const navigate = useNavigate();
+  const isReadOnly = useAcademicStore((s) => s.isReadOnly);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800">Quản lý Lớp học</h1>
-        <Button onClick={vm.openCreateModal}>
+        <Button onClick={vm.openCreateModal} disabled={isReadOnly} title={isReadOnly ? 'Năm học cũ chỉ xem, không thể tạo lớp mới' : undefined}>
           <Plus className="h-4 w-4 mr-2" /> Tạo lớp mới
         </Button>
       </div>
@@ -67,7 +70,7 @@ export default function AdminClasses() {
                 <TableRow 
                   key={cls.lopHocId}
                   className="cursor-pointer hover:bg-slate-50/50"
-                  onClick={() => window.location.href = `/admin/classes/${cls.lopHocId}`}
+                  onClick={() => navigate(`/admin/classes/${cls.lopHocId}`)}
                 >
                   <TableCell className="font-medium text-primary">{cls.tenLop}</TableCell>
                   <TableCell>{cls.khoiLop}</TableCell>
@@ -115,13 +118,16 @@ export default function AdminClasses() {
                 ))}
               </select>
             </div>
-            <Input
-              label="Niên khóa"
-              value={vm.formData.academicYear}
-              onChange={(e) => vm.setFormData({ ...vm.formData, academicYear: e.target.value })}
-              placeholder="VD: 2026-2027"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Niên khóa (Tự động theo hệ thống)</label>
+              <Input
+                value={vm.formData.academicYear}
+                onChange={() => {}} // Disabled
+                placeholder="VD: 2026-2027"
+                disabled
+                className="bg-slate-50 cursor-not-allowed font-medium text-slate-500"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input

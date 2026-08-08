@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class NamHocMapperImpl implements NamHocMapper {
@@ -22,9 +22,9 @@ public class NamHocMapperImpl implements NamHocMapper {
 
         NamHoc namHoc = new NamHoc();
 
+        namHoc.setTenNamHoc( request.getTenNamHoc() );
         namHoc.setNgayBatDau( request.getNgayBatDau() );
         namHoc.setNgayKetThuc( request.getNgayKetThuc() );
-        namHoc.setTenNamHoc( request.getTenNamHoc() );
 
         return namHoc;
     }
@@ -38,9 +38,9 @@ public class NamHocMapperImpl implements NamHocMapper {
         NamHocResponse namHocResponse = new NamHocResponse();
 
         namHocResponse.setNamHocId( entity.getNamHocId() );
+        namHocResponse.setTenNamHoc( entity.getTenNamHoc() );
         namHocResponse.setNgayBatDau( entity.getNgayBatDau() );
         namHocResponse.setNgayKetThuc( entity.getNgayKetThuc() );
-        namHocResponse.setTenNamHoc( entity.getTenNamHoc() );
 
         return namHocResponse;
     }
@@ -51,8 +51,8 @@ public class NamHocMapperImpl implements NamHocMapper {
             return;
         }
 
+        entity.setTenNamHoc( request.getTenNamHoc() );
         entity.setNgayBatDau( request.getNgayBatDau() );
         entity.setNgayKetThuc( request.getNgayKetThuc() );
-        entity.setTenNamHoc( request.getTenNamHoc() );
     }
 }

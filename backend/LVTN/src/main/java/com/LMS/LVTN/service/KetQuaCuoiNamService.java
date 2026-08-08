@@ -37,6 +37,7 @@ public class KetQuaCuoiNamService {
     HoSoGiaoVienRepository hoSoGiaoVienRepository;
     LichSuChuyenLopService lichSuChuyenLopService;
     ThongBaoService thongBaoService;
+    AuthenticationService authenticationService;
 
     @Transactional
     public KetQuaCuoiNamResponse create(KetQuaCuoiNamRequest request) {
@@ -60,38 +61,9 @@ public class KetQuaCuoiNamService {
             ketQua.setGiaoVienXet(giaoVien);
         }
 
+        // Giáo viên chỉ lưu ĐỀ XUẤT ở đây (daDuyet=false mặc định) — KHÔNG tự động chuyển lớp.
+        // Chuyển lớp thật chỉ xảy ra khi Admin duyệt qua duyetHangLoat().
         KetQuaCuoiNam savedKetQua = ketQuaCuoiNamRepository.save(ketQua);
-
-        // Tự động liên thông sang LichSuChuyenLopService để xử lý chuyển lớp/tốt nghiệp
-        if (savedKetQua.getQuyetDinh() != null) {
-            LichSuChuyenLopRequest chuyenLopReq = new LichSuChuyenLopRequest();
-            if (savedKetQua.getHocSinh() != null) {
-                chuyenLopReq.setHocSinhId(savedKetQua.getHocSinh().getHocSinhId());
-            }
-            if (savedKetQua.getLopHoc() != null) {
-                chuyenLopReq.setLopCuId(savedKetQua.getLopHoc().getLopHocId());
-            }
-            chuyenLopReq.setLopMoiId(request.getLopMoiId()); // Có thể null với CHUYEN_CUP
-            chuyenLopReq.setNamHocCu(savedKetQua.getNamHoc());
-            chuyenLopReq.setNamHocMoi(request.getNamHocMoi() != null ? request.getNamHocMoi() : (savedKetQua.getNamHoc() + " -> Mới"));
-
-            if (savedKetQua.getQuyetDinh() == QuyetDinhCuoiNam.LEN_LOP) {
-                chuyenLopReq.setLyDo(LyDoChuyenLop.LEN_LOP);
-            } else if (savedKetQua.getQuyetDinh() == QuyetDinhCuoiNam.O_LAI) {
-                chuyenLopReq.setLyDo(LyDoChuyenLop.O_LAI);
-            } else if (savedKetQua.getQuyetDinh() == QuyetDinhCuoiNam.CHUYEN_CUP) {
-                chuyenLopReq.setLyDo(LyDoChuyenLop.CHUYEN_CUP);
-            }
-
-            if (savedKetQua.getGiaoVienXet() != null && savedKetQua.getGiaoVienXet().getNguoiDung() != null) {
-                chuyenLopReq.setNguoiThucHienId(savedKetQua.getGiaoVienXet().getNguoiDung().getNguoiDungId());
-            }
-            chuyenLopReq.setGhiChu("Tự động chuyển đổi lớp theo Quyết định Cuối năm: " + savedKetQua.getQuyetDinh());
-
-            if (chuyenLopReq.getHocSinhId() != null && chuyenLopReq.getNguoiThucHienId() != null) {
-                lichSuChuyenLopService.create(chuyenLopReq);
-            }
-        }
 
         return ketQuaCuoiNamMapper.toResponse(savedKetQua);
     }
@@ -148,6 +120,54 @@ public class KetQuaCuoiNamService {
         KetQuaCuoiNam ketQua = ketQuaCuoiNamRepository.findByHocSinh_HocSinhIdAndNamHoc(hocSinhId, namHoc)
                 .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
         return ketQuaCuoiNamMapper.toResponse(ketQua);
+    }
+
+    // Admin duyệt lần cuối: với mỗi đề xuất chưa duyệt, tạo LichSuChuyenLop thật (nguoiThucHien
+    // là admin đang gọi, không phải giáo viên đề xuất) rồi đánh dấu daDuyet=true.
+    @Transactional
+    public List<KetQuaCuoiNamResponse> duyetHangLoat(String token, List<com.LMS.LVTN.dto.request.KetQuaCuoiNamDuyetRequest> requests) {
+        String nguoiThucHienId;
+        try {
+            nguoiThucHienId = authenticationService.getMaNguoiDungFromToken(token);
+        } catch (java.text.ParseException e) {
+            throw new AppExceptions(Errorcode.INVALID_TOKEN);
+        }
+
+        return requests.stream().map(req -> {
+            KetQuaCuoiNam ketQua = ketQuaCuoiNamRepository.findById(req.getKetQuaId())
+                    .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+
+            if (Boolean.TRUE.equals(ketQua.getDaDuyet())) {
+                throw new AppExceptions(Errorcode.REQUEST_IS_PROCESSED);
+            }
+
+            if (ketQua.getQuyetDinh() != null && ketQua.getHocSinh() != null) {
+                LichSuChuyenLopRequest chuyenLopReq = new LichSuChuyenLopRequest();
+                chuyenLopReq.setHocSinhId(ketQua.getHocSinh().getHocSinhId());
+                if (ketQua.getLopHoc() != null) {
+                    chuyenLopReq.setLopCuId(ketQua.getLopHoc().getLopHocId());
+                }
+                chuyenLopReq.setLopMoiId(req.getLopMoiId());
+                chuyenLopReq.setNamHocCu(ketQua.getNamHoc());
+                chuyenLopReq.setNamHocMoi(req.getNamHocMoi() != null ? req.getNamHocMoi() : (ketQua.getNamHoc() + " -> Mới"));
+
+                if (ketQua.getQuyetDinh() == QuyetDinhCuoiNam.LEN_LOP) {
+                    chuyenLopReq.setLyDo(LyDoChuyenLop.LEN_LOP);
+                } else if (ketQua.getQuyetDinh() == QuyetDinhCuoiNam.O_LAI) {
+                    chuyenLopReq.setLyDo(LyDoChuyenLop.O_LAI);
+                } else if (ketQua.getQuyetDinh() == QuyetDinhCuoiNam.CHUYEN_CUP) {
+                    chuyenLopReq.setLyDo(LyDoChuyenLop.CHUYEN_CUP);
+                }
+
+                chuyenLopReq.setNguoiThucHienId(nguoiThucHienId);
+                chuyenLopReq.setGhiChu("Admin duyệt Kết quả cuối năm #" + ketQua.getKetQuaId() + " — Quyết định: " + ketQua.getQuyetDinh());
+
+                lichSuChuyenLopService.create(chuyenLopReq);
+            }
+
+            ketQua.setDaDuyet(true);
+            return ketQuaCuoiNamMapper.toResponse(ketQuaCuoiNamRepository.save(ketQua));
+        }).collect(Collectors.toList());
     }
 
     @Transactional

@@ -5,9 +5,10 @@ import { Badge } from '../../../components/ui/Badge';
 interface UserDetailModalProps {
   user: any;
   onClose: () => void;
+  onEdit?: () => void;
 }
 
-export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
+export function UserDetailModal({ user, onClose, onEdit }: UserDetailModalProps) {
   if (!user) return null;
 
   return (
@@ -39,10 +40,69 @@ export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
             <span className="text-slate-500 font-medium">Email</span>
             <span className="col-span-2 font-medium">{user.email || 'Chưa cập nhật'}</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
-            <span className="text-slate-500 font-medium">Số điện thoại</span>
-            <span className="col-span-2 font-medium">{user.phone || 'Chưa cập nhật'}</span>
-          </div>
+          {user.role !== 'HOC_SINH' && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Số điện thoại</span>
+              <span className="col-span-2 font-medium">{user.phone || 'Chưa cập nhật'}</span>
+            </div>
+          )}
+          {user.profile?.ngaySinh && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Ngày sinh</span>
+              <span className="col-span-2 font-medium">{user.profile.ngaySinh}</span>
+            </div>
+          )}
+          {user.profile?.gioiTinh && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Giới tính</span>
+              <span className="col-span-2 font-medium">{user.profile.gioiTinh === 'NAM' ? 'Nam' : 'Nữ'}</span>
+            </div>
+          )}
+          {user.profile?.maHocSinh && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Mã học sinh</span>
+              <span className="col-span-2 font-medium">{user.profile.maHocSinh}</span>
+            </div>
+          )}
+          {user.profile?.maGiaoVien && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Mã giáo viên</span>
+              <span className="col-span-2 font-medium">{user.profile.maGiaoVien}</span>
+            </div>
+          )}
+          {user.profile?.boMon && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Bộ môn</span>
+              <span className="col-span-2 font-medium">{user.profile.boMon}</span>
+            </div>
+          )}
+          {user.profile?.tongXp !== undefined && (
+            <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+              <span className="text-slate-500 font-medium">Tổng XP</span>
+              <span className="col-span-2 font-medium">{user.profile.tongXp}</span>
+            </div>
+          )}
+
+          {user.role === 'PHU_HUYNH' && user.children && (
+            <div className="pt-3">
+              <span className="text-slate-500 font-medium mb-3 block">Danh sách Học sinh liên kết</span>
+              {user.children.length > 0 ? (
+                <div className="space-y-2">
+                  {user.children.map((child: any) => (
+                    <div key={child.idMoiQuanHe} className="bg-slate-50 border border-slate-100 rounded-lg p-3">
+                      <p className="font-semibold text-slate-800 text-sm">
+                        {child.hocSinh?.hoTen} <span className="text-slate-500 font-normal">({child.hocSinh?.maHocSinh})</span>
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">Quan hệ: <span className="font-medium text-indigo-600">{child.quanHe}</span></p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic">Chưa liên kết học sinh nào.</p>
+              )}
+            </div>
+          )}
+
           {user.className && (
             <div className="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
               <span className="text-slate-500 font-medium">Lớp học</span>
@@ -59,7 +119,10 @@ export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex justify-end gap-3">
+          {onEdit && (
+            <Button variant="primary" onClick={onEdit}>Chỉnh sửa</Button>
+          )}
           <Button variant="secondary" onClick={onClose}>Đóng</Button>
         </div>
       </div>

@@ -54,4 +54,14 @@ public class CauHinhHeThongController {
                 .data("Cấu hình hệ thống đã được xóa thành công")
                 .build();
     }
+
+    @PutMapping("/{id}/dot-danh-gia")
+    public ApiResponse<CauHinhHeThongResponse> setDotDanhGia(
+            @PathVariable Short id,
+            @RequestParam boolean dangMo,
+            @RequestParam(required = false) String namHoc) {
+        return ApiResponse.<CauHinhHeThongResponse>builder()
+                .data(cauHinhHeThongService.setDotDanhGia(id, dangMo, namHoc))
+                .build();
+    }
 }

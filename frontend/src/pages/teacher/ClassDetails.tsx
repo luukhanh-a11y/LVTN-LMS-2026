@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, KeySquare, Award, X, Search, Phone, User as UserIcon } from 'lucide-react';
+import { ChevronLeft, KeySquare, Award, X } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
-import { Badge } from '../../components/ui/Badge';
 import toast from 'react-hot-toast';
-import { Input } from '../../components/ui/Input';
 
 import { classService } from '../../services/class.service';
 import { ticketService } from '../../services/ticket.service';
+import { teacherService } from '../../services/teacher.service';
+
+const NHAN_GIOI_TINH: Record<string, string> = {
+  NAM: 'Nam',
+  NU: 'Nữ',
+  KHAC: 'Khác',
+};
 
 export default function TeacherClassDetails() {
   const { classId } = useParams();
@@ -24,18 +29,20 @@ export default function TeacherClassDetails() {
     if (!classId) return;
     setIsLoading(true);
     try {
-      // Get all classes to find this class info
-      const classes = await classService.getAllClasses();
-      const currentClass = classes.find((c: any) => c.lopHocId === Number(classId));
+      // Chỉ lấy các lớp giáo viên được phân công trong học kỳ hiện tại — đồng bộ với "Lớp học của tôi".
+      const classes = await teacherService.getClasses();
+      const currentClass = classes.find((c) => c.id === Number(classId));
       if (currentClass) {
-        // For Teacher view we can map the students count locally after fetching
         const studentsData = await classService.getStudentsByClass(Number(classId));
         setClassInfo({
-          ...currentClass,
+          tenLop: currentClass.name,
           studentsCount: studentsData.length,
-          role: currentClass.giaoVienChuNhiem?.hoTen || 'Chưa phân công'
+          role: currentClass.role || 'Chưa phân công'
         });
         setStudents(studentsData);
+      } else {
+        setClassInfo(null);
+        setStudents([]);
       }
     } catch (err) {
       console.error(err);
@@ -85,74 +92,37 @@ export default function TeacherClassDetails() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Chi tiết Lớp {classInfo.tenLop}</h1>
-          <p className="text-sm text-slate-500">Sĩ số: {classInfo.studentsCount} Học sinh | Giáo viên: {classInfo.role}</p>
+          <p className="text-sm text-slate-500">Sĩ số: {classInfo.studentsCount} Học sinh | Vai trò: {classInfo.role}</p>
         </div>
       </div>
 
       <Card>
-        <div className="p-4 border-b border-slate-100 flex flex-wrap gap-4 items-center">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input className="pl-9" placeholder="Tìm kiếm học sinh theo tên, mã..." />
-          </div>
-          <select className="px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary">
-            <option value="all">Tất cả xếp loại</option>
-            <option value="tot">Hoàn thành Tốt</option>
-            <option value="dat">Hoàn thành</option>
-            <option value="chuadat">Chưa hoàn thành</option>
-          </select>
-        </div>
-        
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Mã HS</TableHead>
-                <TableHead>Học sinh & Phụ huynh</TableHead>
+                <TableHead>Họ tên</TableHead>
                 <TableHead>Ngày sinh</TableHead>
-                <TableHead>Đánh giá (TT27)</TableHead>
-                <TableHead>Chuyên cần</TableHead>
-                <TableHead>Thành tích (XP)</TableHead>
+                <TableHead>Giới tính</TableHead>
+                <TableHead>XP</TableHead>
                 <TableHead className="text-right">Hỗ trợ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-slate-500">Lớp học chưa có học sinh nào.</TableCell>
+                  <TableCell colSpan={6} className="text-center py-8 text-slate-500">Lớp học chưa có học sinh nào.</TableCell>
                 </TableRow>
               ) : students.map(student => (
                 <TableRow key={student.id}>
-                  <TableCell className="font-medium text-slate-500">{student.code}</TableCell>
-                  <TableCell>
-                    <div className="font-bold text-slate-800">{student.name}</div>
-                    <div className="text-xs text-slate-500 flex items-center mt-1">
-                      <UserIcon className="w-3 h-3 mr-1" /> Phụ huynh: {student.parentName || 'Chưa cập nhật'}
-                    </div>
-                    <div className="text-xs text-slate-500 flex items-center mt-0.5">
-                      <Phone className="w-3 h-3 mr-1" /> {student.phone || 'Chưa cập nhật'}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{student.dob}</TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      student.evaluation === 'Hoàn thành Tốt' ? 'success' : 
-                      student.evaluation === 'Hoàn thành' ? 'outline' : 'warning'
-                    }>
-                      {student.evaluation}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="w-full bg-slate-200 rounded-full h-2 max-w-[80px] mr-2">
-                        <div className={`h-2 rounded-full ${student.attendance >= 95 ? 'bg-green-500' : student.attendance >= 90 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${student.attendance}%` }}></div>
-                      </div>
-                      <span className="text-xs font-medium text-slate-600">{student.attendance}%</span>
-                    </div>
-                  </TableCell>
+                  <TableCell className="font-medium text-slate-500">{student.maHocSinh}</TableCell>
+                  <TableCell className="font-bold text-slate-800">{student.fullName}</TableCell>
+                  <TableCell className="text-sm">{student.ngaySinh || '—'}</TableCell>
+                  <TableCell className="text-sm">{student.gioiTinh ? NHAN_GIOI_TINH[student.gioiTinh] ?? student.gioiTinh : '—'}</TableCell>
                   <TableCell>
                     <div className="flex items-center text-amber-500 font-bold text-sm">
-                      <Award className="w-4 h-4 mr-1" /> {student.badges} XP
+                      <Award className="w-4 h-4 mr-1" /> {student.tongXp} XP
                     </div>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
@@ -180,13 +150,13 @@ export default function TeacherClassDetails() {
             <div className="p-6 space-y-4">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Học sinh:</p>
-                <p className="font-bold text-slate-800">{resetStudent.name} ({resetStudent.code})</p>
+                <p className="font-bold text-slate-800">{resetStudent.fullName} ({resetStudent.maHocSinh})</p>
                 <p className="text-xs text-slate-500 mt-1">Lớp {classInfo.tenLop}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Lý do (Sẽ gửi cho Admin)</label>
-                <textarea 
+                <textarea
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-primary text-sm h-24 resize-none"
                   placeholder="VD: Phụ huynh báo quên mật khẩu..."
                   value={ticketDescription}

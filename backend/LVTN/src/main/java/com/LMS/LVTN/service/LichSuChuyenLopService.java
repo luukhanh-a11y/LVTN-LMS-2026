@@ -159,8 +159,8 @@ public class LichSuChuyenLopService {
                 lichSu.setLopMoi(lopMoi);
                 lichSu.setNamHocCu(lopCu != null && lopCu.getNamHoc() != null ? lopCu.getNamHoc().getTenNamHoc() : null);
                 lichSu.setNamHocMoi(lopMoi != null && lopMoi.getNamHoc() != null ? lopMoi.getNamHoc().getTenNamHoc() : (lopCu != null && lopCu.getNamHoc() != null ? lopCu.getNamHoc().getTenNamHoc() : ""));
-                lichSu.setLyDo(com.LMS.LVTN.enums.LyDoChuyenLop.CHUYEN_TRUONG); // Can be adapted later if needed
-                lichSu.setGhiChu(request.getLyDo());
+                lichSu.setLyDo(request.getLyDo());
+                lichSu.setGhiChu(request.getGhiChu());
                 lichSu.setNguoiThucHien(nguoiThucHien);
 
                 lichSuChuyenLopRepository.save(lichSu);

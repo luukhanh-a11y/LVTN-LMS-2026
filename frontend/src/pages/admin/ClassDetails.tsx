@@ -10,11 +10,14 @@ import toast from 'react-hot-toast';
 
 import { classService, type ClassRoom } from '../../services/class.service';
 import { adminService } from '../../services/admin.service';
+import { teacherService, type TeacherProfile } from '../../services/teacher.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function ClassDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+  const isReadOnly = useAcademicStore((s) => s.isReadOnly);
+
   const [classData, setClassData] = useState<ClassRoom | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [allClasses, setAllClasses] = useState<ClassRoom[]>([]);
@@ -36,10 +39,17 @@ export default function ClassDetails() {
   const [pcMonHocId, setPcMonHocId] = useState('');
   const [pcGiaoVienId, setPcGiaoVienId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
+  const [monHocList, setMonHocList] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
+
+  useEffect(() => {
+    adminService.getMonHocList().then(setMonHocList).catch(() => setMonHocList([]));
+    teacherService.getAllTeachers().then(setTeachers).catch(() => setTeachers([]));
+  }, []);
 
   const handleCreatePhanCong = async () => {
     if (!id || !pcMonHocId || !pcGiaoVienId) {
-      toast.error('Vui lòng nhập đầy đủ ID Môn học và ID Giáo viên!');
+      toast.error('Vui lòng chọn đầy đủ Môn học và Giáo viên!');
       return;
     }
     setIsAssigning(true);
@@ -109,7 +119,7 @@ export default function ClassDetails() {
     setShowHistoryModal(true);
     setIsLoadingHistory(true);
     try {
-      const data = await adminService.getClassTransferHistory(student.id);
+      const data = await adminService.getClassTransferHistory(student.hocSinhId);
       setTransferHistory(data);
     } catch (err) {
       console.error(err);
@@ -123,7 +133,7 @@ export default function ClassDetails() {
     if (!transferClassId || !selectedStudent) return;
     setIsTransferring(true);
     try {
-      await adminService.transferClass(selectedStudent.id, parseInt(transferClassId));
+      await adminService.transferClass(selectedStudent.hocSinhId, parseInt(transferClassId));
       toast.success('Chuyển lớp thành công!');
       setShowTransferModal(false);
       fetchData(); // Reload data
@@ -181,29 +191,25 @@ export default function ClassDetails() {
               <TableRow>
                 <TableHead>Mã HS</TableHead>
                 <TableHead>Họ và Tên</TableHead>
-                <TableHead>Phụ huynh</TableHead>
-                <TableHead>SĐT liên hệ</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-slate-500">Chưa có học sinh nào trong lớp này.</TableCell>
+                  <TableCell colSpan={3} className="text-center py-8 text-slate-500">Chưa có học sinh nào trong lớp này.</TableCell>
                 </TableRow>
               ) : (
                 students.map(student => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium text-primary">{student.code}</TableCell>
-                    <TableCell>{student.name}</TableCell>
-                    <TableCell>{student.parentName || <span className="text-slate-400 italic">Chưa liên kết</span>}</TableCell>
-                    <TableCell>{student.phone}</TableCell>
+                  <TableRow key={student.hocSinhId}>
+                    <TableCell className="font-medium text-primary">{student.maHocSinh}</TableCell>
+                    <TableCell>{student.fullName}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleOpenHistoryModal(student)} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
                         <History className="h-4 w-4 mr-1.5" />
                         Lịch sử
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleOpenTransferModal(student)} className="text-pro-primary hover:text-pro-primary hover:bg-pro-primary/10">
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenTransferModal(student)} disabled={isReadOnly} className="text-pro-primary hover:text-pro-primary hover:bg-pro-primary/10">
                         <ArrowRightLeft className="h-4 w-4 mr-1.5" />
                         Chuyển lớp
                       </Button>
@@ -222,7 +228,7 @@ export default function ClassDetails() {
             <BookOpen className="h-5 w-5 text-primary" />
             <span>Phân công giảng dạy bộ môn ({phanCongs.length})</span>
           </div>
-          <Button size="sm" onClick={() => setShowPhanCongModal(true)}>
+          <Button size="sm" onClick={() => setShowPhanCongModal(true)} disabled={isReadOnly} title={isReadOnly ? 'Năm học cũ chỉ xem, không thể thêm phân công' : undefined}>
             <Plus className="h-4 w-4 mr-1.5" /> Thêm Phân công
           </Button>
         </div>
@@ -248,7 +254,7 @@ export default function ClassDetails() {
                     <TableCell>{pc.tenGiaoVien || `GV ID: ${pc.giaoVienId}`}</TableCell>
                     <TableCell>{pc.namHoc || classData?.namHoc?.tenNamHoc || '---'}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleDeletePhanCong(pc.phanCongId || pc.id)} className="text-pro-destructive hover:bg-pro-destructive/10">
+                      <Button variant="ghost" size="sm" onClick={() => handleDeletePhanCong(pc.phanCongId || pc.id)} disabled={isReadOnly} className="text-pro-destructive hover:bg-pro-destructive/10">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -268,7 +274,7 @@ export default function ClassDetails() {
       >
         <div className="p-6 space-y-4">
           <div className="bg-slate-50 p-4 rounded-lg text-sm mb-4">
-            <p><strong>Học sinh:</strong> {selectedStudent?.name} ({selectedStudent?.code})</p>
+            <p><strong>Học sinh:</strong> {selectedStudent?.fullName} ({selectedStudent?.maHocSinh})</p>
             <p><strong>Lớp hiện tại:</strong> {classData?.tenLop}</p>
           </div>
 
@@ -301,7 +307,7 @@ export default function ClassDetails() {
       >
         <div className="p-6 space-y-4">
           <p className="text-sm text-slate-600">
-            <strong>Học sinh:</strong> {historyStudent?.name} ({historyStudent?.code})
+            <strong>Học sinh:</strong> {historyStudent?.fullName} ({historyStudent?.maHocSinh})
           </p>
 
           {isLoadingHistory ? (
@@ -340,24 +346,30 @@ export default function ClassDetails() {
       >
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">ID Môn học</label>
-            <input
-              type="number"
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Môn học</label>
+            <select
               className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
-              placeholder="VD: 1 (Toán), 2 (Tiếng Việt)..."
               value={pcMonHocId}
               onChange={(e) => setPcMonHocId(e.target.value)}
-            />
+            >
+              <option value="">-- Chọn môn học --</option>
+              {monHocList.map((m) => (
+                <option key={m.monHocId} value={m.monHocId}>{m.tenMon}</option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">ID / Mã Giáo viên</label>
-            <input
-              type="text"
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Giáo viên phụ trách</label>
+            <select
               className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
-              placeholder="Nhập ID hoặc UUID của Giáo viên"
               value={pcGiaoVienId}
               onChange={(e) => setPcGiaoVienId(e.target.value)}
-            />
+            >
+              <option value="">-- Chọn giáo viên --</option>
+              {teachers.map((t) => (
+                <option key={t.giaoVienId} value={t.giaoVienId}>{t.hoTen}</option>
+              ))}
+            </select>
           </div>
           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-2">
             <Button type="button" variant="outline" onClick={() => setShowPhanCongModal(false)}>Hủy bỏ</Button>

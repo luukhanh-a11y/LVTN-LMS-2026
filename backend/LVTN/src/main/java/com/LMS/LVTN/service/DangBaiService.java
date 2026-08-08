@@ -39,6 +39,7 @@ public class DangBaiService {
     private final com.LMS.LVTN.repository.BaiTapRepository baiTapRepository;
     private final com.LMS.LVTN.repository.BaiNopRepository baiNopRepository;
     private final com.LMS.LVTN.repository.BaiHocRepository baiHocRepository;
+    private final com.LMS.LVTN.repository.DanhGiaBaiLamRepository danhGiaBaiLamRepository;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public List<DangBaiResponse> getAllDangBaiHeThong() {
@@ -86,7 +87,9 @@ public class DangBaiService {
 
         if (hocSinhId != null && baiTap.getSoLanNopLaiToiDa() != null && baiTap.getSoLanNopLaiToiDa() != -1) {
             long soLanDaLam = baiNopRepository.countByBaiTap_BaiTapIdAndHocSinh_HocSinhId(baiTapId, hocSinhId);
-            long tongSoLanChoPhep = 1 + (baiTap.getSoLanNopLaiToiDa() > 0 ? baiTap.getSoLanNopLaiToiDa() : 0);
+            long soLuotYeuCauLamLai = danhGiaBaiLamRepository.countByBaiNop_BaiTap_BaiTapIdAndBaiNop_HocSinh_HocSinhIdAndHanhDong(
+                    baiTapId, hocSinhId, com.LMS.LVTN.enums.HanhDongDanhGia.YC_LAM_LAI);
+            long tongSoLanChoPhep = 1 + (baiTap.getSoLanNopLaiToiDa() > 0 ? baiTap.getSoLanNopLaiToiDa() : 0) + soLuotYeuCauLamLai;
             if (soLanDaLam >= tongSoLanChoPhep) {
                 throw new AppExceptions(Errorcode.VUOT_QUA_SO_LAN_NOP_TOI_DA);
             }

@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class HopThuThongBaoMapperImpl implements HopThuThongBaoMapper {
@@ -49,8 +49,8 @@ public class HopThuThongBaoMapperImpl implements HopThuThongBaoMapper {
         hopThuThongBaoResponse.setLoaiThongBao( entityThongBaoLoaiThongBao( entity ) );
         hopThuThongBaoResponse.setLaGhim( entityThongBaoLaGhim( entity ) );
         hopThuThongBaoResponse.setNgayDang( entityThongBaoNgayDang( entity ) );
-        hopThuThongBaoResponse.setDaDoc( entity.getDaDoc() );
         hopThuThongBaoResponse.setHopThuId( entity.getHopThuId() );
+        hopThuThongBaoResponse.setDaDoc( entity.getDaDoc() );
         hopThuThongBaoResponse.setThoiDiemDoc( entity.getThoiDiemDoc() );
 
         return hopThuThongBaoResponse;

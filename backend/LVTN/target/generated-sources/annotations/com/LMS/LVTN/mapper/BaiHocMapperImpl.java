@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class BaiHocMapperImpl implements BaiHocMapper {
@@ -24,11 +24,11 @@ public class BaiHocMapperImpl implements BaiHocMapper {
         BaiHoc baiHoc = new BaiHoc();
 
         baiHoc.setBookIndexIdNgoai( request.getBookIndexIdNgoai() );
-        baiHoc.setSlug( request.getSlug() );
-        baiHoc.setSoThuTu( request.getSoThuTu() );
-        baiHoc.setSoTrang( request.getSoTrang() );
         baiHoc.setTenBaiHoc( request.getTenBaiHoc() );
         baiHoc.setTieuDe( request.getTieuDe() );
+        baiHoc.setSlug( request.getSlug() );
+        baiHoc.setSoTrang( request.getSoTrang() );
+        baiHoc.setSoThuTu( request.getSoThuTu() );
 
         return baiHoc;
     }
@@ -45,12 +45,12 @@ public class BaiHocMapperImpl implements BaiHocMapper {
         baiHocResponse.setTenChuDe( entityChuDeTenChuDe( entity ) );
         baiHocResponse.setBaiHocId( entity.getBaiHocId() );
         baiHocResponse.setBookIndexIdNgoai( entity.getBookIndexIdNgoai() );
-        baiHocResponse.setNgayTao( entity.getNgayTao() );
-        baiHocResponse.setSlug( entity.getSlug() );
-        baiHocResponse.setSoThuTu( entity.getSoThuTu() );
-        baiHocResponse.setSoTrang( entity.getSoTrang() );
         baiHocResponse.setTenBaiHoc( entity.getTenBaiHoc() );
         baiHocResponse.setTieuDe( entity.getTieuDe() );
+        baiHocResponse.setSlug( entity.getSlug() );
+        baiHocResponse.setSoTrang( entity.getSoTrang() );
+        baiHocResponse.setSoThuTu( entity.getSoThuTu() );
+        baiHocResponse.setNgayTao( entity.getNgayTao() );
 
         return baiHocResponse;
     }
@@ -62,11 +62,11 @@ public class BaiHocMapperImpl implements BaiHocMapper {
         }
 
         entity.setBookIndexIdNgoai( request.getBookIndexIdNgoai() );
-        entity.setSlug( request.getSlug() );
-        entity.setSoThuTu( request.getSoThuTu() );
-        entity.setSoTrang( request.getSoTrang() );
         entity.setTenBaiHoc( request.getTenBaiHoc() );
         entity.setTieuDe( request.getTieuDe() );
+        entity.setSlug( request.getSlug() );
+        entity.setSoTrang( request.getSoTrang() );
+        entity.setSoThuTu( request.getSoThuTu() );
     }
 
     private Integer entityChuDeChuDeId(BaiHoc baiHoc) {

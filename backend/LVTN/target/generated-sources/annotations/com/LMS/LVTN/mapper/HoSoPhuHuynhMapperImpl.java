@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class HoSoPhuHuynhMapperImpl implements HoSoPhuHuynhMapper {
@@ -23,8 +23,8 @@ public class HoSoPhuHuynhMapperImpl implements HoSoPhuHuynhMapper {
 
         HoSoPhuHuynh hoSoPhuHuynh = new HoSoPhuHuynh();
 
-        hoSoPhuHuynh.setEmailNhanThongBao( request.getEmailNhanThongBao() );
         hoSoPhuHuynh.setHoTen( request.getHoTen() );
+        hoSoPhuHuynh.setEmailNhanThongBao( request.getEmailNhanThongBao() );
 
         return hoSoPhuHuynh;
     }
@@ -39,9 +39,9 @@ public class HoSoPhuHuynhMapperImpl implements HoSoPhuHuynhMapper {
 
         hoSoPhuHuynhResponse.setNguoiDungId( entityNguoiDungNguoiDungId( entity ) );
         hoSoPhuHuynhResponse.setSoDienThoai( entityNguoiDungSoDienThoai( entity ) );
-        hoSoPhuHuynhResponse.setEmailNhanThongBao( entity.getEmailNhanThongBao() );
-        hoSoPhuHuynhResponse.setHoTen( entity.getHoTen() );
         hoSoPhuHuynhResponse.setPhuHuynhId( entity.getPhuHuynhId() );
+        hoSoPhuHuynhResponse.setHoTen( entity.getHoTen() );
+        hoSoPhuHuynhResponse.setEmailNhanThongBao( entity.getEmailNhanThongBao() );
 
         return hoSoPhuHuynhResponse;
     }
@@ -52,8 +52,8 @@ public class HoSoPhuHuynhMapperImpl implements HoSoPhuHuynhMapper {
             return;
         }
 
-        entity.setEmailNhanThongBao( request.getEmailNhanThongBao() );
         entity.setHoTen( request.getHoTen() );
+        entity.setEmailNhanThongBao( request.getEmailNhanThongBao() );
     }
 
     private String entityNguoiDungNguoiDungId(HoSoPhuHuynh hoSoPhuHuynh) {

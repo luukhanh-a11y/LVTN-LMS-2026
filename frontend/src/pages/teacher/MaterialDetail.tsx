@@ -187,14 +187,6 @@ export default function TeacherMaterialDetail() {
                     Chỉnh sửa
                   </Button>
                 )}
-                <Button
-                  className="w-full sm:w-auto px-8"
-                  disabled={!isH5p || !material.h5pContentId}
-                  title={!isH5p || !material.h5pContentId ? 'Chỉ học liệu H5P mới giao được thành bài tập tự động chấm' : undefined}
-                  onClick={() => navigate(`/teacher/assignments?hocLieuId=${material.id}`)}
-                >
-                  Giao bài cho lớp
-                </Button>
               </div>
             </div>
           </CardContent>

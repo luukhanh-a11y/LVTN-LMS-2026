@@ -99,7 +99,13 @@ public class SachService {
         Short khoiLop = hocSinh.getLopHoc().getKhoiLop();
         Short soHocKy = hocKy.getSoHocKy();
 
-        return sachRepository.findByLoaiSachAndKhoiLopAndHocKy(LoaiSach.SACH_GIAO_KHOA, khoiLop, soHocKy).stream()
+        // Ưu tiên bản đã tách riêng cho đúng học kỳ này; nếu chưa có thì dùng bản dùng chung.
+        List<Sach> ketQua = sachRepository.findByLoaiSachAndKhoiLopAndHocKyCuThe_HocKyId(LoaiSach.SACH_GIAO_KHOA, khoiLop, hocKyId);
+        if (ketQua.isEmpty()) {
+            ketQua = sachRepository.findByLoaiSachAndKhoiLopAndHocKy(LoaiSach.SACH_GIAO_KHOA, khoiLop, soHocKy);
+        }
+
+        return ketQua.stream()
                 .map(sachMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -112,18 +118,37 @@ public class SachService {
         Short khoiLop = phanCong.getLopHoc().getKhoiLop();
         Short soHocKy = phanCong.getHocKy().getSoHocKy();
 
-        return sachRepository.findByLoaiSachAndKhoiLopAndMonHocAndHocKy(LoaiSach.SACH_BAI_TAP, khoiLop, monHocId, soHocKy).stream()
+        // Ưu tiên bản đã tách riêng cho đúng học kỳ này; nếu chưa có thì dùng bản dùng chung.
+        List<Sach> ketQua = sachRepository.findByLoaiSachAndKhoiLopAndMonHoc_MonHocIdAndHocKyCuThe_HocKyId(
+                LoaiSach.SACH_BAI_TAP, khoiLop, monHocId, hocKyId);
+        if (ketQua.isEmpty()) {
+            ketQua = sachRepository.findByLoaiSachAndKhoiLopAndMonHocAndHocKy(LoaiSach.SACH_BAI_TAP, khoiLop, monHocId, soHocKy);
+        }
+
+        return ketQua.stream()
                 .map(sachMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    // Ưu tiên bản đã tách riêng cho đúng học kỳ nguồn; nếu chưa có thì dùng bản dùng chung
+    // (tra theo số học kỳ, nhóm hocKyCuThe IS NULL — xem SachRepository).
+    private List<Sach> timSachNguonDeNhanBan(Short monHocId, Short khoiLop, HocKy hocKyCu) {
+        List<Sach> ketQua = sachRepository.findByMonHoc_MonHocIdAndKhoiLopAndHocKyCuThe_HocKyId(monHocId, khoiLop, hocKyCu.getHocKyId());
+        if (ketQua.isEmpty()) {
+            ketQua = sachRepository.findByMonHocAndKhoiLopAndHocKy(monHocId, khoiLop, hocKyCu.getSoHocKy());
+        }
+        return ketQua;
+    }
+
     @Transactional
-    public List<SachResponse> nhanBanSachKhongChuDe(Short monHocId, Short khoiLop, Short hocKyCu, Short hocKyMoi) {
+    public List<SachResponse> nhanBanSachKhongChuDe(Short monHocId, Short khoiLop, Integer hocKyCuId, Integer hocKyMoiId) {
         if (!monHocRepository.existsById(monHocId)) {
             throw new AppExceptions(Errorcode.MON_HOC_NOT_FOUND);
         }
+        HocKy hocKyCu = hocKyRepository.findById(hocKyCuId).orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+        HocKy hocKyMoi = hocKyRepository.findById(hocKyMoiId).orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
 
-        List<Sach> danhSachSachCu = sachRepository.findByMonHocAndKhoiLopAndHocKy(monHocId, khoiLop, hocKyCu);
+        List<Sach> danhSachSachCu = timSachNguonDeNhanBan(monHocId, khoiLop, hocKyCu);
         List<Sach> danhSachSachMoi = new ArrayList<>();
 
         for (Sach sachCu : danhSachSachCu) {
@@ -132,9 +157,10 @@ public class SachService {
             sachMoi.setBoSach(sachCu.getBoSach());
             sachMoi.setKhoiLop(sachCu.getKhoiLop());
             sachMoi.setMonHoc(sachCu.getMonHoc());
-            sachMoi.setHocKy(hocKyMoi);
+            sachMoi.setHocKy(hocKyMoi.getSoHocKy());
+            sachMoi.setHocKyCuThe(hocKyMoi);
             sachMoi.setTenSach(sachCu.getTenSach());
-            sachMoi.setSlug(sachCu.getSlug() != null ? sachCu.getSlug() + "-hk" + hocKyMoi : null);
+            sachMoi.setSlug(sachCu.getSlug() != null ? sachCu.getSlug() + "-hk" + hocKyMoi.getHocKyId() : null);
             sachMoi.setMoTa(sachCu.getMoTa());
             sachMoi.setAnhBiaUrl(sachCu.getAnhBiaUrl());
             sachMoi.setTongSoTrang(sachCu.getTongSoTrang());
@@ -153,12 +179,14 @@ public class SachService {
     }
 
     @Transactional
-    public List<SachResponse> nhanBanSachKemChuDe(Short monHocId, Short khoiLop, Short hocKyCu, Short hocKyMoi) {
+    public List<SachResponse> nhanBanSachKemChuDe(Short monHocId, Short khoiLop, Integer hocKyCuId, Integer hocKyMoiId) {
         if (!monHocRepository.existsById(monHocId)) {
             throw new AppExceptions(Errorcode.MON_HOC_NOT_FOUND);
         }
+        HocKy hocKyCu = hocKyRepository.findById(hocKyCuId).orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+        HocKy hocKyMoi = hocKyRepository.findById(hocKyMoiId).orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
 
-        List<Sach> danhSachSachCu = sachRepository.findByMonHocAndKhoiLopAndHocKy(monHocId, khoiLop, hocKyCu);
+        List<Sach> danhSachSachCu = timSachNguonDeNhanBan(monHocId, khoiLop, hocKyCu);
         List<Sach> danhSachSachMoi = new ArrayList<>();
 
         for (Sach sachCu : danhSachSachCu) {
@@ -167,9 +195,10 @@ public class SachService {
             sachMoi.setBoSach(sachCu.getBoSach());
             sachMoi.setKhoiLop(sachCu.getKhoiLop());
             sachMoi.setMonHoc(sachCu.getMonHoc());
-            sachMoi.setHocKy(hocKyMoi);
+            sachMoi.setHocKy(hocKyMoi.getSoHocKy());
+            sachMoi.setHocKyCuThe(hocKyMoi);
             sachMoi.setTenSach(sachCu.getTenSach());
-            sachMoi.setSlug(sachCu.getSlug() != null ? sachCu.getSlug() + "-hk" + hocKyMoi : null);
+            sachMoi.setSlug(sachCu.getSlug() != null ? sachCu.getSlug() + "-hk" + hocKyMoi.getHocKyId() : null);
             sachMoi.setMoTa(sachCu.getMoTa());
             sachMoi.setAnhBiaUrl(sachCu.getAnhBiaUrl());
             sachMoi.setTongSoTrang(sachCu.getTongSoTrang());
@@ -192,7 +221,7 @@ public class SachService {
     }
 
     @Transactional
-    public List<SachResponse> nhanBanSachTheoHocKy(Short monHocId, Short khoiLop, Short hocKyCu, Short hocKyMoi) {
-        return nhanBanSachKemChuDe(monHocId, khoiLop, hocKyCu, hocKyMoi);
+    public List<SachResponse> nhanBanSachTheoHocKy(Short monHocId, Short khoiLop, Integer hocKyCuId, Integer hocKyMoiId) {
+        return nhanBanSachKemChuDe(monHocId, khoiLop, hocKyCuId, hocKyMoiId);
     }
 }

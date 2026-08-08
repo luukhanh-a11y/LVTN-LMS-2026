@@ -16,4 +16,7 @@ public class CauHinhHeThongResponse {
     private Integer hocKyHienTaiId;
     private Short soHocKyHienTai; // Flattened
     private String tenNamHocHienTai; // Flattened
+
+    private Boolean danhGiaCuoiNamDangMo;
+    private String namHocDanhGia;
 }

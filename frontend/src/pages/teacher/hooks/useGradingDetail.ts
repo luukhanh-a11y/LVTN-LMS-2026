@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { teacherService, type SubmissionDetail } from '../../../services/teacher.service';
-import { useAuthStore } from '../../../stores/useAuthStore';
 
 export type ActionStatus = 'idle' | 'success' | 'error';
 
 export function useGradingDetail(submissionId: string | undefined) {
-  const user = useAuthStore((state) => state.user);
+  // giaoVienId thật (khác user.userId, vốn là id đăng nhập) — cần cho mọi request chấm bài
+  const [giaoVienId, setGiaoVienId] = useState<number | null>(null);
+  useEffect(() => {
+    teacherService.getMyTeacherProfile().then((p) => setGiaoVienId(p.giaoVienId)).catch(() => setGiaoVienId(null));
+  }, []);
 
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +56,11 @@ export function useGradingDetail(submissionId: string | undefined) {
       setActionMsg('Vui lòng nhập nhận xét trước khi phê duyệt!');
       return;
     }
+    if (!giaoVienId) {
+      setActionStatus('error');
+      setActionMsg('Không xác định được hồ sơ giáo viên, vui lòng tải lại trang!');
+      return;
+    }
     setIsSubmittingApprove(true);
     setActionStatus('idle');
     try {
@@ -60,7 +68,7 @@ export function useGradingDetail(submissionId: string | undefined) {
         grade: selectedGrade,
         comment: commentText,
         action: 'DUYET',
-        teacherId: user?.userId ?? 1,
+        teacherId: giaoVienId,
       });
       setActionStatus('success');
       setActionMsg('Phê duyệt bài làm thành công! Học sinh sẽ nhận được phản hồi ngay.');
@@ -78,6 +86,11 @@ export function useGradingDetail(submissionId: string | undefined) {
       setActionMsg('Vui lòng nhập lý do yêu cầu làm lại!');
       return;
     }
+    if (!giaoVienId) {
+      setActionStatus('error');
+      setActionMsg('Không xác định được hồ sơ giáo viên, vui lòng tải lại trang!');
+      return;
+    }
     setIsSubmittingRetry(true);
     setActionStatus('idle');
     try {
@@ -86,7 +99,7 @@ export function useGradingDetail(submissionId: string | undefined) {
         comment: retryReason,
         action: 'YC_LAM_LAI',
         reason: retryReason,
-        teacherId: user?.userId ?? 1,
+        teacherId: giaoVienId,
       });
       setActionStatus('success');
       setActionMsg('Đã gửi yêu cầu làm lại! Học sinh sẽ được phép nộp bài mới.');

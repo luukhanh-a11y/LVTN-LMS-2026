@@ -29,7 +29,7 @@ export const ticketService = {
       content: content.map(mapTicket),
       totalPages: response.data?.data?.totalPages || 0,
       totalElements: response.data?.data?.totalElements || 0,
-      last: response.data?.data?.last || true
+      last: response.data?.data?.last ?? true
     };
   },
 

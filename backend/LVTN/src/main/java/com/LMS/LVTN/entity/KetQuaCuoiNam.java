@@ -61,4 +61,9 @@ public class KetQuaCuoiNam {
 
     @Column(name = "ghi_chu", columnDefinition = "TEXT")
     private String ghiChu;
+
+    // Giáo viên đề xuất quyetDinh trước; chỉ khi Admin duyệt (daDuyet=true) mới thật sự
+    // tạo LichSuChuyenLop và chuyển lớp — xem KetQuaCuoiNamService.duyetHangLoat.
+    @Column(name = "da_duyet", nullable = false)
+    private Boolean daDuyet = false;
 }

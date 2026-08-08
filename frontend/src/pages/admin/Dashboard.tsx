@@ -3,8 +3,10 @@ import { Users, BookOpen, UserCheck, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 
 import { adminService } from '../../services/admin.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function AdminDashboard() {
+  const { selectedNamHoc } = useAcademicStore();
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -16,11 +18,13 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    fetchStats();
-  }, []);
+    if (selectedNamHoc) fetchStats();
+  }, [selectedNamHoc]);
 
   const fetchStats = async () => {
+    if (!selectedNamHoc) return;
     try {
+      // Backend chưa hỗ trợ lọc theo năm học — trả về số liệu toàn hệ thống
       const data = await adminService.getDashboardStats();
       setStats(data);
     } catch (err) {
@@ -37,7 +41,12 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Tổng quan toàn trường</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-slate-800">Tổng quan toàn trường</h1>
+        <span className="text-sm font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+          Năm học: {selectedNamHoc}
+        </span>
+      </div>
       
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

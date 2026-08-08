@@ -1,6 +1,7 @@
 package com.LMS.LVTN.repository;
 
 import com.LMS.LVTN.entity.DanhGiaBaiLam;
+import com.LMS.LVTN.enums.HanhDongDanhGia;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,9 @@ import java.util.List;
 public interface DanhGiaBaiLamRepository extends JpaRepository<DanhGiaBaiLam, Long> {
     Optional<DanhGiaBaiLam> findByBaiNop_BaiNopId(Long baiNopId);
     List<DanhGiaBaiLam> findByGiaoVien_GiaoVienId(Long giaoVienId);
-    
+
     long countByBaiNop_HocSinh_HocSinhIdAndDiemSoGreaterThanEqual(Long hocSinhId, BigDecimal diemSo);
+
+    long countByBaiNop_BaiTap_BaiTapIdAndBaiNop_HocSinh_HocSinhIdAndHanhDong(
+            Long baiTapId, Long hocSinhId, HanhDongDanhGia hanhDong);
 }

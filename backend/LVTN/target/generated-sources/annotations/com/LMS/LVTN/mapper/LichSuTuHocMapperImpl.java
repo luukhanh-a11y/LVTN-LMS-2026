@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class LichSuTuHocMapperImpl implements LichSuTuHocMapper {
@@ -42,10 +42,10 @@ public class LichSuTuHocMapperImpl implements LichSuTuHocMapper {
         lichSuTuHocResponse.setDangBaiId( entityDangBaiDangBaiId( entity ) );
         lichSuTuHocResponse.setTenDangBai( entityDangBaiTenDangBai( entity ) );
         lichSuTuHocResponse.setDapAnChuan( entityDangBaiDapAnChuan( entity ) );
-        lichSuTuHocResponse.setChiTietBaiLam( entity.getChiTietBaiLam() );
-        lichSuTuHocResponse.setDiemSo( entity.getDiemSo() );
-        lichSuTuHocResponse.setThoiGianNop( entity.getThoiGianNop() );
         lichSuTuHocResponse.setTuHocId( entity.getTuHocId() );
+        lichSuTuHocResponse.setDiemSo( entity.getDiemSo() );
+        lichSuTuHocResponse.setChiTietBaiLam( entity.getChiTietBaiLam() );
+        lichSuTuHocResponse.setThoiGianNop( entity.getThoiGianNop() );
 
         return lichSuTuHocResponse;
     }

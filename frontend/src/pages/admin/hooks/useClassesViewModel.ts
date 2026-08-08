@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { classService, type ClassRoom } from '../../../services/class.service';
 import { teacherService, type TeacherProfile } from '../../../services/teacher.service';
+import { useAcademicStore } from '../../../stores/useAcademicStore';
 import toast from 'react-hot-toast';
 
 const INITIAL_FORM = {
@@ -23,6 +24,8 @@ export function useClassesViewModel() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGrade, setFilterGrade] = useState('all');
+  
+  const { selectedNamHoc } = useAcademicStore();
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -44,14 +47,15 @@ export function useClassesViewModel() {
 
   const filteredClasses = useMemo(() =>
     classes.filter((cls) => {
+      const matchYear = cls.namHoc?.tenNamHoc === selectedNamHoc;
       const matchSearch = cls.tenLop.toLowerCase().includes(searchQuery.toLowerCase());
       const matchGrade = filterGrade === 'all' || cls.khoiLop.toString() === filterGrade;
-      return matchSearch && matchGrade;
-    }), [classes, searchQuery, filterGrade]);
+      return matchYear && matchSearch && matchGrade;
+    }), [classes, searchQuery, filterGrade, selectedNamHoc]);
 
   const openCreateModal = () => {
     setEditingClass(null);
-    setFormData(INITIAL_FORM);
+    setFormData({ ...INITIAL_FORM, academicYear: selectedNamHoc });
     setShowClassModal(true);
   };
 
@@ -86,7 +90,7 @@ export function useClassesViewModel() {
       const dto = {
         name: formData.name,
         grade: parseInt(formData.grade),
-        academicYear: formData.academicYear,
+        academicYear: selectedNamHoc, // Force global year
         maxCapacity: parseInt(formData.maxCapacity),
         homeroomTeacherId: formData.homeroomTeacherId ? parseInt(formData.homeroomTeacherId) : undefined,
       };

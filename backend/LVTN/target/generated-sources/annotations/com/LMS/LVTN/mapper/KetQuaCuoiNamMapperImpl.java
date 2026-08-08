@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class KetQuaCuoiNamMapperImpl implements KetQuaCuoiNamMapper {
@@ -25,14 +25,14 @@ public class KetQuaCuoiNamMapperImpl implements KetQuaCuoiNamMapper {
 
         KetQuaCuoiNam ketQuaCuoiNam = new KetQuaCuoiNam();
 
-        ketQuaCuoiNam.setDuocXetDacCach( request.getDuocXetDacCach() );
-        ketQuaCuoiNam.setGhiChu( request.getGhiChu() );
+        ketQuaCuoiNam.setNamHoc( request.getNamHoc() );
         ketQuaCuoiNam.setKetQuaHocTap( request.getKetQuaHocTap() );
         ketQuaCuoiNam.setKetQuaRenLuyen( request.getKetQuaRenLuyen() );
-        ketQuaCuoiNam.setLyDoDacCach( request.getLyDoDacCach() );
-        ketQuaCuoiNam.setNamHoc( request.getNamHoc() );
-        ketQuaCuoiNam.setNgayXet( request.getNgayXet() );
         ketQuaCuoiNam.setQuyetDinh( request.getQuyetDinh() );
+        ketQuaCuoiNam.setDuocXetDacCach( request.getDuocXetDacCach() );
+        ketQuaCuoiNam.setLyDoDacCach( request.getLyDoDacCach() );
+        ketQuaCuoiNam.setNgayXet( request.getNgayXet() );
+        ketQuaCuoiNam.setGhiChu( request.getGhiChu() );
 
         return ketQuaCuoiNam;
     }
@@ -51,15 +51,16 @@ public class KetQuaCuoiNamMapperImpl implements KetQuaCuoiNamMapper {
         ketQuaCuoiNamResponse.setTenLop( entityLopHocTenLop( entity ) );
         ketQuaCuoiNamResponse.setGiaoVienXetId( entityGiaoVienXetGiaoVienId( entity ) );
         ketQuaCuoiNamResponse.setTenGiaoVienXet( entityGiaoVienXetHoTen( entity ) );
-        ketQuaCuoiNamResponse.setDuocXetDacCach( entity.getDuocXetDacCach() );
-        ketQuaCuoiNamResponse.setGhiChu( entity.getGhiChu() );
-        ketQuaCuoiNamResponse.setKetQuaHocTap( entity.getKetQuaHocTap() );
         ketQuaCuoiNamResponse.setKetQuaId( entity.getKetQuaId() );
-        ketQuaCuoiNamResponse.setKetQuaRenLuyen( entity.getKetQuaRenLuyen() );
-        ketQuaCuoiNamResponse.setLyDoDacCach( entity.getLyDoDacCach() );
         ketQuaCuoiNamResponse.setNamHoc( entity.getNamHoc() );
-        ketQuaCuoiNamResponse.setNgayXet( entity.getNgayXet() );
+        ketQuaCuoiNamResponse.setKetQuaHocTap( entity.getKetQuaHocTap() );
+        ketQuaCuoiNamResponse.setKetQuaRenLuyen( entity.getKetQuaRenLuyen() );
         ketQuaCuoiNamResponse.setQuyetDinh( entity.getQuyetDinh() );
+        ketQuaCuoiNamResponse.setDuocXetDacCach( entity.getDuocXetDacCach() );
+        ketQuaCuoiNamResponse.setLyDoDacCach( entity.getLyDoDacCach() );
+        ketQuaCuoiNamResponse.setNgayXet( entity.getNgayXet() );
+        ketQuaCuoiNamResponse.setGhiChu( entity.getGhiChu() );
+        ketQuaCuoiNamResponse.setDaDuyet( entity.getDaDuyet() );
 
         return ketQuaCuoiNamResponse;
     }
@@ -70,14 +71,14 @@ public class KetQuaCuoiNamMapperImpl implements KetQuaCuoiNamMapper {
             return;
         }
 
-        entity.setDuocXetDacCach( request.getDuocXetDacCach() );
-        entity.setGhiChu( request.getGhiChu() );
+        entity.setNamHoc( request.getNamHoc() );
         entity.setKetQuaHocTap( request.getKetQuaHocTap() );
         entity.setKetQuaRenLuyen( request.getKetQuaRenLuyen() );
-        entity.setLyDoDacCach( request.getLyDoDacCach() );
-        entity.setNamHoc( request.getNamHoc() );
-        entity.setNgayXet( request.getNgayXet() );
         entity.setQuyetDinh( request.getQuyetDinh() );
+        entity.setDuocXetDacCach( request.getDuocXetDacCach() );
+        entity.setLyDoDacCach( request.getLyDoDacCach() );
+        entity.setNgayXet( request.getNgayXet() );
+        entity.setGhiChu( request.getGhiChu() );
     }
 
     private Long entityHocSinhHocSinhId(KetQuaCuoiNam ketQuaCuoiNam) {

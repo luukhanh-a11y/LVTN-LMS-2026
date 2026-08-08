@@ -69,4 +69,13 @@ public class KetQuaCuoiNamController {
                 .data("Đã gửi thông báo mở đợt đánh giá cho tất cả Giáo viên chủ nhiệm.")
                 .build();
     }
+
+    @PostMapping("/duyet-hang-loat")
+    public ApiResponse<List<KetQuaCuoiNamResponse>> duyetHangLoat(
+            @RequestHeader("Authorization") String token,
+            @RequestBody List<com.LMS.LVTN.dto.request.KetQuaCuoiNamDuyetRequest> requests) {
+        return ApiResponse.<List<KetQuaCuoiNamResponse>>builder()
+                .data(ketQuaCuoiNamService.duyetHangLoat(token, requests))
+                .build();
+    }
 }

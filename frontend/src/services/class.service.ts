@@ -56,7 +56,7 @@ export const classService = {
       })),
       totalPages: response.data?.data?.totalPages || 0,
       totalElements: response.data?.data?.totalElements || 0,
-      last: response.data?.data?.last || true
+      last: response.data?.data?.last ?? true
     };
   },
 
@@ -83,21 +83,20 @@ export const classService = {
     return response.data?.data || response.data;
   },
 
+  // Nguồn thật là /hoso-hocsinh — có sẵn hocSinhId (khác nguoiDungId, cần cho chuyển lớp/xét kết quả).
   getStudentsByClass: async (id: number): Promise<any[]> => {
-    const response = await api.get('/nguoi-dung');
-    const allUsers = response.data?.data || response.data || [];
-    return allUsers
-        .filter((u: any) => u.vaiTro === 'HOC_SINH' && (
-           (u.hoSoHocSinh && u.hoSoHocSinh.lopHoc && u.hoSoHocSinh.lopHoc.lopHocId === id) || 
-           u.lopHocId === id
-        ))
-        .map((u: any) => ({
-            id: u.nguoiDungId || u.id,
-            username: u.tenDangNhap || u.username,
-            fullName: u.hoTen || u.fullName || u.tenDangNhap,
-            email: u.email,
-            status: u.trangThai || u.status,
-            maHocSinh: u.maHocSinh || (u.hoSoHocSinh ? u.hoSoHocSinh.maHocSinh : null)
+    const response = await api.get('/hoso-hocsinh');
+    const all = response.data?.data || response.data || [];
+    return all
+        .filter((hs: any) => hs.lopHocId === id)
+        .map((hs: any) => ({
+            id: hs.nguoiDungId,
+            hocSinhId: hs.hocSinhId,
+            fullName: hs.hoTen,
+            maHocSinh: hs.maHocSinh,
+            ngaySinh: hs.ngaySinh,
+            gioiTinh: hs.gioiTinh,
+            tongXp: hs.tongXp ?? 0,
         }));
   },
 

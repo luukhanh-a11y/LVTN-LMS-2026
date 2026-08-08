@@ -14,7 +14,6 @@ import SelectChild from './pages/auth/SelectChild';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import AdminTickets from './pages/admin/Tickets';
-import AdminImport from './pages/admin/ExcelImport';
 import AdminClasses from './pages/admin/Classes';
 import ClassDetails from './pages/admin/ClassDetails';
 import AdminSettings from './pages/admin/Settings';
@@ -26,9 +25,6 @@ import TeacherClasses from './pages/teacher/Classes';
 import TeacherClassDetails from './pages/teacher/ClassDetails';
 import TeacherMaterials from './pages/teacher/Materials';
 import TeacherMaterialDetail from './pages/teacher/MaterialDetail';
-import BoSachLessonDetail from './pages/teacher/BoSachLessonDetail';
-import TeacherAssignments from './pages/teacher/Assignments';
-import QuizAuthoring from './pages/teacher/QuizAuthoring';
 import TeacherKetQuaCuoiNam from './pages/teacher/KetQuaCuoiNam';
 import AdminKetQuaCuoiNam from './pages/admin/KetQuaCuoiNam';
 import TeacherGrading from './pages/teacher/Grading';
@@ -97,10 +93,8 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="tickets" element={<AdminTickets />} />
-          <Route path="import" element={<AdminImport />} />
           <Route path="classes" element={<AdminClasses />} />
           <Route path="classes/:id" element={<ClassDetails />} />
-          <Route path="quiz-authoring" element={<QuizAuthoring />} />
           <Route path="curriculum" element={<AdminCurriculum />} />
           <Route path="ket-qua-cuoi-nam" element={<AdminKetQuaCuoiNam />} />
           <Route path="settings" element={<AdminSettings />} />
@@ -113,12 +107,9 @@ function App() {
           <Route path="classes/:classId" element={<TeacherClassDetails />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
           <Route path="materials" element={<TeacherMaterials />} />
-          <Route path="materials/bo-sach/:baiHocId" element={<BoSachLessonDetail />} />
           <Route path="materials/:materialId" element={<TeacherMaterialDetail />} />
           <Route path="editor" element={<TeacherEditor />} />
           <Route path="editor/:contentId" element={<TeacherEditor />} />
-          <Route path="assignments" element={<TeacherAssignments />} />
-          <Route path="quiz-authoring" element={<QuizAuthoring />} />
           <Route path="ket-qua-cuoi-nam" element={<TeacherKetQuaCuoiNam />} />
           <Route path="grading" element={<TeacherGrading />} />
           <Route path="grading/:submissionId" element={<TeacherGradingDetail />} />

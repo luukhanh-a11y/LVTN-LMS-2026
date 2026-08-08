@@ -2,6 +2,7 @@ package com.LMS.LVTN.mapper;
 
 import com.LMS.LVTN.dto.request.SachRequest;
 import com.LMS.LVTN.dto.response.SachResponse;
+import com.LMS.LVTN.entity.HocKy;
 import com.LMS.LVTN.entity.MonHoc;
 import com.LMS.LVTN.entity.Sach;
 import javax.annotation.processing.Generated;
@@ -9,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-07T23:40:25+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-08T11:16:16+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class SachMapperImpl implements SachMapper {
@@ -23,19 +24,19 @@ public class SachMapperImpl implements SachMapper {
 
         Sach sach = new Sach();
 
-        sach.setAnhBiaUrl( request.getAnhBiaUrl() );
-        sach.setBanBienSoan( request.getBanBienSoan() );
-        sach.setBanQuyen( request.getBanQuyen() );
-        sach.setBoSach( request.getBoSach() );
         sach.setBookIdNgoai( request.getBookIdNgoai() );
-        sach.setHocKy( request.getHocKy() );
-        sach.setKhoiLop( request.getKhoiLop() );
         sach.setLoaiSach( request.getLoaiSach() );
-        sach.setMoTa( request.getMoTa() );
-        sach.setNamXuatBan( request.getNamXuatBan() );
-        sach.setSlug( request.getSlug() );
+        sach.setBoSach( request.getBoSach() );
+        sach.setKhoiLop( request.getKhoiLop() );
+        sach.setHocKy( request.getHocKy() );
         sach.setTenSach( request.getTenSach() );
+        sach.setSlug( request.getSlug() );
+        sach.setMoTa( request.getMoTa() );
+        sach.setAnhBiaUrl( request.getAnhBiaUrl() );
         sach.setTongSoTrang( request.getTongSoTrang() );
+        sach.setNamXuatBan( request.getNamXuatBan() );
+        sach.setBanQuyen( request.getBanQuyen() );
+        sach.setBanBienSoan( request.getBanBienSoan() );
         sach.setTrangThai( request.getTrangThai() );
 
         return sach;
@@ -51,23 +52,24 @@ public class SachMapperImpl implements SachMapper {
 
         sachResponse.setMonHocId( entityMonHocMonHocId( entity ) );
         sachResponse.setTenMonHoc( entityMonHocTenMon( entity ) );
-        sachResponse.setAnhBiaUrl( entity.getAnhBiaUrl() );
-        sachResponse.setBanBienSoan( entity.getBanBienSoan() );
-        sachResponse.setBanQuyen( entity.getBanQuyen() );
-        sachResponse.setBoSach( entity.getBoSach() );
-        sachResponse.setBookIdNgoai( entity.getBookIdNgoai() );
-        sachResponse.setHocKy( entity.getHocKy() );
-        sachResponse.setKhoiLop( entity.getKhoiLop() );
-        sachResponse.setLoaiSach( entity.getLoaiSach() );
-        sachResponse.setMoTa( entity.getMoTa() );
-        sachResponse.setNamXuatBan( entity.getNamXuatBan() );
-        sachResponse.setNgayCapNhat( entity.getNgayCapNhat() );
-        sachResponse.setNgayTao( entity.getNgayTao() );
+        sachResponse.setHocKyCuTheId( entityHocKyCuTheHocKyId( entity ) );
         sachResponse.setSachId( entity.getSachId() );
-        sachResponse.setSlug( entity.getSlug() );
+        sachResponse.setBookIdNgoai( entity.getBookIdNgoai() );
+        sachResponse.setLoaiSach( entity.getLoaiSach() );
+        sachResponse.setBoSach( entity.getBoSach() );
+        sachResponse.setKhoiLop( entity.getKhoiLop() );
+        sachResponse.setHocKy( entity.getHocKy() );
         sachResponse.setTenSach( entity.getTenSach() );
+        sachResponse.setSlug( entity.getSlug() );
+        sachResponse.setMoTa( entity.getMoTa() );
+        sachResponse.setAnhBiaUrl( entity.getAnhBiaUrl() );
         sachResponse.setTongSoTrang( entity.getTongSoTrang() );
+        sachResponse.setNamXuatBan( entity.getNamXuatBan() );
+        sachResponse.setBanQuyen( entity.getBanQuyen() );
+        sachResponse.setBanBienSoan( entity.getBanBienSoan() );
         sachResponse.setTrangThai( entity.getTrangThai() );
+        sachResponse.setNgayTao( entity.getNgayTao() );
+        sachResponse.setNgayCapNhat( entity.getNgayCapNhat() );
 
         return sachResponse;
     }
@@ -78,19 +80,19 @@ public class SachMapperImpl implements SachMapper {
             return;
         }
 
-        entity.setAnhBiaUrl( request.getAnhBiaUrl() );
-        entity.setBanBienSoan( request.getBanBienSoan() );
-        entity.setBanQuyen( request.getBanQuyen() );
-        entity.setBoSach( request.getBoSach() );
         entity.setBookIdNgoai( request.getBookIdNgoai() );
-        entity.setHocKy( request.getHocKy() );
-        entity.setKhoiLop( request.getKhoiLop() );
         entity.setLoaiSach( request.getLoaiSach() );
-        entity.setMoTa( request.getMoTa() );
-        entity.setNamXuatBan( request.getNamXuatBan() );
-        entity.setSlug( request.getSlug() );
+        entity.setBoSach( request.getBoSach() );
+        entity.setKhoiLop( request.getKhoiLop() );
+        entity.setHocKy( request.getHocKy() );
         entity.setTenSach( request.getTenSach() );
+        entity.setSlug( request.getSlug() );
+        entity.setMoTa( request.getMoTa() );
+        entity.setAnhBiaUrl( request.getAnhBiaUrl() );
         entity.setTongSoTrang( request.getTongSoTrang() );
+        entity.setNamXuatBan( request.getNamXuatBan() );
+        entity.setBanQuyen( request.getBanQuyen() );
+        entity.setBanBienSoan( request.getBanBienSoan() );
         entity.setTrangThai( request.getTrangThai() );
     }
 
@@ -108,5 +110,13 @@ public class SachMapperImpl implements SachMapper {
             return null;
         }
         return monHoc.getTenMon();
+    }
+
+    private Integer entityHocKyCuTheHocKyId(Sach sach) {
+        HocKy hocKyCuThe = sach.getHocKyCuThe();
+        if ( hocKyCuThe == null ) {
+            return null;
+        }
+        return hocKyCuThe.getHocKyId();
     }
 }

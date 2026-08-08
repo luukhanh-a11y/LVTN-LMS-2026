@@ -100,7 +100,9 @@ public class DanhGiaBaiLamService {
     private void syncBaiNopAndStudentXp(DanhGiaBaiLam danhGia) {
         if (danhGia.getBaiNop() != null) {
             BaiNop baiNop = danhGia.getBaiNop();
-            baiNop.setTrangThai(com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
+            baiNop.setTrangThai(danhGia.getHanhDong() == com.LMS.LVTN.enums.HanhDongDanhGia.YC_LAM_LAI
+                    ? com.LMS.LVTN.enums.TrangThaiBaiNop.YC_LAM_LAI
+                    : com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM);
 
             short xpMoi = 0;
             if (danhGia.getDiemSo() != null) {

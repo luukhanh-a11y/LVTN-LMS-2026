@@ -77,10 +77,10 @@ public class SachController {
     public ApiResponse<List<SachResponse>> nhanBanSachKhongChuDe(
             @RequestParam("monHocId") Short monHocId,
             @RequestParam("khoiLop") Short khoiLop,
-            @RequestParam("hocKyCu") Short hocKyCu,
-            @RequestParam("hocKyMoi") Short hocKyMoi) {
+            @RequestParam("hocKyCuId") Integer hocKyCuId,
+            @RequestParam("hocKyMoiId") Integer hocKyMoiId) {
         return ApiResponse.<List<SachResponse>>builder()
-                .data(sachService.nhanBanSachKhongChuDe(monHocId, khoiLop, hocKyCu, hocKyMoi))
+                .data(sachService.nhanBanSachKhongChuDe(monHocId, khoiLop, hocKyCuId, hocKyMoiId))
                 .build();
     }
 
@@ -88,10 +88,10 @@ public class SachController {
     public ApiResponse<List<SachResponse>> nhanBanSachKemChuDe(
             @RequestParam("monHocId") Short monHocId,
             @RequestParam("khoiLop") Short khoiLop,
-            @RequestParam("hocKyCu") Short hocKyCu,
-            @RequestParam("hocKyMoi") Short hocKyMoi) {
+            @RequestParam("hocKyCuId") Integer hocKyCuId,
+            @RequestParam("hocKyMoiId") Integer hocKyMoiId) {
         return ApiResponse.<List<SachResponse>>builder()
-                .data(sachService.nhanBanSachKemChuDe(monHocId, khoiLop, hocKyCu, hocKyMoi))
+                .data(sachService.nhanBanSachKemChuDe(monHocId, khoiLop, hocKyCuId, hocKyMoiId))
                 .build();
     }
 
@@ -99,10 +99,10 @@ public class SachController {
     public ApiResponse<List<SachResponse>> nhanBanSachTheoHocKy(
             @RequestParam("monHocId") Short monHocId,
             @RequestParam("khoiLop") Short khoiLop,
-            @RequestParam("hocKyCu") Short hocKyCu,
-            @RequestParam("hocKyMoi") Short hocKyMoi) {
+            @RequestParam("hocKyCuId") Integer hocKyCuId,
+            @RequestParam("hocKyMoiId") Integer hocKyMoiId) {
         return ApiResponse.<List<SachResponse>>builder()
-                .data(sachService.nhanBanSachTheoHocKy(monHocId, khoiLop, hocKyCu, hocKyMoi))
+                .data(sachService.nhanBanSachTheoHocKy(monHocId, khoiLop, hocKyCuId, hocKyMoiId))
                 .build();
     }
 }

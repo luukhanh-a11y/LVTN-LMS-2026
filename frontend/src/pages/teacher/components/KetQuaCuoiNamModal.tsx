@@ -8,7 +8,9 @@ interface Props {
   classId: number;
   studentId: number;
   studentName: string;
-  goiYKetQuaHocTap: string | null;
+  giaoVienId: number;
+  namHoc: string;
+  ketQuaId?: number;
   existing?: {
     ketQuaHocTap: string;
     ketQuaRenLuyen: string;
@@ -21,14 +23,8 @@ interface Props {
   onSaved: () => void;
 }
 
-const NHAN_HOC_TAP: Record<string, string> = {
-  HOAN_THANH_TOT: 'Hoàn thành Tốt',
-  HOAN_THANH: 'Hoàn thành',
-  CHUA_HOAN_THANH: 'Chưa hoàn thành',
-};
-
-export function KetQuaCuoiNamModal({ classId, studentId, studentName, goiYKetQuaHocTap, existing, onClose, onSaved }: Props) {
-  const [ketQuaHocTap, setKetQuaHocTap] = useState(existing?.ketQuaHocTap ?? goiYKetQuaHocTap ?? 'HOAN_THANH');
+export function KetQuaCuoiNamModal({ classId, studentId, studentName, giaoVienId, namHoc, ketQuaId, existing, onClose, onSaved }: Props) {
+  const [ketQuaHocTap, setKetQuaHocTap] = useState(existing?.ketQuaHocTap ?? 'HOAN_THANH');
   const [ketQuaRenLuyen, setKetQuaRenLuyen] = useState(existing?.ketQuaRenLuyen ?? 'TOT');
   const [quyetDinh, setQuyetDinh] = useState(existing?.quyetDinh ?? 'LEN_LOP');
   const [duocXetDacCach, setDuocXetDacCach] = useState(existing?.duocXetDacCach ?? false);
@@ -39,15 +35,25 @@ export function KetQuaCuoiNamModal({ classId, studentId, studentName, goiYKetQua
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await teacherService.luuKetQuaCuoiNam(classId, studentId, {
+      const payload = {
+        hocSinhId: studentId,
+        lopHocId: classId,
+        namHoc,
         ketQuaHocTap,
         ketQuaRenLuyen,
         quyetDinh,
         duocXetDacCach,
         lyDoDacCach: duocXetDacCach ? lyDoDacCach : undefined,
+        giaoVienXetId: giaoVienId,
+        ngayXet: new Date().toISOString().slice(0, 10),
         ghiChu,
-      });
-      toast.success(`Đã lưu kết quả cuối năm cho ${studentName}!`);
+      };
+      if (ketQuaId) {
+        await teacherService.updateKetQuaCuoiNam(ketQuaId, payload);
+      } else {
+        await teacherService.createKetQuaCuoiNam(payload);
+      }
+      toast.success(`Đã lưu đề xuất kết quả cuối năm cho ${studentName}! Admin sẽ duyệt & chuyển lớp sau.`);
       onSaved();
       onClose();
     } catch (err: any) {
@@ -73,11 +79,6 @@ export function KetQuaCuoiNamModal({ classId, studentId, studentName, goiYKetQua
           <p className="text-sm text-slate-600">
             Học sinh: <span className="font-bold text-slate-800">{studentName}</span>
           </p>
-          {goiYKetQuaHocTap && (
-            <p className="text-xs text-slate-500 italic">
-              Gợi ý dựa trên điểm cả năm: <span className="font-medium">{NHAN_HOC_TAP[goiYKetQuaHocTap] ?? goiYKetQuaHocTap}</span>
-            </p>
-          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

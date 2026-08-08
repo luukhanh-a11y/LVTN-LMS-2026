@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { Send, Bot, Sparkles, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { teacherService } from '../../services/teacher.service';
-import type { ClassRoom, Material, Subject } from '../../services/teacher.service';
-import { useAuthStore } from '../../stores/useAuthStore';
+import { teacherService, type ClassRoom } from '../../services/teacher.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 // Gợi ý yêu cầu bài tập theo từ khóa trong tiêu đề — quy tắc dựa dữ liệu thật (tiêu đề
 // GV nhập), không gọi API AI ngoài (dự án hiện chưa có credentials cho dịch vụ AI trả phí).
@@ -30,73 +28,180 @@ function suggestDescription(title: string): string {
   return `Các con hãy viết một đoạn văn ngắn (từ 5-7 câu) về chủ đề "${title}". Hãy nêu rõ suy nghĩ, cảm xúc và ví dụ cụ thể của con nhé!`;
 }
 
+// Giao diện hỗ trợ theo từng dạng bài — đồng bộ với bảng mapping ở
+// frontend/src/pages/admin/components/GameAuthoringForm.tsx (soạn nội dung).
+const GIAO_DIEN_THEO_LOAI: Record<string, { value: string; label: string }[]> = {
+  TRAC_NGHIEM: [
+    { value: 'MAC_DINH', label: 'Trắc nghiệm chuẩn' },
+    { value: 'DAO_VANG', label: 'Đào Vàng' },
+    { value: 'DUOI_BAT', label: 'Đuổi Bắt' },
+    { value: 'THU_HOACH_NONG_SAN', label: 'Thu hoạch Nông sản' },
+    { value: 'ECH_QUA_SONG', label: 'Ếch qua sông' },
+    { value: 'BAN_BONG_BAY', label: 'Bắn bóng bay' },
+    { value: 'TRIEU_PHU', label: 'Ai là triệu phú' },
+  ],
+  NOI_CAP: [
+    { value: 'MAC_DINH', label: 'Nối cặp (Kéo dây)' },
+    { value: 'PHAN_LOAI', label: 'Phân loại (Kéo thả vào thùng)' },
+  ],
+  DIEN_KHUYET: [
+    { value: 'MAC_DINH', label: 'Nhập liệu chuẩn' },
+    { value: 'ONG_TIM_MAT', label: 'Game Ong Tìm Mật' },
+  ],
+  LY_THUYET: [{ value: 'MAC_DINH', label: 'Mặc định' }],
+  TU_LUAN: [{ value: 'MAC_DINH', label: 'Mặc định' }],
+};
+
+function parseLoaiDangBai(dangBai: any): string {
+  try {
+    const parsed = JSON.parse(dangBai.duLieuGame || '{}');
+    return parsed.loai || 'TRAC_NGHIEM';
+  } catch {
+    return 'TRAC_NGHIEM';
+  }
+}
+
 export default function TeacherAssignments() {
-  const user = useAuthStore((state) => state.user);
-  const [searchParams] = useSearchParams();
+  const currentHocKyId = useAcademicStore((state) => state.currentHocKyId);
+
   const [targetType, setTargetType] = useState('toan-lop');
   const [showAI, setShowAI] = useState(false);
   const [taskDesc, setTaskDesc] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<number | ''>('');
+  const [selectedMonHocId, setSelectedMonHocId] = useState<number | ''>('');
   const [deadline, setDeadline] = useState('');
   const [maxResubmitCount, setMaxResubmitCount] = useState<number>(0);
   const [assignmentType, setAssignmentType] = useState('TU_LUAN');
 
+  const [teacherProfile, setTeacherProfile] = useState<{ giaoVienId: number } | null>(null);
   const [classes, setClasses] = useState<ClassRoom[]>([]);
-  const [h5pMaterials, setH5pMaterials] = useState<Material[]>([]);
-  const [selectedHocLieuId, setSelectedHocLieuId] = useState<number | ''>('');
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [quizSubjectId, setQuizSubjectId] = useState<number | ''>('');
-  const [quizSlots, setQuizSlots] = useState<any[]>([]);
-  const [selectedDangBais, setSelectedDangBais] = useState<{ dangBaiId: number; thuTu: number; cheDoGiaoDien: string }[]>([]);
-  const [isLoadingQuizSlots, setIsLoadingQuizSlots] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Chuỗi Sách bài tập → Chủ đề → Bài học → Dạng bài (đúng bộ môn giáo viên được phân công)
+  const [sachList, setSachList] = useState<any[]>([]);
+  const [selectedSachId, setSelectedSachId] = useState<number | ''>('');
+  const [isLoadingSach, setIsLoadingSach] = useState(false);
+
+  const [chuDeList, setChuDeList] = useState<any[]>([]);
+  const [selectedChuDeId, setSelectedChuDeId] = useState<number | ''>('');
+  const [isLoadingChuDe, setIsLoadingChuDe] = useState(false);
+
+  const [baiHocList, setBaiHocList] = useState<any[]>([]);
+  const [selectedBaiHocId, setSelectedBaiHocId] = useState<number | ''>('');
+  const [isLoadingBaiHoc, setIsLoadingBaiHoc] = useState(false);
+
+  const [dangBaiList, setDangBaiList] = useState<any[]>([]);
+  const [isLoadingDangBai, setIsLoadingDangBai] = useState(false);
+  const [selectedDangBais, setSelectedDangBais] = useState<{ dangBaiId: number; thuTu: number; cheDoGiaoDien: string }[]>([]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const selectedClass = classes.find((c) => c.id === selectedClassId);
+  const monHocOptions = selectedClass?.monHocList ?? [];
+  const selectedMonHoc = monHocOptions.find((m) => m.monHocId === selectedMonHocId);
+
+  // Nạp hồ sơ giáo viên + danh sách lớp được phân công (đã lọc theo học kỳ hiện tại)
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
       try {
-        const [classData, materialData, subjectData] = await Promise.all([
+        const [profile, classData] = await Promise.all([
+          teacherService.getMyTeacherProfile(),
           teacherService.getClasses(),
-          user?.userId ? teacherService.getMaterials(user.userId) : Promise.resolve([]),
-          teacherService.getSubjects(),
         ]);
+        setTeacherProfile(profile);
         setClasses(classData);
         if (classData.length > 0) setSelectedClassId(classData[0].id);
-        setH5pMaterials(materialData.filter((m) => m.h5pContentId));
-        setSubjects(subjectData);
-
-        const prefillHocLieuId = searchParams.get('hocLieuId');
-        if (prefillHocLieuId) {
-          setAssignmentType('H5P');
-          setSelectedHocLieuId(Number(prefillHocLieuId));
-        }
       } catch (err) {
-        console.error('Lỗi tải danh sách lớp', err);
+        console.error('Lỗi tải dữ liệu giáo viên/lớp học', err);
       } finally {
         setIsLoadingData(false);
       }
-    };
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    })();
   }, []);
 
+  // Khi đổi lớp: reset chuỗi chọn nội dung, tự chọn môn nếu lớp chỉ được phân công 1 môn
   useEffect(() => {
-    if (assignmentType !== 'TRAC_NGHIEM' || !quizSubjectId || !selectedClassId) {
-      setQuizSlots([]);
-      return;
-    }
-    const selectedClass = classes.find((c) => c.id === selectedClassId);
-    if (!selectedClass) return;
-    setIsLoadingQuizSlots(true);
+    const opts = classes.find((c) => c.id === selectedClassId)?.monHocList ?? [];
+    setSelectedMonHocId(opts.length === 1 ? opts[0].monHocId : '');
+    setSachList([]); setSelectedSachId('');
+    setChuDeList([]); setSelectedChuDeId('');
+    setBaiHocList([]); setSelectedBaiHocId('');
+    setDangBaiList([]); setSelectedDangBais([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClassId]);
+
+  // Chọn Sách bài tập đúng bộ môn/lớp/học kỳ giáo viên được phân công
+  useEffect(() => {
+    setSachList([]); setSelectedSachId('');
+    setChuDeList([]); setSelectedChuDeId('');
+    setBaiHocList([]); setSelectedBaiHocId('');
+    setDangBaiList([]); setSelectedDangBais([]);
+    if (assignmentType !== 'TRAC_NGHIEM' || !teacherProfile || !selectedClassId || !selectedMonHoc) return;
+
+    setIsLoadingSach(true);
     teacherService
-      .getQuizSlots(quizSubjectId as number, selectedClass.grade)
-      .then((slots) => setQuizSlots(slots.filter((s) => s.hasContent)))
-      .catch(() => setQuizSlots([]))
-      .finally(() => setIsLoadingQuizSlots(false));
-  }, [assignmentType, quizSubjectId, selectedClassId, classes]);
+      .getSachBaiTapTheoPhanCong({
+        giaoVienId: teacherProfile.giaoVienId,
+        lopHocId: selectedClassId as number,
+        monHocId: selectedMonHoc.monHocId,
+        hocKyId: selectedMonHoc.hocKyId,
+      })
+      .then((list) => {
+        setSachList(list);
+        if (list.length === 1) setSelectedSachId(list[0].sachId);
+      })
+      .catch(() => setSachList([]))
+      .finally(() => setIsLoadingSach(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentType, teacherProfile, selectedClassId, selectedMonHocId]);
+
+  // Chọn Chủ đề trong sách
+  useEffect(() => {
+    setChuDeList([]); setSelectedChuDeId('');
+    setBaiHocList([]); setSelectedBaiHocId('');
+    setDangBaiList([]); setSelectedDangBais([]);
+    if (!selectedSachId) return;
+    setIsLoadingChuDe(true);
+    teacherService
+      .getChuDeBySach(selectedSachId as number)
+      .then((list) => {
+        setChuDeList(list);
+        if (list.length === 1) setSelectedChuDeId(list[0].chuDeId);
+      })
+      .catch(() => setChuDeList([]))
+      .finally(() => setIsLoadingChuDe(false));
+  }, [selectedSachId]);
+
+  // Chọn Bài học trong chủ đề
+  useEffect(() => {
+    setBaiHocList([]); setSelectedBaiHocId('');
+    setDangBaiList([]); setSelectedDangBais([]);
+    if (!selectedChuDeId) return;
+    setIsLoadingBaiHoc(true);
+    teacherService
+      .getBaiHocByChuDe(selectedChuDeId as number)
+      .then((list) => {
+        setBaiHocList(list);
+        if (list.length === 1) setSelectedBaiHocId(list[0].baiHocId);
+      })
+      .catch(() => setBaiHocList([]))
+      .finally(() => setIsLoadingBaiHoc(false));
+  }, [selectedChuDeId]);
+
+  // Chọn Dạng bài cụ thể trong bài học
+  useEffect(() => {
+    setDangBaiList([]); setSelectedDangBais([]);
+    if (!selectedBaiHocId) return;
+    setIsLoadingDangBai(true);
+    teacherService
+      .getDangBaiByBaiHoc(selectedBaiHocId as number)
+      .then((list) => setDangBaiList(list))
+      .catch(() => setDangBaiList([]))
+      .finally(() => setIsLoadingDangBai(false));
+  }, [selectedBaiHocId]);
 
   const handleApplyAI = () => {
     setTaskDesc(suggestDescription(taskTitle || 'chủ đề bài tập'));
@@ -109,14 +214,28 @@ export default function TeacherAssignments() {
       setErrorMsg('Vui lòng điền đầy đủ Tiêu đề, chọn Lớp và Hạn chót!');
       return;
     }
-    if (assignmentType === 'H5P' && !selectedHocLieuId) {
+    if (!teacherProfile) {
       setSubmitStatus('error');
-      setErrorMsg('Vui lòng chọn học liệu H5P cho bài tập này!');
+      setErrorMsg('Không xác định được hồ sơ giáo viên, vui lòng tải lại trang!');
+      return;
+    }
+    if (assignmentType === 'TRAC_NGHIEM' && !selectedMonHoc) {
+      setSubmitStatus('error');
+      setErrorMsg('Vui lòng chọn môn học cho lớp này!');
       return;
     }
     if (assignmentType === 'TRAC_NGHIEM' && selectedDangBais.length === 0) {
       setSubmitStatus('error');
-      setErrorMsg('Vui lòng tích chọn ít nhất một bài quiz bộ sách cho bài tập này!');
+      setErrorMsg('Vui lòng tích chọn ít nhất một dạng bài trong sách cho bài tập này!');
+      return;
+    }
+
+    // hocKyId là bắt buộc ở backend (BaiTap.hocKy, nullable=false) — với bài tự luận không có
+    // sẵn từ chuỗi chọn sách, lấy từ môn/lớp đã chọn, hoặc học kỳ hiện tại làm mặc định.
+    const hocKyId = selectedMonHoc?.hocKyId ?? currentHocKyId;
+    if (!hocKyId) {
+      setSubmitStatus('error');
+      setErrorMsg('Không xác định được học kỳ hiện tại, vui lòng thử lại!');
       return;
     }
 
@@ -130,7 +249,8 @@ export default function TeacherAssignments() {
           tieuDe: taskTitle,
           moTa: taskDesc,
           lopHocId: selectedClassId as number,
-          giaoVienId: user?.userId ?? 1,
+          giaoVienId: teacherProfile.giaoVienId,
+          hocKyId,
           loaiBaiTap: assignmentType,
           deadline: new Date(deadline).toISOString(),
           soLanNopLaiToiDa: maxResubmitCount,
@@ -221,111 +341,175 @@ export default function TeacherAssignments() {
               onChange={(e) => setAssignmentType(e.target.value)}
             >
               <option value="TU_LUAN">Bài tự luận (Chấm tay)</option>
-              <option value="H5P">Bài tập H5P (Tự động chấm)</option>
+              <option value="H5P" disabled>Bài tập H5P (đang nâng cấp, chưa khả dụng)</option>
               <option value="TRAC_NGHIEM">Bài tập bộ sách (Trắc nghiệm/Nối cặp/Điền khuyết - tự động chấm)</option>
             </select>
           </div>
 
-          {assignmentType === 'H5P' && (
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Chọn học liệu H5P</label>
-              {h5pMaterials.length === 0 ? (
-                <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-                  Bạn chưa có học liệu H5P nào. Vào "Kho Học Liệu" để soạn bài trước.
-                </p>
-              ) : (
-                <select
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
-                  value={selectedHocLieuId}
-                  onChange={(e) => setSelectedHocLieuId(e.target.value ? Number(e.target.value) : '')}
-                >
-                  <option value="">-- Chọn học liệu --</option>
-                  {h5pMaterials.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title}{m.grade ? ` (Khối ${m.grade})` : ''}{m.subjectName ? ` - ${m.subjectName}` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          )}
-
           {assignmentType === 'TRAC_NGHIEM' && (
             <div className="pt-2 space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Môn học</label>
-                <select
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
-                  value={quizSubjectId}
-                  onChange={(e) => { setQuizSubjectId(e.target.value ? Number(e.target.value) : ''); setSelectedDangBais([]); }}
-                >
-                  <option value="">-- Chọn môn học --</option>
-                  {subjects.map((s) => (
-                    <option key={s.monHocId} value={s.monHocId}>{s.tenMon}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tích chọn dạng bài & cấu hình giao diện</label>
-                {isLoadingQuizSlots ? (
-                  <div className="flex items-center gap-2 text-slate-500 text-sm p-3">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
-                  </div>
-                ) : !quizSubjectId ? (
-                  <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-                    Chọn môn học trước để xem danh sách bài quiz đã soạn.
-                  </p>
-                ) : quizSlots.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
-                    Chưa có bài quiz nào được soạn cho môn/khối này. Vào "Kho Học Liệu" &gt; "Soạn quiz bộ sách" để soạn trước.
-                  </p>
-                ) : (
-                  <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
-                    {quizSlots.map((slot) => {
-                      const selectedItem = selectedDangBais.find(item => item.dangBaiId === slot.id);
-                      return (
-                        <div key={slot.id} className={`flex items-center justify-between p-2.5 bg-white border rounded-lg transition-all ${selectedItem ? 'border-blue-500 shadow-sm ring-1 ring-blue-500/20' : 'border-slate-200 hover:border-slate-300'}`}>
-                          <label className="flex items-center gap-3 cursor-pointer select-none flex-1">
-                            <input
-                              type="checkbox"
-                              checked={!!selectedItem}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedDangBais([...selectedDangBais, { dangBaiId: slot.id, thuTu: selectedDangBais.length + 1, cheDoGiaoDien: 'MAC_DINH' }]);
-                                } else {
-                                  setSelectedDangBais(selectedDangBais.filter(item => item.dangBaiId !== slot.id));
-                                }
-                              }}
-                              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm font-medium text-slate-700">
-                              {slot.tenChuDe} - {slot.tenDangBai} <span className="text-xs text-slate-400 font-normal">({slot.loai})</span>
-                            </span>
-                          </label>
-                          {selectedItem && (
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="text-slate-500 font-medium">Giao diện:</span>
-                              <select
-                                value={selectedItem.cheDoGiaoDien}
-                                onChange={(e) => {
-                                  const newMode = e.target.value;
-                                  setSelectedDangBais(selectedDangBais.map(item =>
-                                    item.dangBaiId === slot.id ? { ...item, cheDoGiaoDien: newMode } : item
-                                  ));
-                                }}
-                                className="px-2 py-1 bg-blue-50 border border-blue-300 text-blue-700 rounded font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                              >
-                                <option value="MAC_DINH">Mặc định (Quizzes)</option>
-                                <option value="TRO_CHOI">Trò chơi (Game hóa)</option>
-                              </select>
+              {!selectedClass ? (
+                <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                  Vui lòng chọn Lớp học ở mục "Phân phối & Thời hạn" bên dưới trước.
+                </p>
+              ) : monHocOptions.length === 0 ? (
+                <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                  Bạn chưa được phân công dạy môn nào ở lớp này trong học kỳ hiện tại.
+                </p>
+              ) : (
+                <>
+                  {monHocOptions.length > 1 && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Môn học</label>
+                      <select
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
+                        value={selectedMonHocId}
+                        onChange={(e) => setSelectedMonHocId(e.target.value ? Number(e.target.value) : '')}
+                      >
+                        <option value="">-- Chọn môn học --</option>
+                        {monHocOptions.map((m) => (
+                          <option key={m.monHocId} value={m.monHocId}>{m.tenMon}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {selectedMonHoc && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Sách bài tập</label>
+                        {isLoadingSach ? (
+                          <div className="flex items-center gap-2 text-slate-500 text-sm p-3">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                          </div>
+                        ) : sachList.length === 0 ? (
+                          <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                            Chưa có sách bài tập nào cho đúng tổ hợp lớp/môn/học kỳ này.
+                          </p>
+                        ) : (
+                          <select
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
+                            value={selectedSachId}
+                            onChange={(e) => setSelectedSachId(e.target.value ? Number(e.target.value) : '')}
+                          >
+                            <option value="">-- Chọn sách --</option>
+                            {sachList.map((s) => (
+                              <option key={s.sachId} value={s.sachId}>{s.tenSach}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+
+                      {selectedSachId && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Chủ đề</label>
+                          {isLoadingChuDe ? (
+                            <div className="flex items-center gap-2 text-slate-500 text-sm p-3">
+                              <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                            </div>
+                          ) : (
+                            <select
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
+                              value={selectedChuDeId}
+                              onChange={(e) => setSelectedChuDeId(e.target.value ? Number(e.target.value) : '')}
+                            >
+                              <option value="">-- Chọn chủ đề --</option>
+                              {chuDeList.map((cd) => (
+                                <option key={cd.chuDeId} value={cd.chuDeId}>{cd.tenChuDe}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedChuDeId && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Bài học</label>
+                          {isLoadingBaiHoc ? (
+                            <div className="flex items-center gap-2 text-slate-500 text-sm p-3">
+                              <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                            </div>
+                          ) : (
+                            <select
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
+                              value={selectedBaiHocId}
+                              onChange={(e) => setSelectedBaiHocId(e.target.value ? Number(e.target.value) : '')}
+                            >
+                              <option value="">-- Chọn bài học --</option>
+                              {baiHocList.map((bh) => (
+                                <option key={bh.baiHocId} value={bh.baiHocId}>{bh.tenBaiHoc}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedBaiHocId && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">Tích chọn dạng bài & cấu hình giao diện</label>
+                          {isLoadingDangBai ? (
+                            <div className="flex items-center gap-2 text-slate-500 text-sm p-3">
+                              <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                            </div>
+                          ) : dangBaiList.length === 0 ? (
+                            <p className="text-sm text-slate-500 italic p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                              Bài học này chưa có dạng bài nào.
+                            </p>
+                          ) : (
+                            <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
+                              {dangBaiList.map((db) => {
+                                const loai = parseLoaiDangBai(db);
+                                const giaoDienOptions = GIAO_DIEN_THEO_LOAI[loai] ?? GIAO_DIEN_THEO_LOAI.TRAC_NGHIEM;
+                                const selectedItem = selectedDangBais.find((item) => item.dangBaiId === db.dangBaiId);
+                                return (
+                                  <div key={db.dangBaiId} className={`flex items-center justify-between p-2.5 bg-white border rounded-lg transition-all ${selectedItem ? 'border-blue-500 shadow-sm ring-1 ring-blue-500/20' : 'border-slate-200 hover:border-slate-300'}`}>
+                                    <label className="flex items-center gap-3 cursor-pointer select-none flex-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!selectedItem}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedDangBais([...selectedDangBais, { dangBaiId: db.dangBaiId, thuTu: selectedDangBais.length + 1, cheDoGiaoDien: giaoDienOptions[0].value }]);
+                                          } else {
+                                            setSelectedDangBais(selectedDangBais.filter((item) => item.dangBaiId !== db.dangBaiId));
+                                          }
+                                        }}
+                                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                                      />
+                                      <span className="text-sm font-medium text-slate-700">
+                                        {db.tenDangBai} <span className="text-xs text-slate-400 font-normal">({loai})</span>
+                                      </span>
+                                    </label>
+                                    {selectedItem && (
+                                      <div className="flex items-center gap-2 text-xs">
+                                        <span className="text-slate-500 font-medium">Giao diện:</span>
+                                        <select
+                                          value={selectedItem.cheDoGiaoDien}
+                                          onChange={(e) => {
+                                            const newMode = e.target.value;
+                                            setSelectedDangBais(selectedDangBais.map((item) =>
+                                              item.dangBaiId === db.dangBaiId ? { ...item, cheDoGiaoDien: newMode } : item
+                                            ));
+                                          }}
+                                          className="px-2 py-1 bg-blue-50 border border-blue-300 text-blue-700 rounded font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                                        >
+                                          {giaoDienOptions.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
             </div>
           )}
         </CardContent>
@@ -349,6 +533,10 @@ export default function TeacherAssignments() {
               <div className="flex items-center gap-2 text-slate-500 text-sm p-4 bg-slate-50 rounded-lg">
                 <Loader2 className="w-4 h-4 animate-spin" /> Đang tải danh sách lớp...
               </div>
+            ) : classes.length === 0 ? (
+              <p className="text-sm text-slate-500 italic p-4 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                Bạn chưa được phân công giảng dạy lớp nào trong học kỳ hiện tại.
+              </p>
             ) : (
               <div className="space-y-2 p-4 bg-slate-50 border border-slate-100 rounded-lg">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Chọn lớp học</label>
@@ -359,7 +547,7 @@ export default function TeacherAssignments() {
                 >
                   {classes.map((cls) => (
                     <option key={cls.id} value={cls.id}>
-                      {cls.name} - Khối {cls.grade} ({cls.academicYear})
+                      {cls.name}{cls.grade ? ` - Khối ${cls.grade}` : ''}{cls.academicYear ? ` (${cls.academicYear})` : ''}
                     </option>
                   ))}
                 </select>
@@ -370,15 +558,15 @@ export default function TeacherAssignments() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input label="Hạn chót (Deadline)" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             <div className="flex items-center gap-3 pt-6">
-              <label htmlFor="maxResubmit" className="text-sm font-medium text-slate-700 cursor-pointer w-48">
-                Số lần nộp lại tối đa (0 = không giới hạn)
+              <label htmlFor="maxResubmit" className="text-sm font-medium text-slate-700 cursor-pointer w-56">
+                Số lần nộp lại tối đa (0 = không cho nộp lại, -1 = không giới hạn)
               </label>
               <input
                 type="number"
                 id="maxResubmit"
                 className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg outline-none focus:border-primary text-sm"
                 value={maxResubmitCount}
-                min={0}
+                min={-1}
                 onChange={(e) => setMaxResubmitCount(Number(e.target.value))}
               />
             </div>
@@ -387,7 +575,7 @@ export default function TeacherAssignments() {
       </Card>
 
       <div className="flex justify-end space-x-3">
-        <Button variant="outline" onClick={() => { setTaskTitle(''); setTaskDesc(''); setDeadline(''); setSelectedHocLieuId(''); setSubmitStatus('idle'); }}>
+        <Button variant="outline" onClick={() => { setTaskTitle(''); setTaskDesc(''); setDeadline(''); setSubmitStatus('idle'); }}>
           Xóa form
         </Button>
         <Button className="bg-primary hover:bg-primary/90" onClick={handleSubmit} disabled={isSubmitting}>

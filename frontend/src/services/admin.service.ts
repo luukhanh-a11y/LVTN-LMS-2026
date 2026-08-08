@@ -23,13 +23,18 @@ export const adminService = {
     return response.data;
   },
 
-  importTeachers: async (file: File): Promise<any> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await api.post('/admin/import/teachers', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return response.data;
+  // window.open() không gắn header Authorization — endpoint export-template yêu cầu JWT,
+  // nên phải tải qua axios (có interceptor gắn token) rồi tự tạo link tải xuống.
+  downloadTemplate: async (): Promise<void> => {
+    const response = await api.get('/nguoi-dung/export-template', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mau-import-nguoi-dung.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
 
   getLoImportHistory: async (): Promise<any[]> => {
@@ -68,7 +73,7 @@ export const adminService = {
     }));
   },
 
-  searchUsers: async (params: { role?: string; keyword?: string; status?: string; classId?: string; grade?: string; subject?: string; page?: number; size?: number }): Promise<any> => {
+  searchUsers: async (params: { role?: string; keyword?: string; status?: string; classId?: string; grade?: string; subject?: string; namHocId?: number; page?: number; size?: number }): Promise<any> => {
     const response = await api.get('/nguoi-dung/search', { params });
     const content = response.data?.data?.content || [];
     return {
@@ -93,7 +98,8 @@ export const adminService = {
       })),
       totalPages: response.data?.data?.totalPages || 0,
       totalElements: response.data?.data?.totalElements || 0,
-      last: response.data?.data?.last || true
+      // `|| true` luôn = true (kể cả khi backend trả last=false) — dùng ?? để chỉ fallback khi thiếu field.
+      last: response.data?.data?.last ?? true
     };
   },
   toggleUserStatus: async (userId: number, status: string): Promise<any> => {
@@ -106,34 +112,38 @@ export const adminService = {
     return response.data?.data || response.data;
   },
 
-  transferClass: async (userId: number | string, newClassId: number, reason?: string): Promise<any> => {
-    const response = await api.post('/lich-su-chuyen-lop/chuyen-lop', {
-      hocSinhId: String(userId),
+  getChildrenByParentId: async (idUser: string) => {
+    const res = await api.get(`/phu-huynh-hoc-sinh/hoc-sinh/phu-huynh/${idUser}`);
+    return res.data?.data || [];
+  },
+  createParentChildRelation: async (phuHuynhId: number, hocSinhId: number, quanHe: string = 'Phụ huynh') => {
+    const res = await api.post(`/phu-huynh-hoc-sinh`, { phuHuynhId, hocSinhId, quanHe });
+    return res.data;
+  },
+  deleteParentChildRelation: async (idMoiQuanHe: number) => {
+    const res = await api.delete(`/phu-huynh-hoc-sinh/${idMoiQuanHe}`);
+    return res.data;
+  },
+
+  // Backend yêu cầu MẢNG List<LichSuChuyenLopRequest>, field "lyDo" (enum LyDoChuyenLop), hocSinhId kiểu number.
+  transferClass: async (userId: number | string, newClassId: number, lyDo: string = 'DOI_LOP', ghiChu?: string): Promise<any> => {
+    const response = await api.post('/lich-su-chuyen-lop/chuyen-lop', [{
+      hocSinhId: Number(userId),
       lopHocMoiId: newClassId,
-      lyDoChuyen: reason || 'Chuyển lớp bởi Admin',
-    });
+      lyDo,
+      ghiChu,
+    }]);
     return response.data;
   },
 
-
-  chuyenLopGiuaKy: async (data: { hocSinhId: number | string; lopHocCuId: number; lopHocMoiId: number; lyDoChuyen: string }): Promise<any> => {
-    const response = await api.post('/lich-su-chuyen-lop/chuyen-lop', data);
+  chuyenLopGiuaKy: async (data: { hocSinhId: number | string; lopHocCuId: number; lopHocMoiId: number; lyDo: string; ghiChu?: string }): Promise<any> => {
+    const response = await api.post('/lich-su-chuyen-lop/chuyen-lop', [{ ...data, hocSinhId: Number(data.hocSinhId) }]);
     return response.data;
   },
 
-  getClassTransferHistory: async (userId: number): Promise<any> => {
-    const response = await api.get(`/admin/users/${userId}/class-transfer-history`);
-    return response.data;
-  },
-
-  getTongHopKetQuaCuoiNam: async (namHoc?: string, khoiLop?: number): Promise<any[]> => {
-    const response = await api.get('/admin/ket-qua-cuoi-nam', { params: { namHoc, khoiLop } });
-    return response.data;
-  },
-
-  thucHienChuyenLopTuKetQua: async (data: { ketQuaId: number; quyetDinh: string; lopHocMoiId?: number }): Promise<any> => {
-    const response = await api.post('/ket-qua-cuoi-nam/thuc-hien-chuyen-lop-tu-ket-qua', data);
-    return response.data;
+  getClassTransferHistory: async (hocSinhId: number): Promise<any> => {
+    const response = await api.get(`/lich-su-chuyen-lop/hoc-sinh/${hocSinhId}`);
+    return response.data?.data || response.data || [];
   },
 
   chuyenLopHangLoat: async (requests: any[]): Promise<any> => {
@@ -141,9 +151,25 @@ export const adminService = {
     return response.data;
   },
 
-  bulkThucHienChuyenLop: async (data: { hocSinhIds: number[]; lopHocMoiId: number | null; lyDo: string }): Promise<any> => {
+  bulkThucHienChuyenLop: async (data: { hocSinhIds: number[]; lopHocMoiId: number | null; lyDo: string; ghiChu?: string }): Promise<any> => {
     const response = await api.post('/lich-su-chuyen-lop/bulk-chuyen-lop', data);
     return response.data;
+  },
+
+  // === Đợt đánh giá cuối năm (CauHinhHeThong) + duyệt hàng loạt Kết quả cuối năm ===
+  setDotDanhGia: async (id: number, dangMo: boolean, namHoc?: string): Promise<any> => {
+    const response = await api.put(`/cau-hinh-he-thong/${id}/dot-danh-gia`, null, { params: { dangMo, namHoc } });
+    return response.data?.data || response.data;
+  },
+
+  duyetKetQuaCuoiNamHangLoat: async (requests: { ketQuaId: number; lopMoiId?: number; namHocMoi?: string }[]): Promise<any[]> => {
+    const response = await api.post('/ket-qua-cuoi-nam/duyet-hang-loat', requests);
+    return response.data?.data || response.data || [];
+  },
+
+  getAllKetQuaCuoiNam: async (): Promise<any[]> => {
+    const response = await api.get('/ket-qua-cuoi-nam');
+    return response.data?.data || response.data || [];
   },
 
   thongBaoMoDanhGia: async (namHoc: string): Promise<any> => {
@@ -152,28 +178,75 @@ export const adminService = {
   },
 
   createNamHoc: async (data: { tenNamHoc: string; ngayBatDau: string; ngayKetThuc: string; cloneTuNamHocId?: number }): Promise<any> => {
-    const response = await api.post('/nam-hoc', data);
+    const response = await api.post('/namhoc', data);
     return response.data;
   },
 
-  createHocKy: async (data: { tenHocKy: string; namHocId: number; ngayBatDau: string; ngayKetThuc: string }): Promise<any> => {
+  createHocKy: async (data: { namHocId: number; soHocKy: number }): Promise<any> => {
     const response = await api.post('/hoc-ky', data);
     return response.data;
   },
 
-  cloneSach: async (params: { monHocId: number; khoiLop: number; hocKyOldId: number; hocKyNewId: number; copyChildren?: boolean; chiLayDangBaiHeThong?: boolean }): Promise<any> => {
-    const response = await api.post('/sach/nhan-ban', null, { params });
+  cloneSachKhongChuDe: async (params: { monHocId: number; khoiLop: number; hocKyCuId: number; hocKyMoiId: number }): Promise<any> => {
+    const response = await api.post('/sach/nhan-ban-khong-chu-de', null, { params });
+    return response.data;
+  },
+
+  cloneSachKemChuDe: async (params: { monHocId: number; khoiLop: number; hocKyCuId: number; hocKyMoiId: number }): Promise<any> => {
+    const response = await api.post('/sach/nhan-ban-kem-chu-de', null, { params });
     return response.data;
   },
 
   cloneChuDe: async (params: { chuDeOldId: number; sachNewId: number; copyChildren?: boolean; chiLayDangBaiHeThong?: boolean }): Promise<any> => {
-    const response = await api.post('/chu-de/nhan-ban', null, { params });
+    const response = await api.post('/chude/nhan-ban', null, { params });
     return response.data;
   },
 
   cloneBaiHoc: async (params: { baiHocOldId: number; chuDeNewId: number; chiLayDangBaiHeThong?: boolean }): Promise<any> => {
     const response = await api.post('/bai-hoc/nhan-ban', null, { params });
     return response.data;
+  },
+
+  createSach: async (data: any): Promise<any> => {
+    const response = await api.post('/sach', data);
+    return response.data?.data || response.data;
+  },
+
+  updateSach: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/sach/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
+  deleteSach: async (id: number): Promise<void> => {
+    await api.delete(`/sach/${id}`);
+  },
+
+  createChuDe: async (data: any): Promise<any> => {
+    const response = await api.post('/chude', data);
+    return response.data?.data || response.data;
+  },
+
+  updateChuDe: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/chude/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
+  deleteChuDe: async (id: number): Promise<void> => {
+    await api.delete(`/chude/${id}`);
+  },
+
+  createBaiHoc: async (data: any): Promise<any> => {
+    const response = await api.post('/bai-hoc', data);
+    return response.data?.data || response.data;
+  },
+
+  updateBaiHoc: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/bai-hoc/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
+  deleteBaiHoc: async (id: number): Promise<void> => {
+    await api.delete(`/bai-hoc/${id}`);
   },
 
   getBoSachList: async (): Promise<any[]> => {
@@ -184,6 +257,15 @@ export const adminService = {
   getMonHocList: async (): Promise<any[]> => {
     const response = await api.get('/monhoc');
     return response.data?.data || response.data || [];
+  },
+
+  createMonHoc: async (data: { tenMon: string; maMon?: string; moTa?: string }): Promise<any> => {
+    const response = await api.post('/monhoc', data);
+    return response.data?.data || response.data;
+  },
+
+  deleteMonHoc: async (id: number): Promise<void> => {
+    await api.delete(`/monhoc/${id}`);
   },
 
   getChuongList: async (): Promise<any[]> => {
@@ -216,19 +298,51 @@ export const adminService = {
     return response.data?.data || response.data;
   },
 
+  // Cấu hình hệ thống chỉ có 1 bản ghi duy nhất, luôn có cauHinhId = 1
   getSystemConfig: async (): Promise<any> => {
-    const response = await api.get('/admin/config');
-    return response.data;
+    const response = await api.get('/cau-hinh-he-thong/1');
+    return response.data?.data || response.data;
   },
 
   updateSystemConfig: async (data: any): Promise<any> => {
-    const response = await api.put('/admin/config', data);
-    return response.data;
+    const response = await api.put('/cau-hinh-he-thong/1', data);
+    return response.data?.data || response.data;
   },
 
   getDashboardStats: async (): Promise<any> => {
     const response = await api.get('/admin/dashboard');
     return response.data?.data || response.data;
-  }
+  },
+
+  // === Hồ sơ học sinh / giáo viên / phụ huynh (dùng ở useUsersViewModel.ts) ===
+  getHoSoHocSinhByMa: async (maHocSinh: string): Promise<any> => {
+    const response = await api.get(`/hoso-hocsinh/ma/${maHocSinh}`);
+    return response.data?.data || response.data;
+  },
+
+  updateHoSoHocSinh: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/hoso-hocsinh/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
+  getHoSoGiaoVienByMa: async (maGiaoVien: string): Promise<any> => {
+    const response = await api.get(`/hoso-giaovien/ma/${maGiaoVien}`);
+    return response.data?.data || response.data;
+  },
+
+  updateHoSoGiaoVien: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/hoso-giaovien/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
+  getAllHoSoPhuHuynh: async (): Promise<any[]> => {
+    const response = await api.get('/hoso-phuhuynh');
+    return response.data?.data || response.data || [];
+  },
+
+  updateHoSoPhuHuynh: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/hoso-phuhuynh/${id}`, data);
+    return response.data?.data || response.data;
+  },
 };
 

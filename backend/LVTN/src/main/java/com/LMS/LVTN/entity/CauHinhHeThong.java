@@ -34,4 +34,10 @@ public class CauHinhHeThong {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hoc_ky_hien_tai_id", nullable = false)
     private HocKy hocKyHienTai;
+
+    @Column(name = "danh_gia_cuoi_nam_dang_mo", nullable = false)
+    private Boolean danhGiaCuoiNamDangMo = false;
+
+    @Column(name = "nam_hoc_danh_gia", length = 10)
+    private String namHocDanhGia;
 }

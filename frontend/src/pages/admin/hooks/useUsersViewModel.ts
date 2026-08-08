@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { adminService } from '../../../services/admin.service';
 import { classService } from '../../../services/class.service';
+import { useAcademicStore } from '../../../stores/useAcademicStore';
 import toast from 'react-hot-toast';
 
 export type TabType = 'teacher' | 'student' | 'parent';
@@ -36,7 +37,9 @@ export function useUsersViewModel() {
 
   // Selected + form state
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [editFormData, setEditFormData] = useState({ soDienThoai: '', trangThai: '' });
+  const [editFormData, setEditFormData] = useState({
+    soDienThoai: '', trangThai: '', hoTen: '', email: '', ngaySinh: '', gioiTinh: 'NAM', boMon: '', lopHocId: '' as string | number,
+  });
   const [createFormData, setCreateFormData] = useState(INITIAL_CREATE_FORM);
   const [transferClassId, setTransferClassId] = useState('');
   const [transferReason, setTransferReason] = useState('DOI_LOP');
@@ -53,6 +56,8 @@ export function useUsersViewModel() {
   const [filterGrade, setFilterGrade] = useState('all'); // used for student
   const [filterSubject, setFilterSubject] = useState('all'); // used for teacher
   const [filterTeacherClassId, setFilterTeacherClassId] = useState('all'); // used for teacher
+
+  const selectedNamHocId = useAcademicStore((s) => s.selectedNamHocId);
 
   // Initial fetch for metadata (classes)
   useEffect(() => {
@@ -78,7 +83,8 @@ export function useUsersViewModel() {
 
       if (searchQuery) searchParams.keyword = searchQuery;
       if (filterStatus !== 'all') searchParams.status = filterStatus;
-      
+      if (selectedNamHocId) searchParams.namHocId = selectedNamHocId;
+
       if (activeTab === 'student' || activeTab === 'parent') {
         if (filterClassId !== 'all') searchParams.classId = filterClassId;
       }
@@ -109,13 +115,13 @@ export function useUsersViewModel() {
   // When filters change, reset and fetch page 0
   useEffect(() => {
     fetchUsers(0, false);
-  }, [activeTab, searchQuery, filterStatus, filterClassId, filterGrade, filterSubject, filterTeacherClassId]);
+  }, [activeTab, searchQuery, filterStatus, filterClassId, filterGrade, filterSubject, filterTeacherClassId, selectedNamHocId]);
 
   const loadMore = useCallback(() => {
     if (!isLastPage && !isLoadingMore && !isLoading) {
       fetchUsers(page + 1, true);
     }
-  }, [page, isLastPage, isLoadingMore, isLoading, activeTab, searchQuery, filterStatus, filterClassId, filterGrade, filterSubject, filterTeacherClassId]);
+  }, [page, isLastPage, isLoadingMore, isLoading, activeTab, searchQuery, filterStatus, filterClassId, filterGrade, filterSubject, filterTeacherClassId, selectedNamHocId]);
 
   const subjects = useMemo(() => {
     return Array.from(new Set(users.filter(u => u.role === 'GIAO_VIEN' && u.boMon).map(u => u.boMon)));
@@ -157,15 +163,61 @@ export function useUsersViewModel() {
     setIsUpdating(true);
     try {
       const promises = [];
-      // Update phone if applicable
-      if (activeTab === 'teacher' || activeTab === 'parent') {
-        promises.push(adminService.updateUser(selectedUser.id || selectedUser.userId, { soDienThoai: editFormData.soDienThoai }));
-      }
+      const userId = selectedUser.id || selectedUser.userId;
+      
+      // Update User entity fields
+      const userPayload: any = { soDienThoai: editFormData.soDienThoai, email: editFormData.email };
+      promises.push(adminService.updateUser(userId, userPayload));
+
       // Update status
       if (selectedUser.status !== editFormData.trangThai) {
-        promises.push(adminService.toggleUserStatus(selectedUser.id || selectedUser.userId, editFormData.trangThai));
+        promises.push(adminService.toggleUserStatus(userId, editFormData.trangThai));
       }
+      
+      // Wait for user updates first, then update profile
       await Promise.all(promises);
+
+      // Update Profile (Hồ sơ)
+      try {
+        if (activeTab === 'student' && selectedUser.maHocSinh) {
+          const hoSo = await adminService.getHoSoHocSinhByMa(selectedUser.maHocSinh);
+          if (hoSo && hoSo.hocSinhId) {
+            await adminService.updateHoSoHocSinh(hoSo.hocSinhId, {
+              hoTen: editFormData.hoTen,
+              nguoiDungId: userId,
+              maHocSinh: selectedUser.maHocSinh,
+              ngaySinh: editFormData.ngaySinh || undefined,
+              gioiTinh: editFormData.gioiTinh,
+              lopHocId: editFormData.lopHocId ? Number(editFormData.lopHocId) : hoSo.lopHocId,
+            });
+          }
+        } else if (activeTab === 'teacher' && selectedUser.maGiaoVien) {
+          const hoSo = await adminService.getHoSoGiaoVienByMa(selectedUser.maGiaoVien);
+          if (hoSo && hoSo.giaoVienId) {
+            await adminService.updateHoSoGiaoVien(hoSo.giaoVienId, {
+              hoTen: editFormData.hoTen,
+              nguoiDungId: userId,
+              maGiaoVien: selectedUser.maGiaoVien,
+              ngaySinh: editFormData.ngaySinh || undefined,
+              gioiTinh: editFormData.gioiTinh,
+              boMon: editFormData.boMon || hoSo.boMon,
+            });
+          }
+        } else if (activeTab === 'parent') {
+          const allPH = await adminService.getAllHoSoPhuHuynh();
+          const hoSo = allPH.find((ph: any) => ph.nguoiDungId === userId || ph.nguoiDungId === String(userId));
+          if (hoSo && hoSo.phuHuynhId) {
+            await adminService.updateHoSoPhuHuynh(hoSo.phuHuynhId, { 
+              hoTen: editFormData.hoTen, 
+              emailNhanThongBao: editFormData.email,
+              nguoiDungId: userId
+            });
+          }
+        }
+      } catch (profileErr) {
+        console.error("Lỗi khi cập nhật hồ sơ:", profileErr);
+        toast.error('Cập nhật tài khoản thành công nhưng cập nhật hồ sơ thất bại');
+      }
       
       toast.success('Cập nhật tài khoản thành công!');
       setShowEditModal(false);
@@ -197,10 +249,82 @@ export function useUsersViewModel() {
     }
   };
 
-  const openEditModal = (user: any) => {
-    setSelectedUser(user);
-    setEditFormData({ soDienThoai: user.phone ?? '', trangThai: user.status });
+  const [parentChildren, setParentChildren] = useState<any[]>([]);
+
+  const fetchUserProfile = async (user: any) => {
+    try {
+      if (activeTab === 'student' && user.maHocSinh) {
+        return await adminService.getHoSoHocSinhByMa(user.maHocSinh);
+      } else if (activeTab === 'teacher' && user.maGiaoVien) {
+        return await adminService.getHoSoGiaoVienByMa(user.maGiaoVien);
+      } else if (activeTab === 'parent') {
+        const allPH = await adminService.getAllHoSoPhuHuynh();
+        return allPH.find((ph: any) => ph.nguoiDungId === user.id || ph.nguoiDungId === String(user.id));
+      }
+    } catch (err) {
+      console.error("Lỗi lấy hồ sơ:", err);
+    }
+    return null;
+  };
+
+  const loadParentChildren = async (userId: string) => {
+    try {
+      const children = await adminService.getChildrenByParentId(userId);
+      setParentChildren(children);
+    } catch (err) {
+      console.error("Lỗi lấy danh sách con:", err);
+      setParentChildren([]);
+    }
+  };
+
+  const openEditModal = async (user: any) => {
+    const profile = await fetchUserProfile(user);
+    if (activeTab === 'parent') {
+      await loadParentChildren(String(user.id));
+    }
+    setSelectedUser({ ...user, profile });
+    setEditFormData({
+      soDienThoai: user.phone || user.soDienThoai || '',
+      trangThai: user.status || user.trangThai,
+      hoTen: profile?.hoTen || user.fullName || user.hoTen || user.name || '',
+      email: profile?.emailNhanThongBao || user.email || '',
+      ngaySinh: profile?.ngaySinh || '',
+      gioiTinh: profile?.gioiTinh || 'NAM',
+      boMon: profile?.boMon || '',
+      lopHocId: profile?.lopHocId || '',
+    });
     setShowEditModal(true);
+  };
+
+  const handleAddChild = async (maHocSinh: string, quanHe: string) => {
+    if (!selectedUser || !selectedUser.profile?.phuHuynhId) {
+      toast.error("Không tìm thấy hồ sơ phụ huynh!");
+      return;
+    }
+    try {
+      const hs = await adminService.getHoSoHocSinhByMa(maHocSinh);
+      if (!hs || !hs.hocSinhId) {
+        toast.error("Không tìm thấy học sinh với mã này!");
+        return;
+      }
+      await adminService.createParentChildRelation(selectedUser.profile.phuHuynhId, hs.hocSinhId, quanHe);
+      toast.success("Thêm con thành công!");
+      await loadParentChildren(String(selectedUser.id));
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Lỗi khi thêm con!");
+    }
+  };
+
+  const handleRemoveChild = async (idMoiQuanHe: number) => {
+    try {
+      await adminService.deleteParentChildRelation(idMoiQuanHe);
+      toast.success("Xóa liên kết thành công!");
+      if (selectedUser) {
+        await loadParentChildren(String(selectedUser.id));
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Lỗi khi xóa liên kết!");
+    }
   };
 
   const openTransferModal = (user: any) => {
@@ -210,8 +334,18 @@ export function useUsersViewModel() {
     setShowTransferModal(true);
   };
 
-  const openDetailModal = (user: any) => {
-    setSelectedUser(user);
+  const openDetailModal = async (user: any) => {
+    const profile = await fetchUserProfile(user);
+    let children: any[] = [];
+    if (activeTab === 'parent') {
+      try {
+        children = await adminService.getChildrenByParentId(String(user.id));
+        setParentChildren(children);
+      } catch (err) {
+        console.error("Lỗi lấy danh sách con:", err);
+      }
+    }
+    setSelectedUser({ ...user, profile, children });
     setShowDetailModal(true);
   };
 
@@ -247,5 +381,8 @@ export function useUsersViewModel() {
     openEditModal,
     openTransferModal,
     openDetailModal,
+    parentChildren,
+    handleAddChild,
+    handleRemoveChild
   };
 }

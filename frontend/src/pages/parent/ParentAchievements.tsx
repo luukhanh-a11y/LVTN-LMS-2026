@@ -48,8 +48,14 @@ export default function ParentAchievements() {
                   <Award className="w-16 h-16" />
                 </div>
                 
-                <div className={cn("w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300", badge.color)}>
-                  {badge.icon}
+                <div className={cn("w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300", badge.color || "bg-amber-100 text-amber-500")}>
+                  {badge.iconUrl ? (
+                    <img src={badge.iconUrl} alt="badge" className="w-12 h-12 object-contain" />
+                  ) : badge.icon ? (
+                    badge.icon
+                  ) : (
+                    <Award className="w-10 h-10" />
+                  )}
                 </div>
                 
                 <h3 className="font-bold text-slate-900 text-lg mb-1">{badge.name}</h3>

@@ -34,6 +34,7 @@ E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\Nguo
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\PhanCongGiangDayController.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\PhieuHoTroController.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\PhuHuynhHocSinhController.java
+E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\PhuHuynhPortalController.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\SachController.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\ThongBaoController.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\ThongKeDiemController.java
@@ -88,14 +89,17 @@ E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\request\Tie
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\request\UpDateRoleUserRequest.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\request\UpdateTrangThaiUser.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\request\VerifyOtpRequest.java
+E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\AchievementBadgeDTO.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\AdminDashboardResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ApiResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\AuthenticationResponse.java
+E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\BadgeDTO.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\BaiHocResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\BaiNopResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\BaiTapResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\BaoCaoAiBuoiSangResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\CauHinhHeThongResponse.java
+E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ChildItemDTO.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ChiTietBaiTapGameResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ChiTietBaiTapResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ChuDeResponse.java
@@ -121,9 +125,11 @@ E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\Lo
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\MonHocResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\NamHocResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\NguoiDungResponse.java
+E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ParentDashboardResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\PhanCongGiangDayResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\PhieuHoTroResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\PhuHuynhHocSinhResponse.java
+E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\RecentProgressDTO.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\SachResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ThongBaoResponse.java
 E:\DuAnLMS\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\TienDoHocSinhResponse.java

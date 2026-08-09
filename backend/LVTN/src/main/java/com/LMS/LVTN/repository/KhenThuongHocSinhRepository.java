@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface KhenThuongHocSinhRepository extends JpaRepository<KhenThuongHocSinh, Long> {
     List<KhenThuongHocSinh> findByHocSinh_HocSinhId(Long hocSinhId);
+    List<KhenThuongHocSinh> findTop5ByHocSinh_HocSinhIdOrderByThoiDiemTraoDesc(Long hocSinhId);
+    List<KhenThuongHocSinh> findByHocSinh_HocSinhIdOrderByThoiDiemTraoDesc(Long hocSinhId);
     boolean existsByHocSinh_HocSinhIdAndHuyHieu_HuyHieuId(Long hocSinhId, Integer huyHieuId);
 }

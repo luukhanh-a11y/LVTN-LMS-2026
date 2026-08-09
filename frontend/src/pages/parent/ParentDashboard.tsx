@@ -44,7 +44,7 @@ export default function ParentDashboard() {
             </div>
             
             <div className="space-y-4">
-              {progressList.map(item => (
+              {progressList.map((item: any) => (
                 <div key={item.id} className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 hover:bg-slate-50 transition">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                     <div>
@@ -111,6 +111,36 @@ export default function ParentDashboard() {
                 <p className="font-bold">{activeChild.school}</p>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+             <div className="flex items-center gap-3 mb-6">
+               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+               <h3 className="font-bold text-slate-900 text-lg">Huy hiệu mới nhất</h3>
+             </div>
+             {(dashboardData?.recentBadges || []).length > 0 ? (
+               <div className="space-y-4">
+                 {(dashboardData?.recentBadges || []).map((badge: any) => (
+                    <div key={badge.id} className="flex items-center gap-4 border border-slate-100 p-3 rounded-xl bg-amber-50/30">
+                      {badge.iconUrl ? (
+                        <img src={badge.iconUrl} alt="badge" className="w-10 h-10 object-contain" />
+                      ) : (
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">{badge.name}</p>
+                        <p className="text-xs text-slate-500">{badge.date} • {badge.source === 'GIAO_VIEN' ? 'Giáo viên tặng' : 'Hệ thống tự động'}</p>
+                      </div>
+                    </div>
+                 ))}
+               </div>
+             ) : (
+               <div className="text-center py-6 text-slate-500 border border-dashed border-slate-200 rounded-xl bg-slate-50 text-sm">
+                 Bé chưa nhận được huy hiệu nào.
+               </div>
+             )}
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

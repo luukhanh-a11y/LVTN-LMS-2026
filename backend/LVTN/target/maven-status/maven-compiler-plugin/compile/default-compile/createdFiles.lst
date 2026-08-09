@@ -5,6 +5,7 @@ com\LMS\LVTN\entity\InvalidatedToken.class
 com\LMS\LVTN\dto\response\AuthenticationResponse.class
 com\LMS\LVTN\mapper\HopThuThongBaoMapperImpl.class
 com\LMS\LVTN\repository\SachRepository.class
+com\LMS\LVTN\dto\response\ChildItemDTO.class
 com\LMS\LVTN\dto\response\BaiTapResponse.class
 com\LMS\LVTN\repository\CauHinhHeThongRepository.class
 com\LMS\LVTN\controller\BaiHocController.class
@@ -20,6 +21,7 @@ com\LMS\LVTN\service\BaiNopService.class
 com\LMS\LVTN\mapper\LopHocMapper.class
 com\LMS\LVTN\enums\HanhDongDanhGia.class
 com\LMS\LVTN\service\HuyHieuService.class
+com\LMS\LVTN\dto\response\ParentDashboardResponse.class
 com\LMS\LVTN\dto\response\BaiNopResponse.class
 com\LMS\LVTN\entity\BaiNop.class
 com\LMS\LVTN\mapper\DangBaiMapperImpl.class
@@ -37,6 +39,7 @@ com\LMS\LVTN\mapper\HoSoPhuHuynhMapper.class
 com\LMS\LVTN\controller\BaiNopController.class
 com\LMS\LVTN\controller\LichSuTuHocController.class
 com\LMS\LVTN\dto\response\ChiTietBaiTapGameResponse.class
+com\LMS\LVTN\dto\response\RecentProgressDTO.class
 com\LMS\LVTN\dto\response\MonHocResponse.class
 com\LMS\LVTN\dto\request\BaiHocRequest.class
 com\LMS\LVTN\service\NguoiDungService.class
@@ -56,12 +59,15 @@ com\LMS\LVTN\entity\Sach.class
 com\LMS\LVTN\controller\KhenThuongHocSinhController.class
 com\LMS\LVTN\dto\request\ChuDeRequest.class
 com\LMS\LVTN\dto\response\DanhGiaBaiLamResponse.class
+com\LMS\LVTN\dto\response\ParentDashboardResponse$ParentDashboardResponseBuilder.class
 com\LMS\LVTN\dto\game\common\GameDataSplitResult.class
 com\LMS\LVTN\mapper\ThongBaoMapperImpl.class
 com\LMS\LVTN\repository\LichSuChuyenLopRepository.class
 com\LMS\LVTN\repository\BaiHocRepository.class
 com\LMS\LVTN\repository\MonHocRepository.class
+com\LMS\LVTN\dto\response\BadgeDTO$BadgeDTOBuilder.class
 com\LMS\LVTN\mapper\ChuDeMapper.class
+com\LMS\LVTN\dto\response\AchievementBadgeDTO.class
 com\LMS\LVTN\dto\response\GoiYAiNhanXetResponse$GoiYAiNhanXetResponseBuilder.class
 com\LMS\LVTN\enums\LoaiBaiTap.class
 com\LMS\LVTN\controller\BaoCaoAiBuoiSangController.class
@@ -102,6 +108,7 @@ com\LMS\LVTN\entity\PhanCongGiangDay.class
 com\LMS\LVTN\mapper\PhanCongGiangDayMapperImpl.class
 com\LMS\LVTN\repository\HoSoPhuHuynhRepository.class
 com\LMS\LVTN\dto\request\HoSoPhuHuynhRequest.class
+com\LMS\LVTN\dto\response\BadgeDTO.class
 com\LMS\LVTN\dto\response\LopHocResponse.class
 com\LMS\LVTN\dto\game\base\NoiDungGameDTO.class
 com\LMS\LVTN\dto\request\RefreshRequest$RefreshRequestBuilder.class
@@ -197,6 +204,7 @@ com\LMS\LVTN\dto\response\BaiHocResponse.class
 com\LMS\LVTN\dto\request\GoiYAiBaiTapRequest.class
 com\LMS\LVTN\repository\HoSoHocSinhRepository.class
 com\LMS\LVTN\repository\BaiTapRepository.class
+com\LMS\LVTN\dto\response\ChildItemDTO$ChildItemDTOBuilder.class
 com\LMS\LVTN\controller\KetQuaCuoiNamController.class
 com\LMS\LVTN\mapper\BaiHocMapperImpl.class
 com\LMS\LVTN\dto\request\LoImportRequest.class
@@ -283,6 +291,7 @@ com\LMS\LVTN\dto\request\PhuHuynhHocSinhRequest.class
 com\LMS\LVTN\mapper\CauHinhHeThongMapperImpl.class
 com\LMS\LVTN\entity\TienDoHocSinh.class
 com\LMS\LVTN\service\LichSuChuyenLopService.class
+com\LMS\LVTN\dto\response\RecentProgressDTO$RecentProgressDTOBuilder.class
 com\LMS\LVTN\dto\response\HopThuThongBaoResponse.class
 com\LMS\LVTN\configuration\SecurityConfig.class
 com\LMS\LVTN\service\LoImportService.class
@@ -304,6 +313,7 @@ com\LMS\LVTN\dto\request\LogoutRequest.class
 com\LMS\LVTN\enums\LoaiSach.class
 com\LMS\LVTN\exception\handleExceptions.class
 com\LMS\LVTN\service\GoiYAiNhanXetService.class
+com\LMS\LVTN\dto\response\AchievementBadgeDTO$AchievementBadgeDTOBuilder.class
 com\LMS\LVTN\dto\game\specialized\NoiDungNoiCap.class
 com\LMS\LVTN\dto\response\LichSuChuyenLopResponse.class
 com\LMS\LVTN\mapper\ChuDeMapperImpl.class
@@ -335,6 +345,7 @@ com\LMS\LVTN\repository\HocKyRepository.class
 com\LMS\LVTN\dto\response\IntrospectResponse.class
 com\LMS\LVTN\dto\response\ThongBaoResponse.class
 com\LMS\LVTN\entity\MonHoc.class
+com\LMS\LVTN\controller\PhuHuynhPortalController.class
 com\LMS\LVTN\service\MonHocService.class
 com\LMS\LVTN\dto\response\ChiTietBaiTapResponse$ChiTietBaiTapResponseBuilder.class
 com\LMS\LVTN\mapper\HoSoGiaoVienMapperImpl.class

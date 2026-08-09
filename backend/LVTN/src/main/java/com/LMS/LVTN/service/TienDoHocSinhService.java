@@ -1,6 +1,9 @@
 package com.LMS.LVTN.service;
 
 import com.LMS.LVTN.dto.request.TienDoHocSinhRequest;
+import com.LMS.LVTN.dto.response.BadgeDTO;
+import com.LMS.LVTN.dto.response.ParentDashboardResponse;
+import com.LMS.LVTN.dto.response.RecentProgressDTO;
 import com.LMS.LVTN.dto.response.TienDoHocSinhResponse;
 import com.LMS.LVTN.entity.*;
 import com.LMS.LVTN.exception.AppExceptions;
@@ -15,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,9 +32,8 @@ public class TienDoHocSinhService {
     LichSuTuHocRepository lichSuTuHocRepository;
     DangBaiRepository dangBaiRepository;
     TienDoHocSinhMapper tienDoHocSinhMapper;
+    KhenThuongHocSinhRepository khenThuongHocSinhRepository;
 
-    // Học sinh có thể học lại đúng 1 bài học ở học kỳ/năm học khác (ở lại lớp) — tiến độ
-    // phải tách riêng theo hocKyId hiện tại của học sinh, không được dùng chung với năm cũ.
     private HocKy resolveHocKyHienTai(HoSoHocSinh hocSinh, BaiHoc baiHoc) {
         LopHoc lopHoc = hocSinh.getLopHoc();
         if (lopHoc == null) {
@@ -159,5 +160,86 @@ public class TienDoHocSinhService {
             throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
         }
         tienDoHocSinhRepository.deleteById(id);
+    }
+
+    public ParentDashboardResponse getDashboardForStudent(Long hocSinhId) {
+        // Fetch the 5 most recently updated progress records for this student
+        List<TienDoHocSinh> progressList = tienDoHocSinhRepository.findTop5ByHocSinh_HocSinhIdOrderByLanXemCuoiDesc(hocSinhId);
+
+        List<RecentProgressDTO> progressDTOs = progressList.stream().map(tienDo -> {
+            String timeStr = "0 phút";
+            if (tienDo.getThoiGianHoc() != null && tienDo.getThoiGianHoc() > 0) {
+                int mins = tienDo.getThoiGianHoc() / 60;
+                int hours = mins / 60;
+                if (hours > 0) {
+                    timeStr = hours + " giờ " + (mins % 60) + " phút";
+                } else {
+                    timeStr = mins + " phút";
+                }
+            }
+            
+            String subjectName = "N/A";
+            String lessonName = "N/A";
+            if (tienDo.getBaiHoc() != null) {
+                lessonName = tienDo.getBaiHoc().getTenBaiHoc();
+                if (tienDo.getBaiHoc().getChuDe() != null && 
+                    tienDo.getBaiHoc().getChuDe().getSach() != null && 
+                    tienDo.getBaiHoc().getChuDe().getSach().getMonHoc() != null) {
+                    subjectName = tienDo.getBaiHoc().getChuDe().getSach().getMonHoc().getTenMon();
+                }
+            }
+
+            return RecentProgressDTO.builder()
+                    .id(tienDo.getTienDoId())
+                    .subject(subjectName)
+                    .lesson(lessonName)
+                    .isCompleted(tienDo.getDaHoanThanh() != null && tienDo.getDaHoanThanh())
+                    .progress(tienDo.getPhanTramHoanThanh() != null ? tienDo.getPhanTramHoanThanh() : 0)
+                    .timeSpent(timeStr)
+                    .build();
+        }).collect(Collectors.toList());
+
+        // Fetch up to 5 most recent badges
+        List<KhenThuongHocSinh> badges = khenThuongHocSinhRepository.findTop5ByHocSinh_HocSinhIdOrderByThoiDiemTraoDesc(hocSinhId);
+        List<BadgeDTO> badgeDTOs = badges.stream().map(kt -> BadgeDTO.builder()
+                .id(kt.getKhenThuongId())
+                .name(kt.getHuyHieu() != null ? kt.getHuyHieu().getTenHuyHieu() : "N/A")
+                .description(kt.getHuyHieu() != null ? kt.getHuyHieu().getMoTa() : "")
+                .iconUrl(kt.getHuyHieu() != null ? kt.getHuyHieu().getIconUrl() : null)
+                .date(kt.getThoiDiemTrao().toLocalDate().toString())
+                .source(kt.getNguonCap() != null ? kt.getNguonCap().name() : "N/A")
+                .build()).collect(Collectors.toList());
+
+        return ParentDashboardResponse.builder()
+                .recentProgress(progressDTOs)
+                .recentBadges(badgeDTOs)
+                .build();
+    }
+
+    public List<com.LMS.LVTN.dto.response.AchievementBadgeDTO> getAchievementBadges(Long hocSinhId) {
+        List<KhenThuongHocSinh> badges = khenThuongHocSinhRepository.findByHocSinh_HocSinhId(hocSinhId);
+        
+        // Sort descending by date
+        badges.sort((b1, b2) -> b2.getThoiDiemTrao().compareTo(b1.getThoiDiemTrao()));
+        
+        return badges.stream().map(kt -> {
+            String color = "bg-amber-100 text-amber-500";
+            if (kt.getHuyHieu() != null) {
+                if ("THU_CONG".equals(kt.getNguonCap().name())) {
+                    color = "bg-blue-100 text-blue-500";
+                }
+            }
+
+            return com.LMS.LVTN.dto.response.AchievementBadgeDTO.builder()
+                .id(kt.getKhenThuongId())
+                .name(kt.getHuyHieu() != null ? kt.getHuyHieu().getTenHuyHieu() : "Huy hiệu")
+                .date(kt.getThoiDiemTrao().toLocalDate().toString())
+                .message(kt.getThuKhen() != null ? kt.getThuKhen() : "Chúc mừng con đã nhận được huy hiệu mới!")
+                .teacher(kt.getGiaoVien() != null ? kt.getGiaoVien().getHoTen() : "Hệ thống")
+                .color(color)
+                .iconUrl(kt.getHuyHieu() != null ? kt.getHuyHieu().getIconUrl() : null)
+                .icon(null)
+                .build();
+        }).collect(Collectors.toList());
     }
 }

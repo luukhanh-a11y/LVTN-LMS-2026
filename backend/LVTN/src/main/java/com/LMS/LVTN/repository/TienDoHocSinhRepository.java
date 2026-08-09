@@ -13,4 +13,7 @@ public interface TienDoHocSinhRepository extends JpaRepository<TienDoHocSinh, Lo
     // ở học kỳ/năm học khác thì không được kế thừa tiến độ cũ (xem TienDoHocSinhService).
     java.util.Optional<TienDoHocSinh> findByHocSinh_HocSinhIdAndBaiHoc_BaiHocIdAndHocKy_HocKyId(
             Long hocSinhId, Integer baiHocId, Integer hocKyId);
+
+    // Lấy 5 bài học gần nhất để hiển thị lên Dashboard Phụ huynh
+    java.util.List<TienDoHocSinh> findTop5ByHocSinh_HocSinhIdOrderByLanXemCuoiDesc(Long hocSinhId);
 }

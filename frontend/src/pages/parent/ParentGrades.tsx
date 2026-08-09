@@ -134,7 +134,7 @@ export default function ParentGrades() {
                     <div className="flex justify-between items-center pb-4 border-b border-slate-100">
                       <span className="text-slate-500 font-medium">Học lực:</span>
                       <span className={cn(
-                        "font-black text-lg",
+                        "font-extrabold text-lg",
                         gradeData.finalResult.academic === 'TỐT' || gradeData.finalResult.academic === 'GIỎI' ? "text-emerald-600" : "text-blue-600"
                       )}>
                         {gradeData.finalResult.academic}
@@ -143,7 +143,7 @@ export default function ParentGrades() {
                     
                     <div className="flex justify-between items-center pb-4 border-b border-slate-100">
                       <span className="text-slate-500 font-medium">Hạnh kiểm:</span>
-                      <span className="font-black text-lg text-emerald-600">
+                      <span className="font-extrabold text-lg text-emerald-600">
                         {gradeData.finalResult.conduct}
                       </span>
                     </div>

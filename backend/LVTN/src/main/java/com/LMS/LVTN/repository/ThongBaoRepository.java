@@ -11,4 +11,5 @@ public interface ThongBaoRepository extends JpaRepository<ThongBao, Long> {
     List<ThongBao> findAllByOrderByLaGhimDescNgayDangDesc();
     List<ThongBao> findByLaGhimTrueOrderByNgayDangDesc();
     List<ThongBao> findByLaGhimFalseOrderByNgayDangDesc();
+    List<ThongBao> findByNguoiGui_NguoiDungIdOrderByNgayDangDesc(String nguoiGuiId);
 }

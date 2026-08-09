@@ -73,7 +73,13 @@ export default function SubjectTree() {
             {/* Tiêu đề Chương */}
             <div className="flex flex-col items-center mb-8">
                <div className="bg-white border-2 border-slate-200 rounded-2xl px-6 py-3 shadow-sm inline-flex items-center">
-                 <img src={chapter.icon} alt={chapter.title} className="w-10 h-10 mr-3" />
+                 {chapter.icon ? (
+                   <img src={chapter.icon} alt={chapter.title} className="w-10 h-10 mr-3 object-contain" />
+                 ) : (
+                   <div className="w-10 h-10 bg-student-primary/10 rounded-xl flex items-center justify-center mr-3">
+                     <Puzzle className="w-6 h-6 text-student-primary" />
+                   </div>
+                 )}
                  <h2 className="text-2xl font-bold text-slate-800">
                    {chapter.title}
                  </h2>

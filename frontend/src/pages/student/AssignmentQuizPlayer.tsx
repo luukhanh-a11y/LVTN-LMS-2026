@@ -48,7 +48,7 @@ export default function AssignmentQuizPlayer() {
 
   useEffect(() => {
     if (!assignmentId) return;
-    studentService.getQuizAssignmentDetail(Number(assignmentId), user?.userId)
+    studentService.getQuizAssignmentDetail(Number(assignmentId))
       .then(setDetail)
       .catch((err) => setLoadError(err.response?.data?.message || 'Không tải được bài tập.'))
       .finally(() => setIsLoading(false));
@@ -94,7 +94,7 @@ export default function AssignmentQuizPlayer() {
 
     setIsSubmitting(true);
     try {
-      const res = await studentService.submitQuizAssignment(Number(assignmentId), user.userId, baiLam);
+      const res = await studentService.submitQuizAssignment(Number(assignmentId), baiLam);
       setResult(res);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Lỗi khi nộp bài.');

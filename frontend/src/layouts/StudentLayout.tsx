@@ -28,12 +28,13 @@ export default function StudentLayout() {
     <div className="flex min-h-[100dvh] font-body bg-[#f8fafc]">
       {/* Sidebar - Premium Kids UI */}
       <aside className="w-[280px] bg-white border-r border-slate-200 flex flex-col z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)] fixed h-full">
-        <div className="p-6 flex items-center border-b border-slate-100">
-          <Link to="/student" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 bg-indigo-600 rounded-[14px] flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-105 group-active:scale-95 transition-transform">
-              <span className="text-white font-black text-2xl">T</span>
-            </div>
-            <span className="text-2xl font-black text-slate-800 tracking-tight">Titkul Kids</span>
+        <div className="p-6 flex items-center border-b border-slate-100 justify-center">
+          <Link to="/student" className="flex items-center group">
+            <img 
+              src="https://www.titkul.vn/upload/photo/cropped-titkul-logo-header-7055.png" 
+              alt="Titkul Kids" 
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
           </Link>
         </div>
 

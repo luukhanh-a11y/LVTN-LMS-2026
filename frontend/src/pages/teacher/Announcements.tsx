@@ -14,6 +14,8 @@ export default function Announcements() {
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [audience, setAudience] = useState<string>('TAT_CA');
 
+  const [file, setFile] = useState<File | null>(null);
+
   const fetchAnnouncements = async () => {
     try {
       const data = await teacherService.getMyAnnouncements();
@@ -44,15 +46,36 @@ export default function Announcements() {
     e.preventDefault();
     try {
       setLoading(true);
+      let fileDinhKem = null;
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('http://localhost:8080/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.code === 200 || uploadData.data) {
+          fileDinhKem = 'http://localhost:8080' + uploadData.data;
+        } else {
+          toast.error('Lỗi khi tải file lên');
+          setLoading(false);
+          return;
+        }
+      }
+
       await teacherService.createAnnouncement({
         title,
         content,
         audience,
+        fileDinhKem,
         pinned: false
       });
       toast.success('Đã đăng thông báo thành công!');
       setTitle('');
       setContent('');
+      setFile(null);
       setActiveTab('lich-su');
       fetchAnnouncements();
     } catch (err) {
@@ -116,10 +139,36 @@ export default function Announcements() {
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-900">Đính kèm tệp tin</label>
-              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50">
-                <FilePlus className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm font-medium text-slate-600">Kéo thả file vào đây hoặc <span className="text-blue-600">Bấm để chọn file</span></p>
-                <p className="text-xs text-slate-400 mt-1">Hỗ trợ PDF, DOCX, JPG (Tối đa 10MB)</p>
+              <div 
+                className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50 relative"
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                <input 
+                  type="file" 
+                  id="file-upload" 
+                  className="hidden" 
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                />
+                {!file ? (
+                  <>
+                    <FilePlus className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-slate-600">Kéo thả file vào đây hoặc <span className="text-blue-600">Bấm để chọn file</span></p>
+                    <p className="text-xs text-slate-400 mt-1">Hỗ trợ PDF, DOCX, JPG (Tối đa 10MB)</p>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <p className="text-sm font-bold text-blue-600 mb-1">{file.name}</p>
+                    <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <button 
+                      type="button" 
+                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                      className="mt-2 text-xs text-red-500 hover:underline"
+                    >
+                      Xóa file
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -154,6 +203,16 @@ export default function Announcements() {
                     <span className="flex items-center gap-1.5 text-sm font-medium text-blue-600">
                       <Eye className="w-4 h-4" /> Đã xem: {item.views || 0}
                     </span>
+                    {item.fileDinhKem && (
+                      <a 
+                        href={item.fileDinhKem} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-blue-600 transition"
+                      >
+                        <FilePlus className="w-4 h-4" /> Tệp đính kèm
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

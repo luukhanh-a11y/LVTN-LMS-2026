@@ -1,17 +1,84 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle, AlertCircle, FileText, Upload, X, Loader2, ClipboardList, Puzzle, ListChecks } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, FileText, Upload, X, Loader2, ClipboardList, Puzzle, ListChecks, CalendarDays } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { studentService } from '../../services/student.service';
 import { useAuthStore } from '../../stores/useAuthStore';
 import toast from 'react-hot-toast';
+
+// Helper để format date và tính thời gian
+const formatTaskData = (task: any) => {
+  const result = { ...task };
+  result.subject = task.subjectName || 'Bài tập';
+  
+  // Tính toán thời gian hạn nộp
+  if (!task.dueDate) {
+    result.deadline = 'Không xác định';
+    result.isLate = false;
+    result.timeRemaining = 'Không giới hạn';
+    result.timestamp = Infinity;
+  } else {
+    const due = new Date(task.dueDate);
+    const now = new Date();
+    const diff = due.getTime() - now.getTime();
+    
+    result.timestamp = due.getTime();
+    result.isLate = diff < 0;
+    
+    const timeStr = due.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = due.toLocaleDateString('vi-VN');
+    result.deadline = `${timeStr} - ${dateStr}`;
+    
+    if (diff < 0) {
+      result.timeRemaining = 'Quá hạn';
+    } else {
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      if (days > 0) {
+        result.timeRemaining = `${days} ngày ${hours} giờ`;
+      } else {
+        result.timeRemaining = `${hours} giờ`;
+      }
+    }
+  }
+
+  // Nhóm theo ngày giao bài (assignedDate)
+  const now = new Date();
+  if (!task.assignedDate) {
+    result.dateGroupKey = 'Không xác định';
+    result.dateGroupLabel = 'Không xác định';
+    result.assignedTimestamp = 0;
+  } else {
+    const assigned = new Date(task.assignedDate);
+    const assignedMidnight = new Date(assigned.getFullYear(), assigned.getMonth(), assigned.getDate()).getTime();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const diffDays = Math.round((assignedMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+    
+    result.dateGroupKey = assignedMidnight.toString();
+    result.assignedTimestamp = assigned.getTime();
+    const dateFormatted = assigned.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    if (diffDays === -1) result.dateGroupLabel = `Hôm qua, ${dateFormatted}`;
+    else if (diffDays === 0) result.dateGroupLabel = `Hôm nay, ${dateFormatted}`;
+    else if (diffDays === 1) result.dateGroupLabel = `Ngày mai, ${dateFormatted}`;
+    else {
+      result.dateGroupLabel = assigned.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+  }
+
+  return result;
+};
 
 export default function StudentAssignments() {
   const navigate = useNavigate();
   const user = useAuthStore(state => state.user);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  
+  // Mảng gốc và mảng đã nhóm
   const [tasks, setTasks] = useState<any[]>([]);
+  const [groupedTasks, setGroupedTasks] = useState<{ label: string; timestamp: number; items: any[] }[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [essayText, setEssayText] = useState('');
   const [isEssayLoading, setIsEssayLoading] = useState(false);
@@ -23,7 +90,31 @@ export default function StudentAssignments() {
   const fetchAssignments = async () => {
     try {
       const data = await studentService.getAssignments();
-      setTasks(data);
+      const formatted = data.map(formatTaskData);
+      
+      // Nhóm bài tập
+      const groupsMap = new Map<string, { label: string; timestamp: number; items: any[] }>();
+      formatted.forEach((t: any) => {
+        if (!groupsMap.has(t.dateGroupKey)) {
+          groupsMap.set(t.dateGroupKey, {
+            label: t.dateGroupLabel,
+            timestamp: t.dateGroupKey === 'Không xác định' ? 0 : parseInt(t.dateGroupKey),
+            items: []
+          });
+        }
+        groupsMap.get(t.dateGroupKey)!.items.push(t);
+      });
+      
+      // Sắp xếp các nhóm theo ngày giao (mới nhất lên đầu)
+      const sortedGroups = Array.from(groupsMap.values()).sort((a, b) => b.timestamp - a.timestamp);
+      
+      // Sắp xếp các bài tập trong mỗi nhóm (bài nào sắp hết hạn lên đầu)
+      sortedGroups.forEach(group => {
+        group.items.sort((a, b) => a.timestamp - b.timestamp);
+      });
+      
+      setTasks(formatted);
+      setGroupedTasks(sortedGroups);
     } catch (err) {
       console.error('Failed to fetch assignments', err);
     } finally {
@@ -73,17 +164,13 @@ export default function StudentAssignments() {
 
   const handleSubmitEssay = async (isDraft: boolean) => {
     if (!selectedTask) return;
-    if (!user?.userId) {
-      toast.error('Không tìm thấy thông tin học sinh.');
-      return;
-    }
     if (!essayText.trim()) {
       toast.error('Vui lòng nhập nội dung bài làm.');
       return;
     }
     setIsEssaySubmitting(true);
     try {
-      await studentService.submitEssay(selectedTask.id, user.userId, { textContent: essayText, isDraft, attachmentUrl });
+      await studentService.submitEssay(selectedTask.id, { textContent: essayText, isDraft, attachmentUrl });
       toast.success(isDraft ? 'Đã lưu nháp!' : 'Nộp bài thành công!');
       setIsSubmitModalOpen(false);
       fetchAssignments();
@@ -98,13 +185,13 @@ export default function StudentAssignments() {
     <div className="max-w-5xl mx-auto pb-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-black text-slate-800">Bài tập hôm nay</h1>
-          <p className="text-slate-500 font-medium mt-1">Hoàn thành bài tập để nhận thêm nhiều Kim cương nhé!</p>
+          <h1 className="text-3xl font-black text-slate-800">Bài tập của em</h1>
+          <p className="text-slate-500 font-medium mt-1">Hoàn thành bài tập đúng hạn để nhận thêm nhiều Kim cương nhé!</p>
         </div>
-        <ClipboardList className="w-16 h-16 text-student-primary" strokeWidth={1.5} />
+        <ClipboardList className="w-16 h-16 text-student-primary opacity-20 hidden sm:block" strokeWidth={1.5} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="space-y-8">
         {isLoading ? (
           <div className="flex justify-center items-center py-20 text-student-primary">
              <Loader2 className="w-10 h-10 animate-spin" />
@@ -113,64 +200,82 @@ export default function StudentAssignments() {
           <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center text-slate-500">
              Chưa có bài tập nào.
           </div>
-        ) : tasks.map((task) => (
-          <div key={task.id} className={`bg-white border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between transition-shadow hover:shadow-md ${
-            task.status === 'YC_LAM_LAI' ? 'border-student-error/50 bg-student-error/10' : 'border-slate-200'
-          }`}>
-            <div className="flex items-start mb-4 md:mb-0">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 shrink-0 ${
-                task.type === 'H5P' ? 'bg-student-primary/10 text-student-primary' : task.type === 'TRAC_NGHIEM' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'
-              }`}>
-                {task.type === 'H5P' ? <Puzzle className="w-7 h-7" /> : task.type === 'TRAC_NGHIEM' ? <ListChecks className="w-7 h-7" /> : <FileText className="w-6 h-6" />}
+        ) : (
+          groupedTasks.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-4">
+              {/* Tiêu đề nhóm ngày */}
+              <div className="flex items-center space-x-2">
+                <CalendarDays className="w-5 h-5 text-slate-400" />
+                <h2 className="text-lg font-bold text-slate-700 capitalize">{group.label}</h2>
+                <div className="flex-1 h-px bg-slate-200 ml-4"></div>
               </div>
-              <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                    task.subject === 'Toán Học' ? 'bg-student-primary/10 text-student-primary border border-student-primary/20' : 'bg-orange-50 text-orange-700 border border-orange-100'
-                  }`}>{task.subject}</span>
-                  {task.status === 'YC_LAM_LAI' && <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-student-error/20 text-rose-700 animate-pulse">Làm lại</span>}
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-1">{task.title}</h3>
-                
-                <div className="flex items-center text-sm font-medium">
-                  {task.status === 'DA_NOP' ? (
-                    <span className="text-student-success flex items-center"><CheckCircle className="w-4 h-4 mr-1"/> Đã nộp</span>
-                  ) : task.isLate ? (
-                    <span className="text-rose-600 flex items-center"><AlertCircle className="w-4 h-4 mr-1"/> Quá hạn nộp</span>
-                  ) : (
-                    <span className="text-orange-500 flex items-center"><Clock className="w-4 h-4 mr-1"/> Còn {task.timeRemaining}</span>
-                  )}
-                  <span className="mx-2 text-slate-300">•</span>
-                  <span className="text-slate-500">Hạn: {task.deadline}</span>
-                </div>
-              </div>
-            </div>
+              
+              {/* Danh sách bài tập trong ngày */}
+              <div className="grid grid-cols-1 gap-4">
+                {group.items.map((task) => (
+                  <div key={task.id} className={`bg-white border rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between transition-shadow hover:shadow-md ${
+                    task.status === 'YC_LAM_LAI' ? 'border-student-error/50 bg-student-error/10' : 'border-slate-200'
+                  }`}>
+                    <div className="flex items-start mb-4 md:mb-0">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 shrink-0 ${
+                        task.type === 'H5P' ? 'bg-student-primary/10 text-student-primary' : task.type === 'TRAC_NGHIEM' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'
+                      }`}>
+                        {task.type === 'H5P' ? <Puzzle className="w-7 h-7" /> : task.type === 'TRAC_NGHIEM' ? <ListChecks className="w-7 h-7" /> : <FileText className="w-6 h-6" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                            task.subject === 'Toán Học' ? 'bg-student-primary/10 text-student-primary border border-student-primary/20' : 'bg-orange-50 text-orange-700 border border-orange-100'
+                          }`}>{task.subject}</span>
+                          {task.status === 'YC_LAM_LAI' && <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-student-error/20 text-rose-700 animate-pulse">Làm lại</span>}
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 mb-1">{task.title}</h3>
+                        
+                        <div className="flex flex-wrap items-center text-sm font-medium gap-y-1">
+                          {task.status === 'DA_NOP' ? (
+                            <span className="text-student-success flex items-center"><CheckCircle className="w-4 h-4 mr-1"/> Đã nộp</span>
+                          ) : task.isLate ? (
+                            <span className="text-rose-600 flex items-center"><AlertCircle className="w-4 h-4 mr-1"/> Quá hạn nộp</span>
+                          ) : (
+                            <span className="text-orange-500 flex items-center"><Clock className="w-4 h-4 mr-1"/> Còn {task.timeRemaining}</span>
+                          )}
+                          <span className="mx-2 text-slate-300">•</span>
+                          <span className="text-slate-500 flex items-center">
+                             {task.isLate ? <span className="text-rose-500 mr-1">Đã hết hạn lúc:</span> : <span>Hạn:</span>} {task.deadline}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-            <div className="flex justify-end">
-              {task.status === 'DA_NOP' ? (
-                 <Button variant="outline" className="w-full md:w-auto border-slate-200 text-slate-600" disabled>Chờ chấm điểm</Button>
-              ) : task.type === 'H5P' ? (
-                 <Button
-                   onClick={() => navigate(`/student/tasks/${task.id}/play`)}
-                   className="w-full md:w-auto bg-student-primary hover:bg-[#3A82DF] text-white rounded-xl shadow-[0_4px_0_0_theme(colors.primary.hover)] hover:shadow-[0_2px_0_0_theme(colors.primary.hover)] hover:translate-y-[2px] transition-all font-bold"
-                 >
-                   Làm bài H5P
-                 </Button>
-              ) : task.type === 'TRAC_NGHIEM' ? (
-                 <Button
-                   onClick={() => navigate(`/student/tasks/${task.id}/quiz`)}
-                   className="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-[0_4px_0_0_theme(colors.purple.800)] hover:shadow-[0_2px_0_0_theme(colors.purple.800)] hover:translate-y-[2px] transition-all font-bold"
-                 >
-                   Làm bài Quiz
-                 </Button>
-              ) : (
-                 <Button onClick={() => handleOpenSubmit(task)} className="w-full md:w-auto bg-student-success hover:brightness-95 text-white rounded-xl shadow-[0_4px_0_0_theme(colors.student.success)] hover:shadow-[0_2px_0_0_theme(colors.student.success)] hover:translate-y-[2px] transition-all font-bold">
-                   {task.status === 'YC_LAM_LAI' ? 'Nộp lại bài' : 'Nộp bài tự luận'}
-                 </Button>
-              )}
+                    <div className="flex justify-end">
+                      {task.status === 'DA_NOP' ? (
+                         <Button variant="outline" className="w-full md:w-auto border-slate-200 text-slate-600" disabled>Chờ chấm điểm</Button>
+                      ) : task.type === 'H5P' ? (
+                         <Button
+                           onClick={() => navigate(`/student/tasks/${task.id}/play`)}
+                           className="w-full md:w-auto bg-student-primary hover:bg-[#3A82DF] text-white rounded-xl shadow-[0_4px_0_0_theme(colors.primary.hover)] hover:shadow-[0_2px_0_0_theme(colors.primary.hover)] hover:translate-y-[2px] transition-all font-bold"
+                         >
+                           Làm bài H5P
+                         </Button>
+                      ) : task.type === 'TRAC_NGHIEM' ? (
+                         <Button
+                           onClick={() => navigate(`/student/tasks/${task.id}/quiz`)}
+                           className="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-[0_4px_0_0_theme(colors.purple.800)] hover:shadow-[0_2px_0_0_theme(colors.purple.800)] hover:translate-y-[2px] transition-all font-bold"
+                         >
+                           Làm bài Quiz
+                         </Button>
+                      ) : (
+                         <Button onClick={() => handleOpenSubmit(task)} className="w-full md:w-auto bg-student-success hover:brightness-95 text-white rounded-xl shadow-[0_4px_0_0_theme(colors.student.success)] hover:shadow-[0_2px_0_0_theme(colors.student.success)] hover:translate-y-[2px] transition-all font-bold">
+                           {task.status === 'YC_LAM_LAI' ? 'Nộp lại bài' : 'Nộp bài tự luận'}
+                         </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Modal Nộp Bài Tự Luận */}

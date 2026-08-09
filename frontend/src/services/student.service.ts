@@ -30,14 +30,19 @@ export const studentService = {
         try {
           const btRes = await api.get(`/bai-tap/lop-hoc/${lopHocId}`);
           const rawTasks = (btRes.data.data || btRes.data || []).filter((t: any) => t.trangThai === 'DANG_MO' || !t.trangThai).slice(0, 5);
-          upcomingTasks = rawTasks.map((t: any) => ({
-            id: t.baiTapId,
-            title: t.tenBaiTap || t.tieuDe || "Bài tập tương tác",
-            dueDate: t.hanNop || new Date(Date.now() + 86400000 * 3).toISOString(),
-            xpReward: t.xpReward || 50,
-            subjectName: t.monHoc?.tenMon || "Bài tập",
-            completed: false
-          }));
+          upcomingTasks = rawTasks.map((t: any) => {
+            const dueDateStr = t.hanNop ? new Date(t.hanNop).toLocaleDateString('vi-VN') : 'Không thời hạn';
+            return {
+              id: t.baiTapId,
+              title: t.tenBaiTap || t.tieuDe,
+              dueDate: t.hanNop,
+              time: dueDateStr,
+              xpReward: t.xpReward || 0,
+              subject: t.monHoc?.tenMon,
+              subjectName: t.monHoc?.tenMon,
+              completed: false
+            };
+          });
         } catch (err) {
         }
       }
@@ -59,16 +64,20 @@ export const studentService = {
           const rawGhim = ghimRes.data.data || ghimRes.data || [];
           const rawKhongGhim = khongGhimRes.data.data || khongGhimRes.data || [];
           const allNotis = [...rawGhim, ...rawKhongGhim].slice(0, 5);
-          recentNotifications = allNotis.map((n: any) => ({
-            id: n.thongBaoId,
-            title: n.tieuDe,
-            content: n.noiDung,
-            createdAt: n.ngayDang || n.ngayTao || new Date().toISOString(),
-            date: new Date(n.ngayDang || n.ngayTao || new Date()).toLocaleDateString('vi-VN'),
-            read: !!n.daDoc || !!n.trangThaiDoc,
-            pinned: !!n.laGhim,
-            type: n.loaiThongBao
-          }));
+          recentNotifications = allNotis.map((n: any) => {
+            const dateStr = (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '';
+            return {
+              id: n.thongBaoId,
+              title: n.tieuDe,
+              content: n.noiDung,
+              createdAt: n.ngayDang || n.ngayTao,
+              date: dateStr,
+              read: !!n.daDoc || !!n.trangThaiDoc,
+              pinned: !!n.laGhim,
+              type: n.loaiThongBao,
+              isNew: !n.daDoc && !n.trangThaiDoc
+            };
+          });
         } catch (err) {
         }
       }
@@ -139,66 +148,69 @@ export const studentService = {
     
   },
 
-  getAssignments: async () => {      let hoSo: any = {};
-      try {
-        const hsRes = await api.get('/hoso-hocsinh/my-profile');
-        hoSo = hsRes.data.data || hsRes.data;
-      } catch (err) {
-      }
-      if (!hoSo.lopHocId) return [];
-      try {
-        const btRes = await api.get(`/bai-tap/lop-hoc/${hoSo.lopHocId}`);
-        const rawTasks = btRes.data.data || btRes.data || [];
-        return rawTasks.map((t: any) => ({
-          id: t.baiTapId,
-          title: t.tenBaiTap || t.tieuDe || "Bài tập tương tác",
-          dueDate: t.hanNop,
-          xpReward: t.xpReward || 50,
-          completed: false,
-          subjectName: t.monHoc?.tenMon || "Bài tập",
-          type: t.dangBai?.loaiNoiDung || 'TRAC_NGHIEM'
-        }));
-      } catch (err) {
-        return [];
-      }
+  getAssignments: async () => {
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
     
+    if (!hoSo.lopHocId) return [];
+    try {
+      const btRes = await api.get(`/bai-tap/lop-hoc/${hoSo.lopHocId}`);
+      const rawTasks = btRes.data.data || btRes.data || [];
+      return rawTasks.map((t: any) => ({
+        id: t.baiTapId || t.id,
+        title: t.tenBaiTap || t.tieuDe,
+        dueDate: t.deadline || t.hanNop,
+        assignedDate: t.thoiDiemBatDau || t.ngayTao,
+        xpReward: t.xpReward || 0,
+        completed: false, // This will be calculated from BaiNop if needed later
+        subjectName: t.monHoc?.tenMon,
+        type: t.dangBai?.loaiNoiDung || 'TRAC_NGHIEM',
+        status: t.trangThai || t.status
+      }));
+    } catch (err) {
+      return [];
+    }
   },
 
-  getNotifications: async () => {      try {
-        const infoRes = await api.get('/nguoi-dung/my-info');
-        const nguoiDungId = (infoRes.data.data || infoRes.data).nguoiDungId;
-        if (!nguoiDungId) return [];
-        const [ghimRes, khongGhimRes] = await Promise.all([
-          api.get(`/hop-thu-thong-bao/nguoi-dung/${nguoiDungId}/ghim`),
-          api.get(`/hop-thu-thong-bao/nguoi-dung/${nguoiDungId}/khong-ghim`)
-        ]);
-        
-        const rawGhim = (ghimRes.data.data || ghimRes.data || []).map((n: any) => ({
-          id: n.thongBaoId,
-          title: n.tieuDe,
-          content: n.noiDung,
-          createdAt: n.ngayDang || n.ngayTao || new Date().toISOString(),
-          date: new Date(n.ngayDang || n.ngayTao || new Date()).toLocaleDateString('vi-VN'),
-          read: !!n.daDoc || !!n.trangThaiDoc,
-          pinned: true,
-          type: n.loaiThongBao
-        }));
+  getNotifications: async () => {
+    try {
+      const infoRes = await api.get('/nguoi-dung/my-info');
+      const nguoiDungId = (infoRes.data.data || infoRes.data).nguoiDungId;
+      if (!nguoiDungId) return [];
+      const [ghimRes, khongGhimRes] = await Promise.all([
+        api.get(`/hop-thu-thong-bao/nguoi-dung/${nguoiDungId}/ghim`),
+        api.get(`/hop-thu-thong-bao/nguoi-dung/${nguoiDungId}/khong-ghim`)
+      ]);
+      
+      const rawGhim = (ghimRes.data.data || ghimRes.data || []).map((n: any) => ({
+        id: n.thongBaoId,
+        title: n.tieuDe,
+        content: n.noiDung,
+        createdAt: n.ngayDang || n.ngayTao,
+        date: (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '',
+        read: !!n.daDoc || !!n.trangThaiDoc,
+        pinned: true,
+        type: n.loaiThongBao
+      }));
 
-        const rawKhongGhim = (khongGhimRes.data.data || khongGhimRes.data || []).map((n: any) => ({
-          id: n.thongBaoId,
-          title: n.tieuDe,
-          content: n.noiDung,
-          createdAt: n.ngayDang || n.ngayTao || new Date().toISOString(),
-          date: new Date(n.ngayDang || n.ngayTao || new Date()).toLocaleDateString('vi-VN'),
-          read: !!n.daDoc || !!n.trangThaiDoc,
-          pinned: false,
-          type: n.loaiThongBao
-        }));
+      const rawKhongGhim = (khongGhimRes.data.data || khongGhimRes.data || []).map((n: any) => ({
+        id: n.thongBaoId,
+        title: n.tieuDe,
+        content: n.noiDung,
+        createdAt: n.ngayDang || n.ngayTao,
+        date: (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '',
+        read: !!n.daDoc || !!n.trangThaiDoc,
+        pinned: false,
+        type: n.loaiThongBao
+      }));
 
-        return [...rawGhim, ...rawKhongGhim];
-      } catch (err) {
-        return [];
-      }
+      return [...rawGhim, ...rawKhongGhim];
+    } catch (err) {
+      return [];
+    }
   },
 
   getPinnedNotifications: async () => {
@@ -211,8 +223,8 @@ export const studentService = {
         id: n.thongBaoId,
         title: n.tieuDe,
         content: n.noiDung,
-        createdAt: n.ngayDang || n.ngayTao || new Date().toISOString(),
-        date: new Date(n.ngayDang || n.ngayTao || new Date()).toLocaleDateString('vi-VN'),
+        createdAt: n.ngayDang || n.ngayTao,
+        date: (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '',
         read: !!n.daDoc || !!n.trangThaiDoc,
         pinned: true,
         type: n.loaiThongBao
@@ -232,8 +244,8 @@ export const studentService = {
         id: n.thongBaoId,
         title: n.tieuDe,
         content: n.noiDung,
-        createdAt: n.ngayDang || n.ngayTao || new Date().toISOString(),
-        date: new Date(n.ngayDang || n.ngayTao || new Date()).toLocaleDateString('vi-VN'),
+        createdAt: n.ngayDang || n.ngayTao,
+        date: (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '',
         read: !!n.daDoc || !!n.trangThaiDoc,
         pinned: false,
         type: n.loaiThongBao
@@ -249,28 +261,67 @@ export const studentService = {
   markAllNotificationsRead: async () => {    
   },
 
-  getRewards: async () => {      let hoSo: any = {};
-      try {
-        const hsRes = await api.get('/hoso-hocsinh/my-profile');
-        hoSo = hsRes.data.data || hsRes.data;
-      } catch (err) {
-      }
-      if (!hoSo.hocSinhId) return [];
-      try {
-        const ktRes = await api.get(`/khen-thuong-hoc-sinh/hoc-sinh/${hoSo.hocSinhId}`);
-        const rawRewards = ktRes.data.data || ktRes.data || [];
-        return rawRewards.map((r: any) => ({
-          id: r.khenThuongId,
-          title: r.tenKhenThuong || r.tieuDe,
-          description: r.moTa,
-          unlockedAt: r.ngayKhenThuong || new Date().toISOString(),
-          xpBonus: r.xpBonus || 50,
-          iconName: r.iconName || "badge-star"
+  getRewards: async () => {
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
+
+    if (!hoSo.hocSinhId) return { huyHieu: [], thuKhen: [], tongXp: 0 };
+
+    try {
+      const [allBadgesRes, rewardsRes] = await Promise.all([
+        api.get('/huy-hieu'),
+        api.get(`/khen-thuong-hoc-sinh/hoc-sinh/${hoSo.hocSinhId}`)
+      ]);
+
+      const allBadges = allBadgesRes.data.data || allBadgesRes.data || [];
+      const studentRewards = rewardsRes.data.data || rewardsRes.data || [];
+
+      // Map badges
+      const mappedBadges = allBadges.map((badge: any) => {
+        const earnedReward = studentRewards.find((r: any) => r.huyHieuId === badge.huyHieuId || r.huyHieuId === badge.id);
+        
+        let iconPath = badge.iconUrl || badge.icon;
+        // Fallback for broken mock paths
+        if (!iconPath || iconPath.includes('/assets/badges/')) {
+          const names = (badge.tenHuyHieu || badge.tieuDe || '').toLowerCase();
+          if (names.includes('sáng')) iconPath = 'https://placehold.co/400x400/FCD34D/B45309.png?text=Sang+Tao';
+          else if (names.includes('chăm')) iconPath = 'https://placehold.co/400x400/FCA5A5/991B1B.png?text=Cham+Chi';
+          else if (names.includes('xuất')) iconPath = 'https://placehold.co/400x400/93C5FD/1E3A8A.png?text=Xuat+Sac';
+          else iconPath = 'https://placehold.co/400x400/FDBA74/9A3412.png?text=Huy+Hieu';
+        }
+
+        return {
+          id: badge.huyHieuId || badge.id,
+          ten: badge.tenHuyHieu || badge.tieuDe,
+          moTa: badge.moTa,
+          icon: iconPath,
+          daMoKhoa: !!earnedReward,
+          ngayTrao: earnedReward ? new Date(earnedReward.thoiDiemTrao || earnedReward.createdAt).toLocaleDateString('vi-VN') : null
+        };
+      });
+
+      // Map letters
+      const mappedLetters = studentRewards
+        .filter((r: any) => r.thuKhen && r.thuKhen.trim() !== '')
+        .map((r: any) => ({
+          id: r.khenThuongId || r.id,
+          giaoVien: r.tenGiaoVien || 'Thầy Cô',
+          monHoc: 'Môn học', // Backend DTO doesn't have monHoc, use placeholder
+          ngayTrao: new Date(r.thoiDiemTrao || r.createdAt).toLocaleDateString('vi-VN'),
+          noiDung: r.thuKhen
         }));
-      } catch (err) {
-        return [];
-      }
-    
+
+      return {
+        huyHieu: mappedBadges,
+        thuKhen: mappedLetters,
+        tongXp: hoSo.tongXp || 0
+      };
+    } catch (err) {
+      return { huyHieu: [], thuKhen: [], tongXp: 0 };
+    }
   },
 
   getSubjectTree: async (subjectId: number) => {      try {
@@ -604,16 +655,22 @@ export const studentService = {
     return response.data;
   },
 
-  getQuizAssignmentDetail: async (assignmentId: number, studentId?: number) => {
+  getQuizAssignmentDetail: async (assignmentId: number) => {
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
+
     const [btRes, dbRes] = await Promise.all([
       api.get(`/bai-tap/${assignmentId}`),
-      api.get(`/he-thong/dang-bai/bai-tap/${assignmentId}/hoc-sinh`, { params: studentId ? { hocSinhId: studentId } : undefined }).catch((err) => {
+      api.get(`/he-thong/dang-bai/bai-tap/${assignmentId}/hoc-sinh`, { params: hoSo.hocSinhId ? { hocSinhId: hoSo.hocSinhId } : undefined }).catch((err) => {
         if (err.response?.data?.message) throw err;
         return { data: [] };
       })
     ]);
-    const baiTap = btRes.data;
-    const dangBais = dbRes.data || [];
+    const baiTap = btRes.data.data || btRes.data;
+    const dangBais = dbRes.data.data || dbRes.data || [];
 
     const danhSachCauHoi = dangBais.map((db: any) => {
       let gameData = {};
@@ -644,10 +701,16 @@ export const studentService = {
     };
   },
 
-  submitQuizAssignment: async (assignmentId: number, studentId: number, baiLam: Record<string, unknown>) => {
+  submitQuizAssignment: async (assignmentId: number, baiLam: Record<string, unknown>) => {
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
+
     const payload = {
       baiTapId: assignmentId,
-      hocSinhId: studentId,
+      hocSinhId: hoSo.hocSinhId,
       chiTietBaiLam: JSON.stringify(baiLam)
     };
     const response = await api.post(`/bai-nop`, payload);
@@ -659,10 +722,16 @@ export const studentService = {
     return response.data;
   },
 
-  submitEssay: async (assignmentId: number, studentId: number, payload: { textContent: string; isDraft?: boolean; attachmentUrl?: string | null }) => {
+  submitEssay: async (assignmentId: number, payload: { textContent: string; isDraft?: boolean; attachmentUrl?: string | null }) => {
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
+
     const requestData = {
       baiTapId: assignmentId,
-      hocSinhId: studentId,
+      hocSinhId: hoSo.hocSinhId,
       noiDungText: payload.textContent,
       fileDinhKem: payload.attachmentUrl || null
     };

@@ -4,6 +4,7 @@ import { BookOpen, Clock, AlertCircle, Users, GraduationCap, ChevronRight, Spark
 import { cn } from '../../lib/utils';
 import { teacherService } from '../../services/teacher.service';
 import { ticketService } from '../../services/ticket.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function Dashboard() {
   const studentAlerts: any[] = [];
@@ -11,6 +12,8 @@ export default function Dashboard() {
   const [ticketCount, setTicketCount] = useState(0);
   const [report, setReport] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { currentHocKyId, selectedNamHocId } = useAcademicStore();
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -37,7 +40,7 @@ export default function Dashboard() {
       }
     };
     fetchDashboard();
-  }, []);
+  }, [currentHocKyId, selectedNamHocId]);
 
   const recentClasses = classes.slice(0, 3);
 

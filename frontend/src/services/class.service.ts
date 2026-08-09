@@ -105,9 +105,9 @@ export const classService = {
     return response.data?.data || response.data || [];
   },
 
-  getPhanCongByGiaoVien: async (giaoVienId: number | string): Promise<any[]> => {
-    const response = await api.get(`/phan-cong-giang-day/giao-vien/${giaoVienId}`);
-    return response.data?.data || response.data || [];
+  getPhanCongByGiaoVien: async (giaoVienId: number) => {
+    const res = await api.get(`/phan-cong-giang-day/giao-vien/${giaoVienId}`);
+    return res.data?.data || [];
   },
 
   createPhanCong: async (data: { giaoVienId: string | number; monHocId: number; lopHocId: number; namHocId?: number; hocKyId?: number }): Promise<any> => {

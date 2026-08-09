@@ -34,6 +34,8 @@ public class SecurityConfig {
             "/api/auth/logout",
             "/api/auth/forgot-password",
             "/api/auth/verify-otp-reset",
+            "/api/upload",
+            "/uploads/**",
             "/error"
     };
 

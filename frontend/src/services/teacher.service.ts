@@ -380,7 +380,7 @@ export const teacherService = {
   getMyAnnouncements: async (): Promise<any[]> => {
     const user = useAuthStore.getState().user;
     if (!user) return [];
-    const response = await api.get(`/thongbao/nguoi-dung/${user.userId}`);
+    const response = await api.get(`/thongbao/da-gui/${user.userId}`);
     const data = response.data?.data || response.data || [];
     return data;
   },

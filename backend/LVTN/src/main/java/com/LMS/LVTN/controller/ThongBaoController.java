@@ -40,6 +40,13 @@ public class ThongBaoController {
                 .build();
     }
 
+    @GetMapping("/da-gui/{idNguoiDung}")
+    public ApiResponse<List<ThongBaoResponse>> getAllSentByid(@PathVariable String idNguoiDung) {
+        return ApiResponse.<List<ThongBaoResponse>>builder()
+                .data(thongBaoService.getAllSentByid(idNguoiDung))
+                .build();
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ThongBaoResponse> getById(@PathVariable Long id) {
         return ApiResponse.<ThongBaoResponse>builder()

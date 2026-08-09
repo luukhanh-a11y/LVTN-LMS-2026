@@ -110,6 +110,16 @@ public class ThongBaoService {
     }
 
     @Transactional
+    public List<ThongBaoResponse> getAllSentByid(String id){
+        if (!nguoiDungRepository.existsById(id))
+            throw new AppExceptions(Errorcode.USER_NOT_FOUND);
+
+        return thongBaoRepository.findByNguoiGui_NguoiDungIdOrderByNgayDangDesc(id).stream()
+                .map(thongBaoMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public void delete(Long id) {
         if (!thongBaoRepository.existsById(id)) {
             throw new AppExceptions(Errorcode.THONG_BAO_NOT_FOUND);

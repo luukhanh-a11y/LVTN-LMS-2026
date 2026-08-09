@@ -5,9 +5,13 @@ import { cn } from '../../lib/utils';
 import { teacherService } from '../../services/teacher.service';
 import toast from 'react-hot-toast';
 
+import { useAcademicStore } from '../../stores/useAcademicStore';
+
 export default function MyClasses() {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const { currentHocKyId, selectedNamHocId } = useAcademicStore();
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -33,7 +37,7 @@ export default function MyClasses() {
       }
     };
     fetchClasses();
-  }, []);
+  }, [currentHocKyId, selectedNamHocId]);
 
   const homeroomClasses = classes.filter(cls => cls.isHomeroom);
   const teachingClasses = classes.filter(cls => cls.isTeaching);

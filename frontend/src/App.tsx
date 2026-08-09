@@ -40,7 +40,7 @@ import TeacherProfile from './pages/teacher/TeacherProfile';
 import ParentDashboard from './pages/parent/ParentDashboard';
 import ParentChildren from './pages/parent/ParentAchievements';
 import ParentGrades from './pages/parent/ParentGrades';
-import ParentAssignments from './pages/parent/ParentGrades'; // Still placeholder if no Assignments page
+import ParentAssignments from './pages/parent/ParentAssignments';
 import ParentNotifications from './pages/parent/ParentSupport';
 import ParentRewards from './pages/parent/ParentAchievements';
 import ParentSubjectTree from './pages/parent/SubjectTree';

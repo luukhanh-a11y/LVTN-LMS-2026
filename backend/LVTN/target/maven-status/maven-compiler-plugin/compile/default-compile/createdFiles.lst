@@ -76,6 +76,7 @@ com\LMS\LVTN\entity\HopThuThongBao.class
 com\LMS\LVTN\dto\response\TienDoHocSinhResponse.class
 com\LMS\LVTN\service\BaiTapService.class
 com\LMS\LVTN\repository\PhanCongGiangDayRepository.class
+com\LMS\LVTN\dto\response\ParentAssignmentDTO.class
 com\LMS\LVTN\dto\response\AuthenticationResponse$AuthenticationResponseBuilder.class
 com\LMS\LVTN\repository\BaiNopRepository.class
 com\LMS\LVTN\controller\LoImportController.class
@@ -233,6 +234,7 @@ com\LMS\LVTN\service\SachService.class
 com\LMS\LVTN\mapper\TienDoHocSinhMapper.class
 com\LMS\LVTN\dto\response\ApiResponse.class
 com\LMS\LVTN\enums\NguonCap.class
+com\LMS\LVTN\dto\response\ParentAssignmentDTO$ParentAssignmentDTOBuilder.class
 com\LMS\LVTN\service\DangBaiService.class
 com\LMS\LVTN\repository\PhieuHoTroRepository.class
 com\LMS\LVTN\entity\NguoiDung.class

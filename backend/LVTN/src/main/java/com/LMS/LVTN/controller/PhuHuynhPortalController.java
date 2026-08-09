@@ -90,4 +90,25 @@ public class PhuHuynhPortalController {
         // Fetch rewards from service
         return tienDoHocSinhService.getAchievementBadges(childId);
     }
+
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    @GetMapping("/children/{childId}/assignments")
+    public List<com.LMS.LVTN.dto.response.ParentAssignmentDTO> getAssignments(@PathVariable Long childId) {
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        NguoiDung phuHuynh = nguoiDungRepository.findById(userId).orElse(null);
+        if (phuHuynh == null || phuHuynh.getHoSoPhuHuynh() == null) {
+            return Collections.emptyList();
+        }
+
+        // Verify that this child belongs to this parent
+        boolean ownsChild = phuHuynhHocSinhRepository.findByPhuHuynh_PhuHuynhId(phuHuynh.getHoSoPhuHuynh().getPhuHuynhId())
+            .stream().anyMatch(rel -> rel.getHocSinh() != null && rel.getHocSinh().getHocSinhId().equals(childId));
+            
+        if (!ownsChild) {
+            return Collections.emptyList();
+        }
+
+        // Fetch assignments from service
+        return tienDoHocSinhService.getAssignmentsForStudent(childId);
+    }
 }

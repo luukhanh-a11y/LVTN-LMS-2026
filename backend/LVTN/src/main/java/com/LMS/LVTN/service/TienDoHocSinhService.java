@@ -33,6 +33,7 @@ public class TienDoHocSinhService {
     DangBaiRepository dangBaiRepository;
     TienDoHocSinhMapper tienDoHocSinhMapper;
     KhenThuongHocSinhRepository khenThuongHocSinhRepository;
+    BaiTapRepository baiTapRepository;
 
     private HocKy resolveHocKyHienTai(HoSoHocSinh hocSinh, BaiHoc baiHoc) {
         LopHoc lopHoc = hocSinh.getLopHoc();
@@ -240,6 +241,47 @@ public class TienDoHocSinhService {
                 .iconUrl(kt.getHuyHieu() != null ? kt.getHuyHieu().getIconUrl() : null)
                 .icon(null)
                 .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.LMS.LVTN.dto.response.ParentAssignmentDTO> getAssignmentsForStudent(Long hocSinhId) {
+        HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(hocSinhId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+
+        if (hocSinh.getLopHoc() == null) {
+            return java.util.Collections.emptyList();
+        }
+
+        List<BaiTap> baiTaps = baiTapRepository.findByLopHoc_LopHocId(hocSinh.getLopHoc().getLopHocId());
+        return baiTaps.stream().map(bt -> {
+            String type = "TRAC_NGHIEM";
+            if (bt.getDangBai() != null) {
+                type = bt.getDangBai().getLoaiNoiDung() != null ? bt.getDangBai().getLoaiNoiDung().name() : type;
+            }
+
+            String subjectName = "Bài tập";
+            if (bt.getDangBai() != null && bt.getDangBai().getBaiHoc() != null &&
+                bt.getDangBai().getBaiHoc().getChuDe() != null &&
+                bt.getDangBai().getBaiHoc().getChuDe().getSach() != null &&
+                bt.getDangBai().getBaiHoc().getChuDe().getSach().getMonHoc() != null) {
+                subjectName = bt.getDangBai().getBaiHoc().getChuDe().getSach().getMonHoc().getTenMon();
+            }
+            
+            int xpReward = 50;
+            if (bt.getDangBai() != null && bt.getDangBai().getXpThuong() != null) {
+                xpReward = bt.getDangBai().getXpThuong();
+            }
+
+            return com.LMS.LVTN.dto.response.ParentAssignmentDTO.builder()
+                    .id(bt.getBaiTapId())
+                    .title(bt.getTieuDe() != null ? bt.getTieuDe() : (bt.getDangBai() != null ? bt.getDangBai().getTenDangBai() : "Bài tập"))
+                    .dueDate(bt.getDeadline())
+                    .xpReward(xpReward)
+                    .completed(false) // Assuming not completed by default since parent just views it. Or could query BaiNop
+                    .subjectName(subjectName)
+                    .type(type)
+                    .build();
         }).collect(Collectors.toList());
     }
 }

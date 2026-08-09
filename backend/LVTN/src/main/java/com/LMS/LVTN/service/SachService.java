@@ -119,11 +119,21 @@ public class SachService {
         Short soHocKy = phanCong.getHocKy().getSoHocKy();
 
         // Ưu tiên bản đã tách riêng cho đúng học kỳ này; nếu chưa có thì dùng bản dùng chung.
-        List<Sach> ketQua = sachRepository.findByLoaiSachAndKhoiLopAndMonHoc_MonHocIdAndHocKyCuThe_HocKyId(
+        List<Sach> sbt = sachRepository.findByLoaiSachAndKhoiLopAndMonHoc_MonHocIdAndHocKyCuThe_HocKyId(
                 LoaiSach.SACH_BAI_TAP, khoiLop, monHocId, hocKyId);
-        if (ketQua.isEmpty()) {
-            ketQua = sachRepository.findByLoaiSachAndKhoiLopAndMonHocAndHocKy(LoaiSach.SACH_BAI_TAP, khoiLop, monHocId, soHocKy);
+        if (sbt.isEmpty()) {
+            sbt = sachRepository.findByLoaiSachAndKhoiLopAndMonHocAndHocKy(LoaiSach.SACH_BAI_TAP, khoiLop, monHocId, soHocKy);
         }
+
+        List<Sach> sgk = sachRepository.findByLoaiSachAndKhoiLopAndMonHoc_MonHocIdAndHocKyCuThe_HocKyId(
+                LoaiSach.SACH_GIAO_KHOA, khoiLop, monHocId, hocKyId);
+        if (sgk.isEmpty()) {
+            sgk = sachRepository.findByLoaiSachAndKhoiLopAndMonHocAndHocKy(LoaiSach.SACH_GIAO_KHOA, khoiLop, monHocId, soHocKy);
+        }
+
+        List<Sach> ketQua = new ArrayList<>();
+        ketQua.addAll(sbt);
+        ketQua.addAll(sgk);
 
         return ketQua.stream()
                 .map(sachMapper::toResponse)

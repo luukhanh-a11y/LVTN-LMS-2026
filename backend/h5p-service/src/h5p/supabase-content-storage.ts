@@ -4,7 +4,7 @@ import * as H5P from '@lumieducation/h5p-server';
 import axios from 'axios';
 import * as mime from 'mime-types';
 import { ReadStream } from 'fs';
-import { Stream } from 'stream';
+import { Readable, Stream } from 'stream';
 
 // Bọc FileContentStorage gốc (content.json/h5p.json JSON nhẹ vẫn lưu đĩa cục bộ,
 // đúng tinh thần "JSON lưu nhẹ") nhưng route toàn bộ file nhị phân (video, ảnh,
@@ -45,13 +45,15 @@ export class SupabaseContentStorage extends H5P.fsImplementations.FileContentSto
     if (!this.isConfigured()) {
       return super.addFile(id, filename, stream, user);
     }
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of stream as any) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      }
-      const buffer = Buffer.concat(chunks);
+    // Đọc hết stream thành buffer trước — nếu bước này lỗi thì không còn dữ liệu
+    // gì để fallback, để lỗi bay lên nguyên bản thay vì nuốt.
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream as any) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const buffer = Buffer.concat(chunks);
 
+    try {
       // Suy ra Content-Type thật từ đuôi file (video/mp4, image/jpeg...) — nếu
       // không, Supabase lưu mặc định application/octet-stream khiến trình duyệt
       // tải file xuống thay vì phát trực tiếp video/ảnh trong <video>/<img>.
@@ -70,13 +72,14 @@ export class SupabaseContentStorage extends H5P.fsImplementations.FileContentSto
           maxContentLength: Infinity,
         },
       );
+      return;
     } catch (error) {
       this.logger.warn(
         `Upload Supabase thất bại cho ${filename} (contentId=${id}), fallback lưu đĩa cục bộ: ${error.message}`,
       );
-      // stream đã bị đọc hết ở trên nên không thể dùng lại — trường hợp lỗi hiếm
-      // (mất mạng giữa chừng) được coi là chấp nhận được cho 1 dự án đồ án.
-      throw error;
+      // Stream gốc đã bị đọc hết ở trên (for-await) nên không dùng lại được —
+      // dựng lại 1 Readable mới từ buffer đã đọc để fallback ghi ra đĩa cục bộ.
+      return super.addFile(id, filename, Readable.from(buffer), user);
     }
   }
 
@@ -150,20 +153,31 @@ export class SupabaseContentStorage extends H5P.fsImplementations.FileContentSto
   // Liệt kê đệ quy các object dưới 1 prefix trên Supabase Storage (API list chỉ
   // trả 1 cấp, "thư mục" con trả về như 1 entry không có id/metadata).
   private async listSupabasePrefix(prefix: string): Promise<string[]> {
-    const res = await axios.post(
-      `${this.supabaseUrl}/storage/v1/object/list/${this.bucket}`,
-      { prefix, limit: 1000 },
-      {
-        headers: {
-          Authorization: `Bearer ${this.serviceRoleKey}`,
-          apikey: this.serviceRoleKey,
-          'Content-Type': 'application/json',
+    const pageSize = 1000;
+    const allEntries: Array<{ name: string; id: string | null }> = [];
+    let offset = 0;
+    // Lặp phân trang tới khi trang trả về ít hơn pageSize — tránh liệt kê thiếu
+    // âm thầm khi 1 content có hơn 1000 file con.
+    for (;;) {
+      const res = await axios.post(
+        `${this.supabaseUrl}/storage/v1/object/list/${this.bucket}`,
+        { prefix, limit: pageSize, offset },
+        {
+          headers: {
+            Authorization: `Bearer ${this.serviceRoleKey}`,
+            apikey: this.serviceRoleKey,
+            'Content-Type': 'application/json',
+          },
         },
-      },
-    );
-    const entries: Array<{ name: string; id: string | null }> = res.data ?? [];
+      );
+      const page: Array<{ name: string; id: string | null }> = res.data ?? [];
+      allEntries.push(...page);
+      if (page.length < pageSize) break;
+      offset += pageSize;
+    }
+
     const results: string[] = [];
-    for (const entry of entries) {
+    for (const entry of allEntries) {
       if (entry.id === null) {
         // Đây là "thư mục" giả lập của Supabase Storage — đệ quy vào bên trong.
         const nested = await this.listSupabasePrefix(`${prefix}${entry.name}/`);

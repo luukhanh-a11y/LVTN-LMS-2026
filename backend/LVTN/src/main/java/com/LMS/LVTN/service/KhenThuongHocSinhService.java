@@ -34,6 +34,7 @@ public class KhenThuongHocSinhService {
     HoSoGiaoVienRepository hoSoGiaoVienRepository;
     AuthenticationService authenticationService;
     KhenThuongHocSinhMapper mapper;
+    EmailService emailService;
 
     @Transactional
     public KhenThuongHocSinhResponse tangHuyHieuThuCong(String token, KhenThuongHocSinhRequest request) {
@@ -66,7 +67,24 @@ public class KhenThuongHocSinhService {
             
             KhenThuongHocSinh saved = khenThuongHocSinhRepository.save(khenThuong);
             
-            // 5. TODO: Tạo ThongBao (Public) để báo cho cả lớp hoặc Phụ huynh biết
+            // 5. Tạo ThongBao (Public) để báo cho cả lớp hoặc Phụ huynh biết
+            // Gửi email thông báo cho phụ huynh
+            if (hocSinh.getPhuHuynhHocSinhs() != null) {
+                for (com.LMS.LVTN.entity.PhuHuynhHocSinh phhs : hocSinh.getPhuHuynhHocSinhs()) {
+                    String email = phhs.getPhuHuynh().getEmailNhanThongBao();
+                    if (email == null || email.trim().isEmpty()) {
+                        email = phhs.getPhuHuynh().getNguoiDung().getEmail();
+                    }
+                    if (email != null && !email.trim().isEmpty()) {
+                        String subject = "Thông báo khen thưởng học sinh " + hocSinh.getHoTen();
+                        String content = "Kính gửi phụ huynh,\n\n" +
+                                "Học sinh " + hocSinh.getHoTen() + " vừa nhận được huy hiệu khen thưởng: " + huyHieu.getTenHuyHieu() + ".\n\n" +
+                                "Lời khen từ giáo viên: " + request.getThuKhen() + "\n\n" +
+                                "Trân trọng,\nHệ thống Titkul Kids LMS";
+                        emailService.sendSimpleEmail(email, subject, content);
+                    }
+                }
+            }
 
             return mapper.toResponse(saved);
 

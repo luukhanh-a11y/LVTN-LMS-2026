@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import * as H5P from '@lumieducation/h5p-server';
 import * as path from 'path';
 import * as fs from 'fs';
-import axios from 'axios';
 import { SupabaseContentStorage } from './supabase-content-storage';
 
 // Dùng LaissezFairePermissionSystem mặc định (cho phép mọi thao tác) — IUser v10
@@ -98,8 +97,6 @@ export class H5pService implements OnModuleInit {
     library: string,
     teacherId: string,
     teacherName: string,
-    grade?: number,
-    subjectId?: number,
   ): Promise<{ contentId: string; metadata: any }> {
     const user = makeTeacherUser(teacherId, teacherName);
     const { id, metadata: savedMetadata } = await this.h5pEditor.saveOrUpdateContentReturnMetaData(
@@ -109,7 +106,6 @@ export class H5pService implements OnModuleInit {
       library,
       user,
     );
-    await this.notifySpringBoot(id, savedMetadata, library, teacherId, grade, subjectId);
     return { contentId: id, metadata: savedMetadata };
   }
 
@@ -129,7 +125,6 @@ export class H5pService implements OnModuleInit {
       library,
       user,
     );
-    await this.notifySpringBoot(id, savedMetadata, library, teacherId);
     return { contentId: id, metadata: savedMetadata };
   }
 
@@ -165,42 +160,5 @@ export class H5pService implements OnModuleInit {
 
   async listContent(): Promise<string[]> {
     return this.h5pEditor.contentManager.listContent(makeTeacherUser('admin', 'Admin'));
-  }
-
-  // Thông báo Spring Boot sau khi GV lưu H5P content mới
-  private async notifySpringBoot(
-    contentId: string,
-    metadata: any,
-    library: string,
-    teacherId: string,
-    grade?: number,
-    subjectId?: number,
-  ): Promise<void> {
-    const springBootUrl = this.configService.get('SPRING_BOOT_URL', 'http://localhost:8080');
-    const loaiHocLieu = library.includes('QuestionSet') || library.includes('DragQuestion')
-      ? 'BAI_TAP_H5P'
-      : 'BAI_GIANG_H5P';
-
-    try {
-      await axios.post(
-        `${springBootUrl}/api/v1/internal/hoc-lieu`,
-        {
-          h5pContentId: contentId,
-          tieuDe: metadata?.title ?? 'Học liệu H5P không tên',
-          loaiHocLieu,
-          nguonGoc: 'GIAO_VIEN_TAO',
-          giaoVienId: Number(teacherId) || null,
-          khoiLop: grade ?? null,
-          monHocId: subjectId ?? null,
-        },
-        {
-          // Chung secret với JWT bên Spring Boot để xác thực service-to-service.
-          headers: { 'X-Internal-Secret': this.configService.get('JWT_SECRET') },
-        },
-      );
-      this.logger.log(`Đã thông báo Spring Boot: contentId=${contentId}`);
-    } catch (error) {
-      this.logger.warn(`Không thể thông báo Spring Boot (sẽ retry sau): ${error.message}`);
-    }
   }
 }

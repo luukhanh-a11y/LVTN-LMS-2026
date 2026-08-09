@@ -14,14 +14,11 @@ export const h5pService = {
   saveNewContent: async (
     library: string,
     params: { params: any; metadata: any },
-    classification?: { grade?: number; subjectId?: number },
   ): Promise<{ contentId: string; metadata: any }> => {
     const response = await h5pApi.post('/h5p/api/content', {
       library,
       params: params.params,
       metadata: params.metadata,
-      grade: classification?.grade,
-      subjectId: classification?.subjectId,
     });
     return response.data;
   },

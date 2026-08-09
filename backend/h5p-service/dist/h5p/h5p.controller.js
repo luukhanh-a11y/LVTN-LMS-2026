@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.H5pController = void 0;
 const common_1 = require("@nestjs/common");
 const h5p_service_1 = require("./h5p.service");
+const H5P_SESSION_USER_ID = 'h5p-anonymous';
 let H5pController = class H5pController {
     h5pService;
     constructor(h5pService) {
@@ -26,19 +27,19 @@ let H5pController = class H5pController {
     }
     async getNewEditorModel(req) {
         const user = req.user;
-        return this.h5pService.getEditorModel(undefined, String(user?.userId ?? '0'), user?.sub ?? 'GiaoVien');
+        return this.h5pService.getEditorModel(undefined, H5P_SESSION_USER_ID, user?.sub ?? 'GiaoVien');
     }
     async getEditorModel(contentId, req) {
         const user = req.user;
-        return this.h5pService.getEditorModel(contentId, String(user?.userId ?? '0'), user?.sub ?? 'GiaoVien');
+        return this.h5pService.getEditorModel(contentId, H5P_SESSION_USER_ID, user?.sub ?? 'GiaoVien');
     }
     async saveContent(body, req) {
         const user = req.user;
-        return this.h5pService.saveContent(body.params, body.metadata, body.library, String(user?.userId ?? '0'), user?.sub ?? 'GiaoVien', body.grade, body.subjectId);
+        return this.h5pService.saveContent(body.params, body.metadata, body.library, H5P_SESSION_USER_ID, user?.sub ?? 'GiaoVien');
     }
     async updateContent(contentId, body, req) {
         const user = req.user;
-        return this.h5pService.updateContent(contentId, body.params, body.metadata, body.library, String(user?.userId ?? '0'), user?.sub ?? 'GiaoVien');
+        return this.h5pService.updateContent(contentId, body.params, body.metadata, body.library, H5P_SESSION_USER_ID, user?.sub ?? 'GiaoVien');
     }
     async deleteContent(contentId) {
         await this.h5pService.deleteContent(contentId);

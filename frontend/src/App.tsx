@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Layouts
 import AuthLayout from './layouts/AuthLayout';
-import DashboardLayout from './layouts/DashboardLayout';
+import AdminLayout from './layouts/AdminLayout';
+import TeacherLayout from './layouts/TeacherLayout';
+import ParentLayout from './layouts/ParentLayout';
 
 // Pages - Auth
 import Login from './pages/auth/Login';
@@ -11,39 +12,39 @@ import ForceChangePassword from './pages/auth/ForceChangePassword';
 import SelectChild from './pages/auth/SelectChild';
 
 // Pages - Admin
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminUsers from './pages/admin/Users';
-import AdminTickets from './pages/admin/Tickets';
-import AdminClasses from './pages/admin/Classes';
-import ClassDetails from './pages/admin/ClassDetails';
-import AdminSettings from './pages/admin/Settings';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminTickets from './pages/admin/AdminSupport';
+import AdminClasses from './pages/admin/AdminClasses';
+import ClassDetails from './pages/admin/AdminClassDetail';
+import AdminSettings from './pages/admin/AdminSettings';
 import AdminCurriculum from './pages/admin/Curriculum';
 
 // Pages - Teacher
 import TeacherDashboard from './pages/teacher/Dashboard';
-import TeacherClasses from './pages/teacher/Classes';
-import TeacherClassDetails from './pages/teacher/ClassDetails';
+import TeacherClasses from './pages/teacher/MyClasses';
+import TeacherClassDetails from './pages/teacher/ClassDetail';
 import TeacherMaterials from './pages/teacher/Materials';
 import TeacherMaterialDetail from './pages/teacher/MaterialDetail';
 import TeacherKetQuaCuoiNam from './pages/teacher/KetQuaCuoiNam';
 import AdminKetQuaCuoiNam from './pages/admin/KetQuaCuoiNam';
-import TeacherGrading from './pages/teacher/Grading';
+import TeacherGrading from './pages/teacher/GradingWorkspace';
 import TeacherGradingDetail from './pages/teacher/GradingDetail';
-import TeacherReports from './pages/teacher/Reports';
+import TeacherReports from './pages/teacher/Gradebook';
 import TeacherAnnouncements from './pages/teacher/Announcements';
 import TeacherEditor from './pages/teacher/Editor';
-import TeacherTickets from './pages/teacher/Tickets';
-import TeacherProfile from './pages/teacher/Profile';
+import TeacherTickets from './pages/teacher/Notifications';
+import TeacherProfile from './pages/teacher/TeacherProfile';
 
 // Pages - Parent
-import ParentDashboard from './pages/parent/Dashboard';
-import ParentChildren from './pages/parent/Children';
-import ParentGrades from './pages/parent/Grades';
-import ParentAssignments from './pages/parent/Assignments';
-import ParentNotifications from './pages/parent/Notifications';
-import ParentRewards from './pages/parent/Rewards';
+import ParentDashboard from './pages/parent/ParentDashboard';
+import ParentChildren from './pages/parent/ParentAchievements';
+import ParentGrades from './pages/parent/ParentGrades';
+import ParentAssignments from './pages/parent/ParentGrades'; // Still placeholder if no Assignments page
+import ParentNotifications from './pages/parent/ParentSupport';
+import ParentRewards from './pages/parent/ParentAchievements';
 import ParentSubjectTree from './pages/parent/SubjectTree';
-import ParentProfile from './pages/parent/Profile';
+import ParentProfile from './pages/parent/ParentSupport';
 
 // Pages - Student (Bright Theme)
 import StudentLayout from './layouts/StudentLayout';
@@ -89,7 +90,7 @@ function App() {
         </Route>
 
         {/* Admin Routes */}
-        <Route path="/admin" element={<DashboardLayout role="admin" />}>
+        <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="tickets" element={<AdminTickets />} />
@@ -101,7 +102,7 @@ function App() {
         </Route>
 
         {/* Teacher Routes */}
-        <Route path="/teacher" element={<DashboardLayout role="teacher" />}>
+        <Route path="/teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherDashboard />} />
           <Route path="classes" element={<TeacherClasses />} />
           <Route path="classes/:classId" element={<TeacherClassDetails />} />
@@ -119,7 +120,7 @@ function App() {
         </Route>
 
         {/* Parent Routes */}
-        <Route path="/parent" element={<DashboardLayout role="parent" />}>
+        <Route path="/parent" element={<ParentLayout />}>
           <Route index element={<ParentDashboard />} />
           <Route path="children" element={<ParentChildren />} />
           <Route path="grades" element={<ParentGrades />} />

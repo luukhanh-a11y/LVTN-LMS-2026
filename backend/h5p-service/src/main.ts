@@ -2,22 +2,41 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { h5pAjaxExpressRouter } from '@lumieducation/h5p-express';
 import * as path from 'path';
+import * as express from 'express';
+import fileUpload from 'express-fileupload';
 import { H5pService } from './h5p/h5p.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Tắt body-parser tự động của Nest (chỉ được gắn ngầm bên trong app.listen()
+  // → init(), tức là SAU khi router '/h5p' raw bên dưới đã mount) — tự gắn
+  // express.json()/urlencoded() thủ công ngay từ đầu để req.body có sẵn cho cả
+  // route Nest lẫn route raw Express, tránh lỗi "Cannot use 'in' operator to
+  // search for 'libraries' in undefined" khi H5P core JS POST tới /h5p/ajax.
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  // h5p-express đọc file upload qua req.files.file/.h5p dạng { data, mimetype,
+  // name, size, tempFilePath } — đúng format của express-fileupload (không phải
+  // multer, dù multer có trong package.json nhưng chưa từng được wiring dùng).
+  app.use(fileUpload({ useTempFiles: true, tempFileDir: path.resolve('./h5p/temporary') }));
 
   app.enableCors({
     origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    // X-Academic-Year: axios interceptor dùng chung (frontend/src/lib/axios.ts)
+    // gắn header này vào MỌI request kể cả sang h5p-service, dù service này
+    // không dùng tới — vẫn phải khai báo ở đây, nếu không trình duyệt chặn
+    // ngay từ bước preflight OPTIONS.
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Academic-Year'],
   });
 
-  app.setGlobalPrefix('api/v1');
+  // Khớp với baseURL 'http://localhost:3001/api' phía frontend (h5pApi) — controller
+  // đã tự có prefix 'h5p/api' nên global prefix chỉ cần 'api', không phải 'api/v1'.
+  app.setGlobalPrefix('api');
 
   // Không dùng app.init() ở đây — nó khóa route table của Nest (kèm 404 mặc định)
   // trước khi router H5P raw bên dưới được mount, chặn hết request /h5p/*.

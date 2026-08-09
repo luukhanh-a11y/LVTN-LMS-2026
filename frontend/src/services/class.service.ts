@@ -101,12 +101,12 @@ export const classService = {
   },
 
   getPhanCongByLop: async (lopHocId: number): Promise<any[]> => {
-    const response = await api.get<any[]>(`/phan-cong-giang-day/lop-hoc/${lopHocId}`);
+    const response = await api.get(`/phan-cong-giang-day/lop-hoc/${lopHocId}`);
     return response.data?.data || response.data || [];
   },
 
   getPhanCongByGiaoVien: async (giaoVienId: number | string): Promise<any[]> => {
-    const response = await api.get<any[]>(`/phan-cong-giang-day/giao-vien/${giaoVienId}`);
+    const response = await api.get(`/phan-cong-giang-day/giao-vien/${giaoVienId}`);
     return response.data?.data || response.data || [];
   },
 

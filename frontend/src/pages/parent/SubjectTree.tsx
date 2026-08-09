@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Calculator, PlayCircle, Puzzle, FileQuestion, CheckCircle2, Lock } from 'lucide-react';
 import { parentService } from '../../services/parent.service';
+import { useParentContextStore } from '../../stores/useParentContextStore';
 
 export default function ParentSubjectTree() {
-  const [children, setChildren] = useState<any[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+  const { selectedChild } = useParentContextStore();
+  const selectedChildId = selectedChild?.id;
+  
   const [subjects, setSubjects] = useState<any[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
   const [chapters, setChapters] = useState<any[]>([]);
@@ -13,22 +15,13 @@ export default function ParentSubjectTree() {
   useEffect(() => {
     const fetchInitial = async () => {
       try {
-        const [childrenData, subjectsData] = await Promise.all([
-          parentService.getChildren(),
-          parentService.getSubjects(),
-        ]);
-        setChildren(childrenData);
+        const subjectsData = await parentService.getSubjects();
         setSubjects(subjectsData);
-        if (childrenData && childrenData.length > 0) {
-          setSelectedChildId(childrenData[0].id);
-        }
         if (subjectsData && subjectsData.length > 0) {
           setSelectedSubjectId(subjectsData[0].monHocId);
         }
-        if (!childrenData?.length) setIsLoading(false);
       } catch (err) {
-        console.error('Failed to fetch children/subjects', err);
-        setIsLoading(false);
+        console.error('Failed to fetch subjects', err);
       }
     };
     fetchInitial();
@@ -36,7 +29,10 @@ export default function ParentSubjectTree() {
 
   useEffect(() => {
     const fetchTree = async () => {
-      if (!selectedChildId || !selectedSubjectId) return;
+      if (!selectedChildId || !selectedSubjectId) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const data = await parentService.getSubjectTree(selectedChildId, selectedSubjectId);
@@ -63,43 +59,29 @@ export default function ParentSubjectTree() {
           </div>
         </div>
 
-        {children.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {subjects.length > 0 && (
             <div className="flex items-center space-x-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-              <span className="text-sm font-medium text-slate-500 pl-2">Chọn học sinh:</span>
+              <span className="text-sm font-medium text-slate-500 pl-2">Môn học:</span>
               <select
                 className="bg-slate-50 border-none text-sm font-semibold rounded-lg focus:ring-0 py-2 pl-3 pr-8"
-                value={selectedChildId || ''}
-                onChange={(e) => setSelectedChildId(Number(e.target.value))}
+                value={selectedSubjectId || ''}
+                onChange={(e) => setSelectedSubjectId(Number(e.target.value))}
               >
-                {children.map(child => (
-                  <option key={child.id} value={child.id}>{child.name} - {child.className}</option>
+                {subjects.map((subject: any) => (
+                  <option key={subject.monHocId} value={subject.monHocId}>{subject.tenMon}</option>
                 ))}
               </select>
             </div>
-            {subjects.length > 0 && (
-              <div className="flex items-center space-x-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-                <span className="text-sm font-medium text-slate-500 pl-2">Môn học:</span>
-                <select
-                  className="bg-slate-50 border-none text-sm font-semibold rounded-lg focus:ring-0 py-2 pl-3 pr-8"
-                  value={selectedSubjectId || ''}
-                  onChange={(e) => setSelectedSubjectId(Number(e.target.value))}
-                >
-                  {subjects.map((subject: any) => (
-                    <option key={subject.monHocId} value={subject.monHocId}>{subject.tenMon}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-pro-primary" />
         </div>
-      ) : children.length === 0 ? (
+      ) : !selectedChildId ? (
         <div className="bg-slate-50 border-dashed border-2 rounded-2xl flex flex-col items-center justify-center h-64 text-slate-500">
           <p>Bạn chưa có học sinh nào được liên kết.</p>
         </div>

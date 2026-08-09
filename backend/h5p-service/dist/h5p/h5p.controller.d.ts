@@ -12,8 +12,6 @@ export declare class H5pController {
         params: any;
         metadata: any;
         library: string;
-        grade?: number;
-        subjectId?: number;
     }, req: Request): Promise<{
         contentId: string;
         metadata: any;

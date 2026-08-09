@@ -32,23 +32,31 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const h5p_express_1 = require("@lumieducation/h5p-express");
 const path = __importStar(require("path"));
+const express = __importStar(require("express"));
+const express_fileupload_1 = __importDefault(require("express-fileupload"));
 const h5p_service_1 = require("./h5p/h5p.service");
 const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 async function bootstrap() {
-    const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const app = await core_1.NestFactory.create(app_module_1.AppModule, { bodyParser: false });
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use((0, express_fileupload_1.default)({ useTempFiles: true, tempFileDir: path.resolve('./h5p/temporary') }));
     app.enableCors({
         origin: ['http://localhost:5173', 'http://localhost:3000'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Academic-Year'],
     });
-    app.setGlobalPrefix('api/v1');
+    app.setGlobalPrefix('api');
     const h5pService = app.get(h5p_service_1.H5pService);
     await h5pService.ready();
     const h5pEditor = h5pService.getEditor();

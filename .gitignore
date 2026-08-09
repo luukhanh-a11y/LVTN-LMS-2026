@@ -1,6 +1,10 @@
 # Bỏ qua thư mục build chứa file .jar nặng
 backend/core-service/target/
 
+# Secrets — không được commit (chứa SUPABASE_SERVICE_ROLE_KEY và các key nhạy cảm khác)
+backend/h5p-service/.env
+backend/core-service/src/main/resources/application-secrets.yml
+
 # Bỏ qua 2 file video quá giới hạn 100MB của GitHub
 data-game/backgroud/ech-qua-song/vecteezy_water-surface-texture-background-concept_4747808.mp4
 frontend/public/custom-assets/ech-qua-song/water_bg.mp4

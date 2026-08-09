@@ -14,6 +14,9 @@ public class DangBaiResponse {
     private Integer dangBaiId;
     private Integer baiHocId;
     private String tenBaiHoc; // Flattened
+    private Short khoiLop; // Flattened từ baiHoc.chuDe.sach
+    private Short monHocId; // Flattened từ baiHoc.chuDe.sach.monHoc
+    private String tenMon; // Flattened từ baiHoc.chuDe.sach.monHoc
     private Integer bookIndexIdNgoai;
     private String tenDangBai;
     private String slug;

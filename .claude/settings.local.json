@@ -146,7 +146,8 @@
       "Bash(echo \"RESULT=$?\")",
       "Bash(echo \"BACKEND_RESULT=$?\")",
       "Bash(echo \"BACKEND=$?\")",
-      "Bash(\"/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe\" -uroot -proot -h127.0.0.1 -P3306 lms1 --default-character-set=utf8mb4 -e \"DESCRIBE sach;\")"
+      "Bash(\"/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe\" -uroot -proot -h127.0.0.1 -P3306 lms1 --default-character-set=utf8mb4 -e \"DESCRIBE sach;\")",
+      "Bash(git check-ignore *)"
     ]
   }
 }

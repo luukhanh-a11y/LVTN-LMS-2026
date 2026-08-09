@@ -13,7 +13,7 @@ export declare class H5pService implements OnModuleInit {
     private initialize;
     getEditor(): H5P.H5PEditor;
     getPlayer(): H5P.H5PPlayer;
-    saveContent(params: any, metadata: any, library: string, teacherId: string, teacherName: string, grade?: number, subjectId?: number): Promise<{
+    saveContent(params: any, metadata: any, library: string, teacherId: string, teacherName: string): Promise<{
         contentId: string;
         metadata: any;
     }>;
@@ -25,5 +25,4 @@ export declare class H5pService implements OnModuleInit {
     deleteContent(contentId: string): Promise<void>;
     getPlayerConfig(contentId: string, userId: string): Promise<any>;
     listContent(): Promise<string[]>;
-    private notifySpringBoot;
 }

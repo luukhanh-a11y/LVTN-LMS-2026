@@ -4,14 +4,17 @@ import com.LMS.LVTN.dto.request.DangBaiRequest;
 import com.LMS.LVTN.dto.response.DangBaiResponse;
 import com.LMS.LVTN.dto.response.DangBaiStudentResponse;
 import com.LMS.LVTN.entity.BaiHoc;
+import com.LMS.LVTN.entity.ChuDe;
 import com.LMS.LVTN.entity.DangBai;
 import com.LMS.LVTN.entity.HoSoGiaoVien;
+import com.LMS.LVTN.entity.MonHoc;
+import com.LMS.LVTN.entity.Sach;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-08T11:16:16+0700",
+    date = "2026-08-09T19:35:17+0700",
     comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
@@ -52,6 +55,9 @@ public class DangBaiMapperImpl extends DangBaiMapper {
 
         dangBaiResponse.setBaiHocId( entityBaiHocBaiHocId( entity ) );
         dangBaiResponse.setTenBaiHoc( entityBaiHocTenBaiHoc( entity ) );
+        dangBaiResponse.setKhoiLop( entityBaiHocChuDeSachKhoiLop( entity ) );
+        dangBaiResponse.setMonHocId( entityBaiHocChuDeSachMonHocMonHocId( entity ) );
+        dangBaiResponse.setTenMon( entityBaiHocChuDeSachMonHocTenMon( entity ) );
         dangBaiResponse.setGiaoVienId( entityGiaoVienGiaoVienId( entity ) );
         dangBaiResponse.setTenGiaoVien( entityGiaoVienHoTen( entity ) );
         dangBaiResponse.setDangBaiId( entity.getDangBaiId() );
@@ -136,6 +142,62 @@ public class DangBaiMapperImpl extends DangBaiMapper {
             return null;
         }
         return baiHoc.getTenBaiHoc();
+    }
+
+    private Short entityBaiHocChuDeSachKhoiLop(DangBai dangBai) {
+        BaiHoc baiHoc = dangBai.getBaiHoc();
+        if ( baiHoc == null ) {
+            return null;
+        }
+        ChuDe chuDe = baiHoc.getChuDe();
+        if ( chuDe == null ) {
+            return null;
+        }
+        Sach sach = chuDe.getSach();
+        if ( sach == null ) {
+            return null;
+        }
+        return sach.getKhoiLop();
+    }
+
+    private Short entityBaiHocChuDeSachMonHocMonHocId(DangBai dangBai) {
+        BaiHoc baiHoc = dangBai.getBaiHoc();
+        if ( baiHoc == null ) {
+            return null;
+        }
+        ChuDe chuDe = baiHoc.getChuDe();
+        if ( chuDe == null ) {
+            return null;
+        }
+        Sach sach = chuDe.getSach();
+        if ( sach == null ) {
+            return null;
+        }
+        MonHoc monHoc = sach.getMonHoc();
+        if ( monHoc == null ) {
+            return null;
+        }
+        return monHoc.getMonHocId();
+    }
+
+    private String entityBaiHocChuDeSachMonHocTenMon(DangBai dangBai) {
+        BaiHoc baiHoc = dangBai.getBaiHoc();
+        if ( baiHoc == null ) {
+            return null;
+        }
+        ChuDe chuDe = baiHoc.getChuDe();
+        if ( chuDe == null ) {
+            return null;
+        }
+        Sach sach = chuDe.getSach();
+        if ( sach == null ) {
+            return null;
+        }
+        MonHoc monHoc = sach.getMonHoc();
+        if ( monHoc == null ) {
+            return null;
+        }
+        return monHoc.getTenMon();
     }
 
     private Long entityGiaoVienGiaoVienId(DangBai dangBai) {

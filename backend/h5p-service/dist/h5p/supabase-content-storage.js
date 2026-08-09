@@ -41,6 +41,7 @@ const common_1 = require("@nestjs/common");
 const H5P = __importStar(require("@lumieducation/h5p-server"));
 const axios_1 = __importDefault(require("axios"));
 const mime = __importStar(require("mime-types"));
+const stream_1 = require("stream");
 class SupabaseContentStorage extends H5P.fsImplementations.FileContentStorage {
     logger = new common_1.Logger(SupabaseContentStorage.name);
     supabaseUrl;
@@ -65,12 +66,12 @@ class SupabaseContentStorage extends H5P.fsImplementations.FileContentStorage {
         if (!this.isConfigured()) {
             return super.addFile(id, filename, stream, user);
         }
+        const chunks = [];
+        for await (const chunk of stream) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        const buffer = Buffer.concat(chunks);
         try {
-            const chunks = [];
-            for await (const chunk of stream) {
-                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-            }
-            const buffer = Buffer.concat(chunks);
             const contentType = mime.lookup(filename) || 'application/octet-stream';
             await axios_1.default.post(`${this.supabaseUrl}/storage/v1/object/${this.bucket}/${this.objectPath(id, filename)}`, buffer, {
                 headers: {
@@ -82,10 +83,11 @@ class SupabaseContentStorage extends H5P.fsImplementations.FileContentStorage {
                 maxBodyLength: Infinity,
                 maxContentLength: Infinity,
             });
+            return;
         }
         catch (error) {
             this.logger.warn(`Upload Supabase thất bại cho ${filename} (contentId=${id}), fallback lưu đĩa cục bộ: ${error.message}`);
-            throw error;
+            return super.addFile(id, filename, stream_1.Readable.from(buffer), user);
         }
     }
     async fileExists(contentId, filename) {
@@ -141,16 +143,25 @@ class SupabaseContentStorage extends H5P.fsImplementations.FileContentStorage {
         return super.getFileStream(id, filename, user, rangeStart, rangeEnd);
     }
     async listSupabasePrefix(prefix) {
-        const res = await axios_1.default.post(`${this.supabaseUrl}/storage/v1/object/list/${this.bucket}`, { prefix, limit: 1000 }, {
-            headers: {
-                Authorization: `Bearer ${this.serviceRoleKey}`,
-                apikey: this.serviceRoleKey,
-                'Content-Type': 'application/json',
-            },
-        });
-        const entries = res.data ?? [];
+        const pageSize = 1000;
+        const allEntries = [];
+        let offset = 0;
+        for (;;) {
+            const res = await axios_1.default.post(`${this.supabaseUrl}/storage/v1/object/list/${this.bucket}`, { prefix, limit: pageSize, offset }, {
+                headers: {
+                    Authorization: `Bearer ${this.serviceRoleKey}`,
+                    apikey: this.serviceRoleKey,
+                    'Content-Type': 'application/json',
+                },
+            });
+            const page = res.data ?? [];
+            allEntries.push(...page);
+            if (page.length < pageSize)
+                break;
+            offset += pageSize;
+        }
         const results = [];
-        for (const entry of entries) {
+        for (const entry of allEntries) {
             if (entry.id === null) {
                 const nested = await this.listSupabasePrefix(`${prefix}${entry.name}/`);
                 results.push(...nested.map((n) => `${entry.name}/${n}`));

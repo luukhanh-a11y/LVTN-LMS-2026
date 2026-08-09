@@ -43,8 +43,7 @@ public class DangBaiService {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public List<DangBaiResponse> getAllDangBaiHeThong() {
-        return dangBaiRepository.findAll().stream()
-                .filter(db -> db.getNguonGoc() == NguonGoc.HE_THONG)
+        return dangBaiRepository.findByNguonGoc(NguonGoc.HE_THONG).stream()
                 .map(dangBaiMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -177,6 +176,88 @@ public class DangBaiService {
         if (!dangBaiRepository.existsById(id))
             throw new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND);
         dangBaiRepository.deleteById(id);
+    }
+
+    // ── Kho học liệu của giáo viên (dang_bai nguồn GIAO_VIEN_BO_SUNG) ──
+
+    // "Kho học liệu" của GV = học liệu GV tự soạn (GIAO_VIEN_BO_SUNG, đúng giaoVienId)
+    // + toàn bộ học liệu sách giáo khoa hệ thống (HE_THONG) — vì hoc_lieu cũ (kể cả
+    // phần "thư viện gốc" từ sách) đã được sáp nhập vào dang_bai, không tách bảng riêng.
+    public List<DangBaiResponse> getMyMaterials(Long giaoVienId) {
+        List<DangBai> heThong = dangBaiRepository.findByNguonGoc(NguonGoc.HE_THONG);
+        List<DangBai> cuaToi = dangBaiRepository.findByNguonGocAndGiaoVien_GiaoVienId(NguonGoc.GIAO_VIEN_BO_SUNG, giaoVienId);
+
+        List<DangBai> tatCa = new ArrayList<>(heThong.size() + cuaToi.size());
+        tatCa.addAll(heThong);
+        tatCa.addAll(cuaToi);
+
+        return tatCa.stream()
+                .map(dangBaiMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Tra cứu dạng bài GV đã gắn với 1 content H5P cụ thể — dùng khi FE mở lại
+    // Editor để sửa (route /teacher/editor/:contentId chỉ có h5pNoiDungId, chưa
+    // biết dangBaiId/baiHocId tương ứng).
+    public DangBaiResponse getByH5pNoiDungId(String h5pNoiDungId) {
+        return dangBaiRepository.findByH5pNoiDungId(h5pNoiDungId)
+                .map(dangBaiMapper::toResponse)
+                .orElse(null);
+    }
+
+    @Transactional
+    public DangBaiResponse createDangBaiGiaoVien(DangBaiRequest request) {
+        if (request.getBaiHocId() == null) {
+            throw new AppExceptions(Errorcode.BAI_HOC_NOT_FOUND);
+        }
+        DangBai dangBai = new DangBai();
+        dangBaiMapper.updateEntityFromRequest(request, dangBai);
+        dangBai.setNguonGoc(NguonGoc.GIAO_VIEN_BO_SUNG);
+        apDungMacDinh(dangBai);
+
+        DangBai saved = dangBaiRepository.save(dangBai);
+        return dangBaiMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public DangBaiResponse updateDangBaiGiaoVien(Integer id, DangBaiRequest request) {
+        DangBai dangBai = dangBaiRepository.findById(id)
+                .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
+        kiemTraQuyenSoHuu(dangBai, request.getGiaoVienId());
+
+        dangBaiMapper.updateEntityFromRequest(request, dangBai);
+        dangBai.setNguonGoc(NguonGoc.GIAO_VIEN_BO_SUNG);
+        apDungMacDinh(dangBai);
+
+        DangBai saved = dangBaiRepository.save(dangBai);
+        return dangBaiMapper.toResponse(saved);
+    }
+
+    // Kho học liệu GV chỉ gửi các field cốt lõi (baiHocId, tenDangBai, loaiNoiDung,
+    // giaoVienId, h5pNoiDungId) — soThuTu/xpThuong không có trong payload nên bị
+    // mapper ghi đè thành null, vi phạm NOT NULL của cột so_thu_tu/xp_thuong.
+    private void apDungMacDinh(DangBai dangBai) {
+        if (dangBai.getSoThuTu() == null) {
+            dangBai.setSoThuTu((short) 0);
+        }
+        if (dangBai.getXpThuong() == null) {
+            dangBai.setXpThuong((short) 0);
+        }
+    }
+
+    public void deleteDangBaiGiaoVien(Integer id, Long giaoVienId) {
+        DangBai dangBai = dangBaiRepository.findById(id)
+                .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
+        kiemTraQuyenSoHuu(dangBai, giaoVienId);
+        dangBaiRepository.deleteById(id);
+    }
+
+    private void kiemTraQuyenSoHuu(DangBai dangBai, Long giaoVienId) {
+        if (dangBai.getNguonGoc() != NguonGoc.GIAO_VIEN_BO_SUNG
+                || dangBai.getGiaoVien() == null
+                || !dangBai.getGiaoVien().getGiaoVienId().equals(giaoVienId)) {
+            throw new AppExceptions(Errorcode.UNAUTHORIZED);
+        }
     }
 
     @Transactional

@@ -41,9 +41,6 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 var H5pService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.H5pService = void 0;
@@ -52,7 +49,6 @@ const config_1 = require("@nestjs/config");
 const H5P = __importStar(require("@lumieducation/h5p-server"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
-const axios_1 = __importDefault(require("axios"));
 const supabase_content_storage_1 = require("./supabase-content-storage");
 const makeTeacherUser = (id, name) => ({
     id,
@@ -109,16 +105,14 @@ let H5pService = H5pService_1 = class H5pService {
     getPlayer() {
         return this.h5pPlayer;
     }
-    async saveContent(params, metadata, library, teacherId, teacherName, grade, subjectId) {
+    async saveContent(params, metadata, library, teacherId, teacherName) {
         const user = makeTeacherUser(teacherId, teacherName);
         const { id, metadata: savedMetadata } = await this.h5pEditor.saveOrUpdateContentReturnMetaData(undefined, params, metadata, library, user);
-        await this.notifySpringBoot(id, savedMetadata, library, teacherId, grade, subjectId);
         return { contentId: id, metadata: savedMetadata };
     }
     async updateContent(contentId, params, metadata, library, teacherId, teacherName) {
         const user = makeTeacherUser(teacherId, teacherName);
         const { id, metadata: savedMetadata } = await this.h5pEditor.saveOrUpdateContentReturnMetaData(contentId, params, metadata, library, user);
-        await this.notifySpringBoot(id, savedMetadata, library, teacherId);
         return { contentId: id, metadata: savedMetadata };
     }
     async getEditorModel(contentId, teacherId, teacherName) {
@@ -139,29 +133,6 @@ let H5pService = H5pService_1 = class H5pService {
     }
     async listContent() {
         return this.h5pEditor.contentManager.listContent(makeTeacherUser('admin', 'Admin'));
-    }
-    async notifySpringBoot(contentId, metadata, library, teacherId, grade, subjectId) {
-        const springBootUrl = this.configService.get('SPRING_BOOT_URL', 'http://localhost:8080');
-        const loaiHocLieu = library.includes('QuestionSet') || library.includes('DragQuestion')
-            ? 'BAI_TAP_H5P'
-            : 'BAI_GIANG_H5P';
-        try {
-            await axios_1.default.post(`${springBootUrl}/api/v1/internal/hoc-lieu`, {
-                h5pContentId: contentId,
-                tieuDe: metadata?.title ?? 'Học liệu H5P không tên',
-                loaiHocLieu,
-                nguonGoc: 'GIAO_VIEN_TAO',
-                giaoVienId: Number(teacherId) || null,
-                khoiLop: grade ?? null,
-                monHocId: subjectId ?? null,
-            }, {
-                headers: { 'X-Internal-Secret': this.configService.get('JWT_SECRET') },
-            });
-            this.logger.log(`Đã thông báo Spring Boot: contentId=${contentId}`);
-        }
-        catch (error) {
-            this.logger.warn(`Không thể thông báo Spring Boot (sẽ retry sau): ${error.message}`);
-        }
     }
 };
 exports.H5pService = H5pService;

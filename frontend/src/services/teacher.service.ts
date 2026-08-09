@@ -1,6 +1,7 @@
 import { api } from '../lib/axios';
 import { classService } from './class.service';
 import { useAcademicStore } from '../stores/useAcademicStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 // ===== Interfaces (Types phản ánh cấu trúc JSON từ Backend) =====
 
@@ -17,21 +18,32 @@ export interface ClassRoom {
   monHocList?: { monHocId: number; tenMon: string; hocKyId: number }[];
 }
 
+// Phản ánh DangBaiResponse (backend) — "học liệu" là dang_bai nguồn GIAO_VIEN_BO_SUNG,
+// hoc_lieu đã được sáp nhập vào dang_bai trong thiết kế schema hiện tại của LVTN.
 export interface Material {
-  id: number;
-  title: string;
-  type: 'TAI_LIEU' | 'BAI_GIANG_H5P' | 'BAI_TAP_H5P';
-  origin: 'THU_VIEN_GOC' | 'GIAO_VIEN_TAO';
-  fileUrl: string | null;
-  h5pContentId: string | null;
-  xpReward: number;
-  allowRetry: boolean;
-  maxRetryCount: number | null;
-  createdAt: string;
-  teacherUserId: number | null;
-  grade: number | null;
-  subjectId: number | null;
-  subjectName: string | null;
+  dangBaiId: number;
+  tenDangBai: string;
+  loaiNoiDung: 'H5P' | 'FILE' | 'NATIVE' | 'JSON_TEXT';
+  nguonGoc: 'HE_THONG' | 'GIAO_VIEN_BO_SUNG';
+  h5pNoiDungId: string | null;
+  baiHocId: number;
+  tenBaiHoc: string | null;
+  khoiLop: number | null;
+  monHocId: number | null;
+  tenMon: string | null;
+  giaoVienId: number | null;
+  xpThuong: number;
+  duLieuGame: string | null;
+  dapAnChuan: string | null;
+  ngayTao: string;
+}
+
+export interface MaterialUpsertPayload {
+  baiHocId: number;
+  tenDangBai: string;
+  loaiNoiDung: 'H5P' | 'FILE' | 'NATIVE' | 'JSON_TEXT';
+  giaoVienId: number;
+  h5pNoiDungId?: string;
 }
 
 export interface Subject {
@@ -127,14 +139,44 @@ export const teacherService = {
     const currentHocKyId = useAcademicStore.getState().currentHocKyId;
     const filtered = currentHocKyId ? phanCongs.filter((p: any) => p.hocKyId === currentHocKyId) : phanCongs;
 
-    // Gộp theo lopHocId vì 1 lớp có thể có nhiều bản ghi phân công (mỗi bản ghi 1 môn)
+    // Lấy tất cả lớp học để kiểm tra xem có lớp nào mình làm GVCN mà không có phân công giảng dạy không
+    let tatCaLopHoc: any[] = [];
+    try {
+      tatCaLopHoc = await classService.getAllClasses();
+    } catch (e) {
+      console.error("Failed to fetch all classes", e);
+    }
+
     const byLop = new Map<number, any>();
+    
+    // Gộp theo phân công giảng dạy
     filtered.forEach((p: any) => {
       if (!byLop.has(p.lopHocId)) {
         byLop.set(p.lopHocId, { lopHocId: p.lopHocId, tenLop: p.tenLop, monHocList: [] as any[] });
       }
       byLop.get(p.lopHocId).monHocList.push({ monHocId: p.monHocId, tenMon: p.tenMon, hocKyId: p.hocKyId });
     });
+
+    // Bổ sung thêm các lớp mà giáo viên này làm GVCN (kể cả khi không có phân công giảng dạy nào)
+    const selectedNamHocId = useAcademicStore.getState().selectedNamHocId;
+    tatCaLopHoc.forEach((lop: any) => {
+      // Chỉ lấy các lớp thuộc năm học đang được chọn
+      if (selectedNamHocId && lop.namHoc?.namHocId !== selectedNamHocId) return;
+
+      if (lop.giaoVienChuNhiem?.giaoVienId === profile.giaoVienId) {
+        if (!byLop.has(lop.lopHocId)) {
+          byLop.set(lop.lopHocId, { lopHocId: lop.lopHocId, tenLop: lop.tenLop, monHocList: [] as any[] });
+        }
+      }
+    });
+
+    let allStudents: any[] = [];
+    try {
+      const allStudentsResponse = await api.get('/hoso-hocsinh');
+      allStudents = allStudentsResponse.data?.data || allStudentsResponse.data || [];
+    } catch (e) {
+      console.error("Failed to load students for count", e);
+    }
 
     return Promise.all(
       Array.from(byLop.values()).map(async (item): Promise<ClassRoom> => {
@@ -147,12 +189,12 @@ export const teacherService = {
             academicYear: detail.namHoc?.tenNamHoc ?? '',
             maxCapacity: detail.siSoToiDa,
             status: detail.trangThai,
-            students: detail.siSoHienTai,
-            role: detail.giaoVienChuNhiem?.giaoVienId === profile.giaoVienId ? 'Chủ nhiệm' : 'Giáo viên bộ môn',
+            students: allStudents.filter((s: any) => Number(s.lopHocId) === Number(item.lopHocId)).length,
+            role: Number((detail as any).giaoVienChuNhiemId || detail.giaoVienChuNhiem?.giaoVienId) === Number(profile.giaoVienId) ? 'Chủ nhiệm' : 'Giáo viên bộ môn',
             monHocList: item.monHocList,
           };
         } catch {
-          return { id: item.lopHocId, name: item.tenLop, grade: 0, academicYear: '', monHocList: item.monHocList };
+          return { id: item.lopHocId, name: item.tenLop, grade: 0, academicYear: '', students: 0, monHocList: item.monHocList };
         }
       })
     );
@@ -164,29 +206,40 @@ export const teacherService = {
     return response.data?.data || response.data || [];
   },
 
-  // Lấy danh sách học liệu (Kho học liệu). Truyền giaoVienId để lọc "kho cá nhân của tôi".
-  getMaterials: async (giaoVienId?: number): Promise<Material[]> => {
-    const response = await api.get<Material[]>('/hoc-lieu', {
-      params: giaoVienId ? { giaoVienId } : undefined,
-    });
+  // Lấy danh sách học liệu (Kho học liệu cá nhân của giáo viên).
+  getMaterials: async (giaoVienId: number): Promise<Material[]> => {
+    const response = await api.get<Material[]>('/giao-vien/dang-bai', { params: { giaoVienId } });
     return response.data;
   },
 
   getMaterialById: async (id: number | string): Promise<Material> => {
-    const response = await api.get<Material>(`/hoc-lieu/${id}`);
+    const response = await api.get<Material>(`/he-thong/dang-bai/${id}`);
     return response.data;
   },
 
-  deleteMaterial: async (id: number | string): Promise<void> => {
-    await api.delete(`/hoc-lieu/${id}`);
+  // Tra cứu học liệu đã gắn với 1 content H5P (dùng khi mở lại Editor để sửa).
+  getMaterialByH5pContentId: async (h5pContentId: string): Promise<Material | null> => {
+    try {
+      const response = await api.get<Material>(`/giao-vien/dang-bai/by-h5p/${h5pContentId}`);
+      return response.data;
+    } catch (err: any) {
+      if (err?.response?.status === 404) return null;
+      throw err;
+    }
   },
 
-  updateMaterialClassification: async (
-    id: number | string,
-    data: { grade: number | null; subjectId: number | null },
-  ): Promise<Material> => {
-    const response = await api.patch<Material>(`/hoc-lieu/${id}/classification`, data);
+  createMaterial: async (data: MaterialUpsertPayload): Promise<Material> => {
+    const response = await api.post<Material>('/giao-vien/dang-bai', data);
     return response.data;
+  },
+
+  updateMaterial: async (id: number | string, data: MaterialUpsertPayload): Promise<Material> => {
+    const response = await api.put<Material>(`/giao-vien/dang-bai/${id}`, data);
+    return response.data;
+  },
+
+  deleteMaterial: async (id: number | string, giaoVienId: number): Promise<void> => {
+    await api.delete(`/giao-vien/dang-bai/${id}`, { params: { giaoVienId } });
   },
 
   // === Sách bài tập đúng bộ môn/lớp/học kỳ giáo viên được phân công (Giao bài tập) ===
@@ -215,7 +268,7 @@ export const teacherService = {
   getHocSinhByLop: async (lopHocId: number): Promise<{ hocSinhId: number; hoTen: string; maHocSinh: string }[]> => {
     const response = await api.get('/hoso-hocsinh');
     const all = response.data?.data || response.data || [];
-    return all.filter((hs: any) => hs.lopHocId === lopHocId);
+    return all.filter((hs: any) => Number(hs.lopHocId) === Number(lopHocId));
   },
 
   getKetQuaCuoiNam: async (hocSinhId: number, namHoc: string): Promise<any> => {
@@ -307,24 +360,46 @@ export const teacherService = {
   createAnnouncement: async (dto: {
     title: string;
     content: string;
-    audience: 'TAT_CA' | 'PHU_HUYNH' | 'HOC_SINH';
+    audience: string | number; // 'TAT_CA' or lopHocId
     pinned: boolean;
   }): Promise<void> => {
-    await api.post('/teachers/me/announcements', dto);
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error('Not logged in');
+    
+    const payload = {
+      nguoiGuiId: user.userId,
+      tieuDe: dto.title,
+      noiDung: dto.content,
+      loaiThongBao: 'NOI_BO',
+      laGhim: dto.pinned || false,
+      lopHocId: dto.audience === 'TAT_CA' ? null : Number(dto.audience)
+    };
+    await api.post('/thongbao', payload);
   },
 
   getMyAnnouncements: async (): Promise<any[]> => {
-    const response = await api.get('/teachers/me/announcements');
-    return response.data;
+    const user = useAuthStore.getState().user;
+    if (!user) return [];
+    const response = await api.get(`/thongbao/nguoi-dung/${user.userId}`);
+    const data = response.data?.data || response.data || [];
+    return data;
   },
 
-  getBadges: async (): Promise<{ huyHieuId: number; tenHuyHieu: string; moTa: string | null; iconUrl: string | null }[]> => {
-    const response = await api.get('/badges');
-    return response.data;
+  getBadges: async (): Promise<{ huyHieuId: number; tenHuyHieu: string; moTa: string | null; iconUrl: string | null; loai?: string }[]> => {
+    const response = await api.get('/huy-hieu');
+    const data = response.data?.data || response.data || [];
+    return data;
   },
 
   awardBadge: async (studentId: number, dto: { huyHieuId: number; thuKhen: string }): Promise<void> => {
-    await api.post(`/teachers/me/students/${studentId}/rewards`, dto);
+    const profile = await teacherService.getMyTeacherProfile();
+    await api.post('/khen-thuong-hoc-sinh/tang-thu-cong', {
+      hocSinhId: studentId,
+      huyHieuId: dto.huyHieuId,
+      giaoVienId: profile.giaoVienId,
+      thuKhen: dto.thuKhen,
+      nguonCap: 'THU_CONG'
+    });
   },
 
   generateCommentSuggestions: async (submissionId: number): Promise<{ id: number; suggestions: string[] }> => {
@@ -337,8 +412,8 @@ export const teacherService = {
   },
 
   generateExerciseSuggestions: async (payload: { grade?: number; subjectId?: number; topicHint?: string }): Promise<{ suggestions: string[] }> => {
-    const response = await api.post('/hoc-lieu/ai-goi-y-bai-tap', payload);
-    return response.data;
+    const response = await api.post('/goi-y-ai-bai-tap', payload);
+    return response.data?.data || response.data;
   },
 
   getDanhSachXetLopHoc: async (classId: number): Promise<any[]> => {

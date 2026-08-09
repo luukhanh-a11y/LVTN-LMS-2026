@@ -11,6 +11,13 @@ import {
 import { H5pService } from './h5p.service';
 import type { Request } from 'express';
 
+// H5P core JS gọi AJAX nội bộ (upload file tạm qua /h5p/ajax) không kèm Bearer
+// token, nên luôn được gán user mặc định 'h5p-anonymous' (xem populateH5pUser
+// trong main.ts). Editor/Save PHẢI dùng cùng 1 id này khi thao tác trên cùng 1
+// phiên soạn bài, nếu không H5P server sẽ tra cứu nhầm thư mục file tạm của
+// user khác — 404 "not found" và tự xoá tham chiếu file khỏi content đã lưu.
+const H5P_SESSION_USER_ID = 'h5p-anonymous';
+
 @Controller('h5p/api')
 export class H5pController {
   constructor(private readonly h5pService: H5pService) {}
@@ -27,7 +34,7 @@ export class H5pController {
     const user = (req as any).user;
     return this.h5pService.getEditorModel(
       undefined,
-      String(user?.userId ?? '0'),
+      H5P_SESSION_USER_ID,
       user?.sub ?? 'GiaoVien',
     );
   }
@@ -38,7 +45,7 @@ export class H5pController {
     const user = (req as any).user;
     return this.h5pService.getEditorModel(
       contentId,
-      String(user?.userId ?? '0'),
+      H5P_SESSION_USER_ID,
       user?.sub ?? 'GiaoVien',
     );
   }
@@ -46,7 +53,7 @@ export class H5pController {
   // Giáo viên lưu H5P content mới
   @Post('content')
   async saveContent(
-    @Body() body: { params: any; metadata: any; library: string; grade?: number; subjectId?: number },
+    @Body() body: { params: any; metadata: any; library: string },
     @Req() req: Request,
   ) {
     const user = (req as any).user;
@@ -54,10 +61,8 @@ export class H5pController {
       body.params,
       body.metadata,
       body.library,
-      String(user?.userId ?? '0'),
+      H5P_SESSION_USER_ID,
       user?.sub ?? 'GiaoVien',
-      body.grade,
-      body.subjectId,
     );
   }
 
@@ -74,7 +79,7 @@ export class H5pController {
       body.params,
       body.metadata,
       body.library,
-      String(user?.userId ?? '0'),
+      H5P_SESSION_USER_ID,
       user?.sub ?? 'GiaoVien',
     );
   }

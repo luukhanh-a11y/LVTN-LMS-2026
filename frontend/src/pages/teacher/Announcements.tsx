@@ -1,148 +1,169 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Megaphone, Send, FilePlus, Eye, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Send, Pin, Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import { cn } from '../../lib/utils';
 import { teacherService } from '../../services/teacher.service';
 
-const AUDIENCE_LABEL: Record<string, string> = {
-  TAT_CA: 'Tất cả',
-  PHU_HUYNH: 'Phụ huynh',
-  HOC_SINH: 'Học sinh',
-};
-
-export default function TeacherAnnouncements() {
+export default function Announcements() {
+  const [activeTab, setActiveTab] = useState('tao-moi');
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [audience, setAudience] = useState<'TAT_CA' | 'PHU_HUYNH' | 'HOC_SINH'>('TAT_CA');
-  const [pinned, setPinned] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [audience, setAudience] = useState<string>('TAT_CA');
 
-  const [history, setHistory] = useState<any[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-
-  const fetchHistory = async () => {
-    setIsLoadingHistory(true);
+  const fetchAnnouncements = async () => {
     try {
       const data = await teacherService.getMyAnnouncements();
-      setHistory(data);
+      setAnnouncements(data || []);
     } catch (err) {
-      console.error('Failed to fetch announcements', err);
+      console.error(err);
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      setLoadingClasses(true);
+      const data = await teacherService.getClasses();
+      setClasses(data || []);
+    } catch (err) {
+      console.error(err);
     } finally {
-      setIsLoadingHistory(false);
+      setLoadingClasses(false);
     }
   };
 
   useEffect(() => {
-    fetchHistory();
+    fetchAnnouncements();
+    fetchClasses();
   }, []);
 
-  const handleSubmit = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error('Vui lòng nhập đầy đủ tiêu đề và nội dung.');
-      return;
-    }
-    setIsSubmitting(true);
+  const handlePostAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await teacherService.createAnnouncement({ title, content, audience, pinned });
-      toast.success('Đã đăng thông báo!');
+      setLoading(true);
+      await teacherService.createAnnouncement({
+        title,
+        content,
+        audience,
+        pinned: false
+      });
+      toast.success('Đã đăng thông báo thành công!');
       setTitle('');
       setContent('');
-      setPinned(false);
-      setAudience('TAT_CA');
-      fetchHistory();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Đăng thông báo thất bại.');
+      setActiveTab('lich-su');
+      fetchAnnouncements();
+    } catch (err) {
+      console.error(err);
+      toast.error('Gửi thông báo thất bại');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-slate-800">Bảng Tin Lớp Học</h1>
+    <div className="max-w-5xl mx-auto space-y-6 flex flex-col h-[calc(100vh-8rem)]">
+      
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <Megaphone className="w-6 h-6 text-blue-600" /> Thông báo chung
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">Đăng thông báo tới học sinh và xem lịch sử các thông báo đã gửi.</p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Đăng thông báo mới</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input placeholder="Tiêu đề thông báo..." value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea
-            className="w-full h-32 px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-primary focus:ring-1 resize-none"
-            placeholder="Nội dung thông báo..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          ></textarea>
+      <div className="flex items-center gap-6 border-b border-slate-200">
+        <button 
+          onClick={() => setActiveTab('tao-moi')}
+          className={cn("pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer", activeTab === 'tao-moi' ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-700")}
+        >
+          Soạn thông báo
+        </button>
+        <button 
+          onClick={() => setActiveTab('lich-su')}
+          className={cn("pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer", activeTab === 'lich-su' ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-700")}
+        >
+          Lịch sử đã gửi
+        </button>
+      </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center space-x-4">
-              <select
-                className="px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm focus:border-primary"
-                value={audience}
-                onChange={(e) => setAudience(e.target.value as typeof audience)}
-              >
-                <option value="TAT_CA">Gửi tất cả (Phụ huynh & Học sinh)</option>
-                <option value="PHU_HUYNH">Chỉ gửi Phụ huynh</option>
-                <option value="HOC_SINH">Chỉ gửi Học sinh</option>
+      <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        
+        {activeTab === 'tao-moi' && (
+          <div className="flex-1 overflow-y-auto">
+            <form onSubmit={handlePostAnnouncement} className="p-8 space-y-6 animate-in fade-in max-w-3xl mx-auto">
+              <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-900">Gửi đến <span className="text-red-500">*</span></label>
+              <select required value={audience} onChange={(e) => setAudience(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50">
+                <option value="TAT_CA">Tất cả các lớp đang dạy</option>
+                {classes.map(cls => (
+                  <option key={cls.id} value={cls.id}>{cls.name} {cls.grade ? `(Khối ${cls.grade})` : ''}</option>
+                ))}
               </select>
-              <label className="flex items-center text-sm font-medium text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-primary rounded border-slate-300 mr-2"
-                  checked={pinned}
-                  onChange={(e) => setPinned(e.target.checked)}
-                />
-                Ghim lên đầu
-              </label>
             </div>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              Đăng ngay
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-900">Tiêu đề thông báo <span className="text-red-500">*</span></label>
+              <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nhập tiêu đề ngắn gọn..." className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50" />
+            </div>
 
-      <div className="space-y-4 mt-8">
-        <h3 className="text-lg font-bold text-slate-800">Lịch sử đăng</h3>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-900">Nội dung chi tiết <span className="text-red-500">*</span></label>
+              <textarea required value={content} onChange={(e) => setContent(e.target.value)} rows={6} placeholder="Nhập nội dung thông báo muốn gửi..." className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none bg-slate-50 leading-relaxed"></textarea>
+            </div>
 
-        {isLoadingHistory ? (
-          <div className="flex items-center justify-center py-12 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" /> Đang tải...
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-900">Đính kèm tệp tin</label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-400 transition cursor-pointer bg-slate-50">
+                <FilePlus className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-600">Kéo thả file vào đây hoặc <span className="text-blue-600">Bấm để chọn file</span></p>
+                <p className="text-xs text-slate-400 mt-1">Hỗ trợ PDF, DOCX, JPG (Tối đa 10MB)</p>
+              </div>
+            </div>
+
+              <div className="pt-4 flex justify-end">
+                <button disabled={loading} type="submit" className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm cursor-pointer disabled:opacity-50">
+                  <Send className="w-5 h-5" /> Phát hành thông báo
+                </button>
+              </div>
+            </form>
           </div>
-        ) : history.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-xl">
-            Bạn chưa đăng thông báo nào.
-          </div>
-        ) : (
-          history.map((item) => (
-            <Card
-              key={item.id}
-              className={item.pinned ? 'border-pro-warning/40 bg-pro-warning/10 shadow-sm relative overflow-hidden' : 'border-slate-200 bg-white'}
-            >
-              <CardContent className="p-4 relative z-10">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center space-x-2 mb-2">
-                    {item.pinned && (
-                      <div className="flex items-center text-pro-warning font-bold bg-pro-warning/20 px-2 py-1 rounded-md text-sm">
-                        <Pin className="w-4 h-4 mr-1" />
-                        Đã ghim
-                      </div>
-                    )}
-                    <div className="px-2 py-1 bg-white/50 text-pro-warning rounded text-xs border border-pro-warning/30">
-                      Gửi: {AUDIENCE_LABEL[item.audience] ?? item.audience}
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-500">{item.date}</span>
-                </div>
-                <h4 className="font-bold text-slate-800 text-lg">{item.title}</h4>
-                <p className="text-sm text-slate-700 mt-2">{item.content}</p>
-              </CardContent>
-            </Card>
-          ))
         )}
+
+        {activeTab === 'lich-su' && (
+          <div className="p-8 flex-1 overflow-y-auto bg-slate-50 animate-in fade-in space-y-4">
+            {announcements.map((item: any) => (
+              <div key={item.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">{item.tieuDe || item.title}</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-0.5">Gửi đến: <span className="text-slate-800">{item.audience || item.tenLop || 'Tất cả'}</span></p>
+                  </div>
+                  <div className="text-right">
+                    <span className="flex items-center gap-1 text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+                      <Clock className="w-3.5 h-3.5" /> {(item.ngayDang || item.createdAt) ? new Date(item.ngayDang || item.createdAt).toLocaleDateString() : 'Gần đây'}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-700 leading-relaxed">{item.noiDung || item.content}</p>
+                
+                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-blue-600">
+                      <Eye className="w-4 h-4" /> Đã xem: {item.views || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {announcements.length === 0 && (
+               <div className="text-center text-slate-500 py-10">Chưa có thông báo nào được gửi.</div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );

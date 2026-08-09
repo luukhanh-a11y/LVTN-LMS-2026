@@ -26,12 +26,9 @@ interface H5PEditorProps {
   contentId?: string;
   // Gọi khi trình soạn thảo H5P đã tải xong và sẵn sàng thao tác
   onReady?: () => void;
-  // Khối/Môn chọn sẵn ở trang cha (chỉ áp dụng lúc tạo mới) — gửi kèm lúc lưu để BE lưu luôn phân loại.
-  grade?: number;
-  subjectId?: number;
 }
 
-const H5PEditor = forwardRef<H5PEditorHandle, H5PEditorProps>(({ contentId, onReady, grade, subjectId }, ref) => {
+const H5PEditor = forwardRef<H5PEditorHandle, H5PEditorProps>(({ contentId, onReady }, ref) => {
   const elementRef = useRef<H5PEditorElement>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -55,20 +52,9 @@ const H5PEditor = forwardRef<H5PEditorHandle, H5PEditorProps>(({ contentId, onRe
     }
   }, []);
 
-  // Đọc grade/subjectId qua ref (không phải dependency của saveContent) để chọn
-  // Khối/Môn không làm đổi tham chiếu saveContent — tránh useEffect bên dưới
-  // chạy lại và set loading=true mãi mãi (web component không thực sự tải lại).
-  const gradeRef = useRef(grade);
-  const subjectIdRef = useRef(subjectId);
-  useEffect(() => { gradeRef.current = grade; }, [grade]);
-  useEffect(() => { subjectIdRef.current = subjectId; }, [subjectId]);
-
   const saveContent = useCallback(async (id: string, requestBody: { library: string; params: any }) => {
     if (!id) {
-      return h5pService.saveNewContent(requestBody.library, requestBody.params, {
-        grade: gradeRef.current,
-        subjectId: subjectIdRef.current,
-      });
+      return h5pService.saveNewContent(requestBody.library, requestBody.params);
     }
     return h5pService.updateContent(id, requestBody.library, requestBody.params);
   }, []);

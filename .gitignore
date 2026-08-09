@@ -10,4 +10,4 @@ data-game/backgroud/ech-qua-song/vecteezy_water-surface-texture-background-conce
 frontend/public/custom-assets/ech-qua-song/water_bg.mp4
 
 # (Tùy chọn) Nếu bạn muốn bỏ qua TẤT CẢ các file video mp4 trong dự án, chỉ cần dùng 1 dòng này:
-# *.mp4
+# *.mp4target/ 

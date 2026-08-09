@@ -52,10 +52,10 @@ export default function GradingWorkspace() {
           <p className="text-sm text-slate-500 mt-1">Chọn lớp học và bài tập để bắt đầu chấm điểm.</p>
         </div>
 
-        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex">
+        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex min-h-0">
           
           {/* CỘT TRÁI: DANH SÁCH LỚP */}
-          <div className="w-1/3 border-r border-slate-100 bg-slate-50/50 flex flex-col">
+          <div className="w-1/3 border-r border-slate-100 bg-slate-50/50 flex flex-col min-h-0">
             <div className="p-5 border-b border-slate-100 bg-white">
               <h3 className="font-bold text-slate-800">Danh sách lớp học</h3>
             </div>
@@ -82,7 +82,7 @@ export default function GradingWorkspace() {
           </div>
 
           {/* CỘT PHẢI: DANH SÁCH BÀI TẬP */}
-          <div className="w-2/3 bg-white flex flex-col">
+          <div className="w-2/3 bg-white flex flex-col min-h-0">
             <div className="p-5 border-b border-slate-100">
               <h3 className="font-bold text-slate-800">
                 {selectedClassId ? `Bài tập cần chấm - ${classes.find(c => c.id === selectedClassId)?.name}` : "Bài tập cần chấm"}
@@ -212,10 +212,10 @@ export default function GradingWorkspace() {
       </div>
 
       {/* Grid Layout Tối ưu khoảng trắng (Quy tắc 2 & 4) */}
-      <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden grid grid-cols-12 divide-x divide-slate-100">
+      <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden grid grid-cols-12 divide-x divide-slate-100 min-h-0">
         
         {/* CỘT 1: DANH SÁCH HỌC SINH (Neutral Colors - Quy tắc 1) */}
-        <div className="col-span-3 flex flex-col h-full bg-white">
+        <div className="col-span-3 flex flex-col h-full bg-white min-h-0">
           <div className="p-4 border-b border-slate-100">
             <input 
               type="text" 
@@ -257,7 +257,7 @@ export default function GradingWorkspace() {
         </div>
 
         {/* CỘT 2: KHÔNG GIAN ĐỌC & REVIEW BÀI LÀM (Tăng khoảng trắng - Quy tắc 2) */}
-        <div className="col-span-6 bg-slate-50/50 flex flex-col h-full overflow-y-auto">
+        <div className="col-span-6 bg-slate-50/50 flex flex-col h-full overflow-y-auto min-h-0">
           {currentSubmission ? (
             <div className="p-10 max-w-3xl mx-auto w-full space-y-8">
               
@@ -357,7 +357,7 @@ export default function GradingWorkspace() {
         </div>
 
         {/* CỘT 3: PANEL CHẤM ĐIỂM (Phân cấp Hero Metrics - Quy tắc 5) */}
-        <div className="col-span-3 bg-white flex flex-col h-full">
+        <div className="col-span-3 bg-white flex flex-col h-full min-h-0">
           <div className="p-8 flex-1 overflow-y-auto space-y-10">
             
             {/* HERO METRIC: ĐIỂM SỐ */}

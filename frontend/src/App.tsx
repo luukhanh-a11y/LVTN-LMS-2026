@@ -41,7 +41,7 @@ import ParentDashboard from './pages/parent/ParentDashboard';
 import ParentChildren from './pages/parent/ParentAchievements';
 import ParentGrades from './pages/parent/ParentGrades';
 import ParentAssignments from './pages/parent/ParentAssignments';
-import ParentNotifications from './pages/parent/ParentSupport';
+import ParentNotifications from './pages/parent/ParentNotifications';
 import ParentRewards from './pages/parent/ParentAchievements';
 import ParentSubjectTree from './pages/parent/SubjectTree';
 import ParentProfile from './pages/parent/ParentSupport';
@@ -128,6 +128,7 @@ function App() {
           <Route path="notifications" element={<ParentNotifications />} />
           <Route path="rewards" element={<ParentRewards />} />
           <Route path="subject-tree" element={<ParentSubjectTree />} />
+          <Route path="support" element={<ParentProfile />} />
           <Route path="profile" element={<ParentProfile />} />
         </Route>
 

@@ -403,12 +403,12 @@ export const teacherService = {
   },
 
   generateCommentSuggestions: async (submissionId: number): Promise<{ id: number; suggestions: string[] }> => {
-    const response = await api.post(`/submissions/${submissionId}/comment-suggestions`);
-    return response.data;
+    const response = await api.post(`/goi-y-ai-nhan-xet/bai-nop/${submissionId}`);
+    return response.data?.data || response.data;
   },
 
   chooseCommentSuggestion: async (suggestionId: number): Promise<void> => {
-    await api.post(`/submissions/comment-suggestions/${suggestionId}/choose`);
+    await api.post(`/goi-y-ai-nhan-xet/${suggestionId}/chon`);
   },
 
   generateExerciseSuggestions: async (payload: { grade?: number; subjectId?: number; topicHint?: string }): Promise<{ suggestions: string[] }> => {
@@ -440,10 +440,10 @@ export const teacherService = {
     summary: string;
     generatedAt: string;
   }> => {
-    const response = await api.get('/teachers/me/morning-report', {
-      params: classId ? { classId } : undefined,
+    const response = await api.get('/bao-cao-ai-buoi-sang', {
+      params: classId ? { lopHocId: classId } : undefined,
     });
-    return response.data;
+    return response.data?.data || response.data;
   },
 
   getDiemTrungBinhMon: async (hocSinhId: number, hocKyId: number = 1): Promise<any[]> => {

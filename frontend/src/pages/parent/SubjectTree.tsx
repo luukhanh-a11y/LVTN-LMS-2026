@@ -54,7 +54,7 @@ export default function ParentSubjectTree() {
              <Calculator className="w-10 h-10 text-pro-primary" strokeWidth={1.5} />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-800">Tiến trình học tập</h1>
+            <h1 className="text-3xl font-bold text-slate-800">Tiến trình học tập</h1>
             <p className="text-slate-500 font-medium">Theo dõi bài học của con</p>
           </div>
         </div>

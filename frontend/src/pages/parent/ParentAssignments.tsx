@@ -31,7 +31,7 @@ export default function ParentAssignments() {
     <div className="max-w-5xl mx-auto pb-12 animate-in fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-800">Bài tập của bé</h1>
+          <h1 className="text-3xl font-bold text-slate-800">Bài tập của bé</h1>
           <p className="text-slate-500 font-medium mt-1">
             Theo dõi các bài tập tương tác và bài tự luận của <strong className="text-blue-700">{selectedChild?.name || 'bé'}</strong>.
           </p>

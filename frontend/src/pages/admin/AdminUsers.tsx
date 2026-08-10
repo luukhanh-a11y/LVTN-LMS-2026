@@ -29,9 +29,9 @@ export default function AdminUsers() {
     try {
       const roleMap: Record<string, string> = {
         'Tất cả': '',
-        'Giáo viên': 'TEACHER',
-        'Học sinh': 'STUDENT',
-        'Phụ huynh': 'PARENT'
+        'Giáo viên': 'GIAO_VIEN',
+        'Học sinh': 'HOC_SINH',
+        'Phụ huynh': 'PHU_HUYNH'
       };
       
       const res = await adminService.searchUsers({
@@ -45,7 +45,7 @@ export default function AdminUsers() {
         id: u.id,
         name: u.fullName,
         email: u.email || u.username,
-        role: u.role === 'TEACHER' ? 'Giáo viên' : u.role === 'STUDENT' ? 'Học sinh' : u.role === 'PARENT' ? 'Phụ huynh' : 'Quản trị',
+        role: u.role === 'GIAO_VIEN' ? 'Giáo viên' : u.role === 'HOC_SINH' ? 'Học sinh' : u.role === 'PHU_HUYNH' ? 'Phụ huynh' : 'Quản trị',
         status: u.status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa',
         lastLogin: 'Gần đây'
       }));

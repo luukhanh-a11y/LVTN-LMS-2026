@@ -74,10 +74,11 @@ export const adminService = {
   },
 
   searchUsers: async (params: { role?: string; keyword?: string; status?: string; classId?: string; grade?: string; subject?: string; namHocId?: number; page?: number; size?: number }): Promise<any> => {
-    const response = await api.get('/nguoi-dung/search', { params });
-    const content = response.data?.data?.content || [];
-    return {
-      content: content.map((u: any) => ({
+    try {
+      const response = await api.get('/nguoi-dung/search', { params });
+      const content = response.data?.data?.content || [];
+      return {
+        content: content.map((u: any) => ({
         id: u.nguoiDungId || u.id,
         userId: u.nguoiDungId || u.id,
         username: u.tenDangNhap || u.username,
@@ -98,9 +99,12 @@ export const adminService = {
       })),
       totalPages: response.data?.data?.totalPages || 0,
       totalElements: response.data?.data?.totalElements || 0,
-      // `|| true` luôn = true (kể cả khi backend trả last=false) — dùng ?? để chỉ fallback khi thiếu field.
       last: response.data?.data?.last ?? true
     };
+    } catch (e: any) {
+      console.error('SEARCH ERROR:', e.response?.data);
+      throw e;
+    }
   },
   toggleUserStatus: async (userId: number, status: string): Promise<any> => {
     const response = await api.put(`/nguoi-dung/${userId}/trang-thai`, { trangThai: status });

@@ -48,7 +48,18 @@ import ParentProfile from './pages/parent/ParentSupport';
 
 // Pages - Student (Bright Theme)
 import StudentLayout from './layouts/StudentLayout';
-import StudentDashboard from './pages/student/Dashboard';
+import DashboardRouter from './pages/student/DashboardRouter';
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentGameWorkspace from './pages/student/StudentGameWorkspace';
+import StudentMatchGame from './pages/student/StudentMatchGame';
+import StudentFillBlankGame from './pages/student/StudentFillBlankGame';
+import StudentLibrary from './pages/student/StudentLibrary';
+import StudentBookRoadmap from './pages/student/StudentBookRoadmap';
+import StudentBookReader from './pages/student/StudentBookReader';
+import StudentEssayWorkspace from './pages/student/StudentEssayWorkspace';
+import StudentExamWorkspace from './pages/student/StudentExamWorkspace';
+import TrophyRouter from './pages/student/TrophyRouter';
+
 import SubjectTree from './pages/student/SubjectTree';
 import AdventureMap from './pages/student/AdventureMap';
 import LessonPlayer from './pages/student/LessonPlayer';
@@ -77,7 +88,18 @@ function App() {
 
         {/* Student Routes (Bright Theme) */}
         <Route path="/student" element={<StudentLayout />}>
-          <Route index element={<StudentDashboard />} />
+          <Route index element={<DashboardRouter />} />
+          <Route path="game" element={<StudentGameWorkspace />} />
+          <Route path="match-game" element={<StudentMatchGame />} />
+          <Route path="fill-blank" element={<StudentFillBlankGame />} />
+          <Route path="library" element={<StudentLibrary />} />
+          <Route path="roadmap" element={<StudentBookRoadmap />} />
+          <Route path="book-reader" element={<StudentBookReader />} />
+          <Route path="essay" element={<StudentEssayWorkspace />} />
+          <Route path="exam" element={<StudentExamWorkspace />} />
+          <Route path="trophy" element={<TrophyRouter />} />
+          
+          {/* Legacy Routes (Keep for compatibility if needed) */}
           <Route path="subject/:subjectId" element={<SubjectTree />} />
           <Route path="subject/:subjectId/map" element={<AdventureMap />} />
           <Route path="lesson/:lessonId" element={<LessonPlayer />} />

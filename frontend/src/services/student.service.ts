@@ -12,6 +12,40 @@ export interface Material {
 }
 
 export const studentService = {
+  getBookRoadmap: async (bookId: number) => {
+    // 1. Lấy thông tin sách
+    const sachRes = await api.get(`/sach/${bookId}`);
+    const sach = sachRes.data?.data || sachRes.data;
+
+    // 2. Lấy danh sách chủ đề của sách
+    const chuDeRes = await api.get(`/chude/sach/${bookId}`);
+    const chuDes = chuDeRes.data?.data || chuDeRes.data || [];
+
+    // 3. Lấy danh sách bài học cho từng chủ đề
+    const roadMap = await Promise.all(
+      chuDes.map(async (cd: any) => {
+        const baiHocRes = await api.get(`/bai-hoc/chu-de/${cd.chuDeId}`);
+        const baiHocs = baiHocRes.data?.data || baiHocRes.data || [];
+        
+        return {
+          id: cd.chuDeId,
+          tenChuDe: cd.tenChuDe || cd.tieuDe,
+          icon: '🔢', // TODO: Lấy icon thật nếu có
+          baiHoc: baiHocs.map((bh: any) => ({
+            id: bh.baiHocId,
+            tenBaiHoc: bh.tenBaiHoc || bh.tieuDe,
+            type: 'CURRENT' // TODO: Hiện tại mở khóa tất cả, chờ API bulk progress
+          }))
+        };
+      })
+    );
+
+    return {
+      sachId: sach.sachId || sach.id,
+      tenSach: sach.tenSach || sach.tenMonHoc || 'Sách',
+      chuDe: roadMap
+    };
+  },
   getMaterials: async (): Promise<Material[]> => {
     const response = await api.get<Material[]>('/hoc-lieu');
     return response.data;
@@ -29,7 +63,9 @@ export const studentService = {
       if (lopHocId) {
         try {
           const btRes = await api.get(`/bai-tap/lop-hoc/${lopHocId}`);
-          const rawTasks = (btRes.data.data || btRes.data || []).filter((t: any) => t.trangThai === 'DANG_MO' || !t.trangThai).slice(0, 5);
+          let allTasks = (btRes.data.data || btRes.data || []).filter((t: any) => t.trangThai === 'DANG_MO' || !t.trangThai);
+          allTasks.sort((a: any, b: any) => (b.baiTapId || 0) - (a.baiTapId || 0));
+          const rawTasks = allTasks.slice(0, 5);
           upcomingTasks = rawTasks.map((t: any) => {
             const dueDateStr = t.hanNop ? new Date(t.hanNop).toLocaleDateString('vi-VN') : 'Không thời hạn';
             return {
@@ -40,7 +76,8 @@ export const studentService = {
               xpReward: t.xpReward || 0,
               subject: t.monHoc?.tenMon,
               subjectName: t.monHoc?.tenMon,
-              completed: false
+              completed: false,
+              loaiBaiTap: t.loaiBaiTap
             };
           });
         } catch (err) {
@@ -133,9 +170,19 @@ export const studentService = {
           console.error("Failed to fetch subjects for dashboard:", err);
         }
       }
+      let className = "1A";
+      if (hoSo.lopHocId) {
+        try {
+          const lopRes = await api.get(`/lophoc/${hoSo.lopHocId}`);
+          className = lopRes.data.data?.tenLop || lopRes.data?.tenLop || "1A";
+        } catch (e) {
+          console.warn("Could not fetch class for dashboard routing");
+        }
+      }
       
       return {
         studentName: hoSo.hoTen || "Học sinh",
+        className: className, // Dùng className thực tế để route chuẩn xác
         totalXp: hoSo.tongXp || 0,
         level: Math.floor((hoSo.tongXp || 0) / 100) + 1,
         nextLevelXp: 100,
@@ -165,11 +212,12 @@ export const studentService = {
         dueDate: t.deadline || t.hanNop,
         assignedDate: t.thoiDiemBatDau || t.ngayTao,
         xpReward: t.xpReward || 0,
-        completed: false, // This will be calculated from BaiNop if needed later
+        completed: false,
         subjectName: t.monHoc?.tenMon,
         type: t.dangBai?.loaiNoiDung || 'TRAC_NGHIEM',
         status: t.trangThai || t.status
       }));
+
     } catch (err) {
       return [];
     }
@@ -448,9 +496,15 @@ export const studentService = {
           hoSo = hsRes.data.data || hsRes.data;
         } catch (err) {}
 
-        const tdRes = await api.get('/tien-do-hoc-sinh');
-        const allTd = tdRes.data.data || tdRes.data || [];
+        let allTd: any[] = [];
+        try {
+          const tdRes = await api.get('/tien-do-hoc-sinh');
+          allTd = tdRes.data.data || tdRes.data || [];
+        } catch (err) {
+          console.warn('[LessonPlayer] /tien-do-hoc-sinh không khả dụng, bỏ qua tiến độ:', err);
+        }
         const myProgress = allTd.filter((p: any) => p.hocSinhId === hoSo.hocSinhId);
+
 
         let dangBaiList: any[] = [];
         try {
@@ -643,8 +697,16 @@ export const studentService = {
   },
 
   getH5PAssignmentDetail: async (assignmentId: number) => {
+    console.log('[H5P] Fetching assignment detail for id:', assignmentId);
     const response = await api.get(`/bai-tap/${assignmentId}`);
-    return response.data;
+    console.log('[H5P] Raw response:', response.data);
+    const detail = response.data?.data || response.data;
+    console.log('[H5P] Detail:', detail);
+    // Provide default values for fields that might be missing from BaiTapResponse
+    if (detail.canSubmit === undefined) detail.canSubmit = true;
+    if (detail.attemptsUsed === undefined) detail.attemptsUsed = 0;
+    if (!detail.h5pContentId) console.warn('[H5P] WARNING: h5pContentId is null/empty! BaiTap may not be linked to a DangBai with H5P content.');
+    return detail;
   },
 
   submitH5PAssignment: async (
@@ -719,7 +781,7 @@ export const studentService = {
 
   getEssayAssignmentDetail: async (assignmentId: number) => {
     const response = await api.get(`/bai-tap/${assignmentId}`);
-    return response.data;
+    return response.data?.data || response.data;
   },
 
   submitEssay: async (assignmentId: number, payload: { textContent: string; isDraft?: boolean; attachmentUrl?: string | null }) => {

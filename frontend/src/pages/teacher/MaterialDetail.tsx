@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, FileText, Puzzle, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, FileText, Puzzle, Loader2, AlertTriangle, Send } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import H5PPlayer from '../../components/h5p/H5PPlayer';
-import { teacherService, type Material } from '../../services/teacher.service';
+import { teacherService, type Material, type ClassRoom } from '../../services/teacher.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 import QuizForm from '../../components/student/QuizForm';
 import LyThuyetForm from '../../components/student/LyThuyetForm';
 import TuLuanForm from '../../components/student/TuLuanForm';
@@ -86,6 +87,23 @@ export default function TeacherMaterialDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Giao bài state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [classes, setClasses] = useState<ClassRoom[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<number | ''>('');
+  const [deadline, setDeadline] = useState('');
+  const [maxResubmitCount, setMaxResubmitCount] = useState(3);
+  
+  const currentHocKyId = useAcademicStore(state => state.currentHocKyId);
+
+  // Fetch classes when assign modal opens
+  useEffect(() => {
+    if (showAssignModal && classes.length === 0) {
+      teacherService.getClasses().then(data => setClasses(data)).catch(console.error);
+    }
+  }, [showAssignModal]);
+
   useEffect(() => {
     if (!materialId) return;
     let cancelled = false;
@@ -121,6 +139,68 @@ export default function TeacherMaterialDetail() {
       toast.error(err?.response?.data?.message ?? 'Xóa học liệu thất bại.');
       setDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedClassId) {
+      toast.error('Vui lòng chọn lớp học');
+      return;
+    }
+    if (!material) return;
+    
+    setAssigning(true);
+    try {
+      const profile = await teacherService.getMyTeacherProfile();
+      
+      let loaiBaiTapBackend = "TRAC_NGHIEM";
+      if (material.loaiNoiDung === 'H5P') {
+        loaiBaiTapBackend = "H5P";
+      } else if (material.loaiNoiDung === 'FILE') {
+        loaiBaiTapBackend = "TU_LUAN";
+      } else if (material.loaiNoiDung === 'JSON_TEXT') {
+        try {
+          const cauHinh = JSON.parse(material.duLieuGame || '{}');
+          if (cauHinh.loai === 'TU_LUAN') loaiBaiTapBackend = 'TU_LUAN';
+        } catch(e) {}
+      }
+
+      const payload = {
+        baiTap: {
+          giaoVienId: profile.giaoVienId,
+          lopHocId: Number(selectedClassId),
+          hocKyId: currentHocKyId || 1, // Fallback if missing
+          tieuDe: material.tenDangBai,
+          moTa: "Bài tập được giao từ kho học liệu",
+          loaiBaiTap: loaiBaiTapBackend, 
+          thoiDiemBatDau: new Date().toISOString(),
+          deadline: deadline ? new Date(deadline).toISOString() : null,
+          soLanNopLaiToiDa: maxResubmitCount,
+          trangThai: "DANG_MO"
+        },
+        danhSachChiTiet: [
+          {
+            dangBaiId: material.dangBaiId || (material as any).id,
+            thuTu: 1,
+            cheDoGiaoDien: "DEFAULT"
+          }
+        ]
+      };
+
+      await teacherService.createAssignment(payload);
+      toast.success('Giao bài thành công!');
+      setShowAssignModal(false);
+      
+      // Không có trang /teacher/assignments, nên chuyển hướng về trang lớp học
+      navigate('/teacher/classes');
+    } catch (err: any) {
+      if (err?.response?.data?.code === 1022) {
+        toast.error('Hệ thống không cho phép giao bài từ Sách giáo khoa chính khóa (hoặc dữ liệu đã bị xóa). Vui lòng chọn học liệu khác!');
+      } else {
+        toast.error(err?.response?.data?.message ?? 'Giao bài thất bại. Lỗi 404 (Không tìm thấy đối tượng).');
+      }
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -214,6 +294,12 @@ export default function TeacherMaterialDetail() {
                     Chỉnh sửa
                   </Button>
                 )}
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+                  onClick={() => setShowAssignModal(true)}
+                >
+                  <Send className="w-4 h-4 mr-2" /> Giao bài
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -240,6 +326,65 @@ export default function TeacherMaterialDetail() {
             </Button>
             <Button className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
               {deleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL GIAO BÀI */}
+      <Modal
+        isOpen={showAssignModal}
+        onClose={() => !assigning && setShowAssignModal(false)}
+        title="Giao bài cho lớp"
+        widthClass="w-[500px]"
+      >
+        <div className="p-6 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Lớp học <span className="text-red-500">*</span></label>
+            <select 
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={assigning}
+            >
+              <option value="">-- Chọn lớp học --</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name} (Khối {c.grade})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Hạn nộp (Tùy chọn)</label>
+            <input 
+              type="datetime-local" 
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={assigning}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Số lần làm bài tối đa</label>
+            <input 
+              type="number" 
+              min={1}
+              max={100}
+              value={maxResubmitCount}
+              onChange={(e) => setMaxResubmitCount(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={assigning}
+            />
+          </div>
+
+          <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setShowAssignModal(false)} disabled={assigning}>
+              Hủy
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleAssign} disabled={assigning}>
+              {assigning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              {assigning ? 'Đang giao...' : 'Xác nhận giao bài'}
             </Button>
           </div>
         </div>

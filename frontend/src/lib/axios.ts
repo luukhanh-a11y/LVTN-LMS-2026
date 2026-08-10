@@ -47,6 +47,10 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const failedUrl = originalRequest?.url;
+    const failedStatus = error.response?.status;
+    console.error(`[AXIOS ❌] ${originalRequest?.method?.toUpperCase()} ${failedUrl} → ${failedStatus}`);
+
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = useAuthStore.getState().refreshToken;
@@ -54,26 +58,34 @@ api.interceptors.response.use(
       if (refreshToken && window.location.pathname !== '/login' && !originalRequest.url?.includes('/refresh')) {
         try {
           const res = await axios.post('http://localhost:8080/api/auth/refresh', { token: refreshToken });
-          const { accessToken, refreshToken: newRefreshToken } = res.data.data || res.data;
+          // Backend trả về { token, authenticated, thongTinUser } — không phải { accessToken }
+          const raw = res.data.data || res.data;
+          const newToken = raw.token || raw.accessToken;
+          const newRefreshToken = raw.refreshToken || raw.token;
 
-          if (accessToken) {
+          if (newToken) {
             const currentUser = useAuthStore.getState().user;
             if (currentUser) {
-              useAuthStore.getState().setAuth(accessToken, newRefreshToken, currentUser);
+              useAuthStore.getState().setAuth(newToken, newRefreshToken, currentUser);
             }
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
           }
         } catch (refreshError) {
+          console.error('[AXIOS] Refresh token failed, logging out.', refreshError);
           useAuthStore.getState().logout();
-          window.location.href = '/login';
+          // Tạm thời comment dòng này để không bị mất log
+          // window.location.href = '/login';
           return Promise.reject(refreshError);
         }
       }
 
+      // Không có refreshToken hoặc refresh thất bại
+      console.error(`[AXIOS ❌ LOGOUT] 401 không thể xử lý → logout. URL gây ra: ${failedUrl}`);
       useAuthStore.getState().logout();
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        // Tạm thời comment dòng này để không bị mất log
+        // window.location.href = '/login';
       }
     }
     return Promise.reject(error);

@@ -9,6 +9,7 @@ export interface UserProfileDto {
   avatarUrl: string | null;
   studentId?: number;
   classId?: number;
+  className?: string;
   totalXp?: number;
 }
 
@@ -52,10 +53,21 @@ export const userService = {
     const role = baseInfo.vaiTro;
 
     let profileData: any = {};
+    let className = 'Chưa có lớp';
+
     try {
       if (role === 'HOC_SINH') {
         const hsRes = await api.get('/hoso-hocsinh/my-profile');
         profileData = hsRes.data.data || hsRes.data;
+        
+        if (profileData.lopHocId) {
+          try {
+            const lopRes = await api.get(`/lophoc/${profileData.lopHocId}`);
+            className = lopRes.data.data?.tenLop || lopRes.data?.tenLop || className;
+          } catch(e) {
+            console.warn("Could not fetch class name", e);
+          }
+        }
       } else if (role === 'GIAO_VIEN') {
         const gvRes = await api.get('/hoso-giaovien/my-profile');
         profileData = gvRes.data.data || gvRes.data;
@@ -77,13 +89,21 @@ export const userService = {
       // Additional properties based on role can be added here if needed
       studentId: profileData.hocSinhId,
       classId: profileData.lopHocId,
+      className: className,
       totalXp: profileData.tongXp
     } as any;
   },
   
   getStudentDashboard: async (): Promise<StudentDashboardDto> => {
-    const response = await api.get<StudentDashboardDto>('/students/me/dashboard');
-    return response.data;
+    const profile = await userService.getMyProfile();
+
+    return {
+      fullName: profile.fullName,
+      className: profile.className || 'Chưa có lớp',
+      academicYear: '2023 - 2024',
+      totalXp: profile.totalXp || 0,
+      recentEvaluations: [] // TODO: Fetch from actual grading endpoint when available
+    };
   },
 
   getTeacherDashboard: async (): Promise<TeacherDashboardDto> => {

@@ -207,13 +207,6 @@ export default function ParentLayout() {
         
         {/* Footer Sidebar */}
         <div className="p-4 border-t border-slate-100 space-y-2 bg-slate-50/50">
-          <button onClick={handleLogout} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors font-medium text-sm cursor-pointer group">
-            <div className="flex items-center gap-3">
-              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
-              Đăng xuất
-            </div>
-          </button>
-          
           <Link to="/parent/profile" className="flex items-center gap-3 px-3 py-2 rounded-xl mt-2 hover:bg-slate-100 transition cursor-pointer">
             <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 shadow-sm overflow-hidden border border-slate-200">
                {user?.avatarUrl ? (
@@ -223,10 +216,17 @@ export default function ParentLayout() {
                )}
             </div>
             <div className="text-sm overflow-hidden flex-1">
-              <p className="font-bold text-slate-900 truncate" title={user?.fullName || user?.username}>{user?.fullName || user?.username}</p>
+              <p className="font-semibold text-slate-900 truncate" title={user?.fullName || user?.username}>{user?.fullName || user?.username}</p>
               <p className="text-slate-500 text-xs truncate">Phụ huynh</p>
             </div>
           </Link>
+          
+          <button onClick={handleLogout} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors font-medium text-sm cursor-pointer group mt-1">
+            <div className="flex items-center gap-3">
+              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
+              Đăng xuất
+            </div>
+          </button>
         </div>
       </aside>
 

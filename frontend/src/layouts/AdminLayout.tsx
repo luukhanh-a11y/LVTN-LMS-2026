@@ -153,13 +153,6 @@ export default function AdminLayout() {
         
         {/* Vùng dưới cùng Sidebar */}
         <div className="p-4 border-t border-slate-100 space-y-2 bg-slate-50/50">
-          <button onClick={handleLogout} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors font-medium text-sm cursor-pointer group">
-            <div className="flex items-center gap-3">
-              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
-              Đăng xuất
-            </div>
-          </button>
-          
           <div className="flex items-center gap-3 px-3 py-2 rounded-xl mt-2">
             <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 shadow-sm overflow-hidden border border-slate-200">
                {user?.avatarUrl ? (
@@ -169,10 +162,17 @@ export default function AdminLayout() {
                )}
             </div>
             <div className="text-sm overflow-hidden flex-1">
-              <p className="font-bold text-slate-900 truncate" title={user?.fullName || user?.username}>{user?.fullName || user?.username}</p>
+              <p className="font-semibold text-slate-900 truncate" title={user?.fullName || user?.username}>{user?.fullName || user?.username}</p>
               <p className="text-slate-500 text-xs truncate">Quản trị viên</p>
             </div>
           </div>
+          
+          <button onClick={handleLogout} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors font-medium text-sm cursor-pointer group mt-1">
+            <div className="flex items-center gap-3">
+              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
+              Đăng xuất
+            </div>
+          </button>
         </div>
       </aside>
 

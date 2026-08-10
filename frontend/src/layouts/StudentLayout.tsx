@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
-import { Bell, Search, Map, CheckSquare, Trophy, Gem, Star, UserCircle } from 'lucide-react';
+import { Bell, Search, Map, CheckSquare, Trophy, Gem, Star, UserCircle, LogOut } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useEffect } from 'react';
 import { userService } from '../services/user.service';
@@ -8,6 +8,7 @@ export default function StudentLayout() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
     if (user?.requirePasswordChange) {
@@ -111,6 +112,13 @@ export default function StudentLayout() {
               <span className="truncate flex-1 text-[15px]">{user?.fullName || user?.username || 'Học sinh'}</span>
             </Link>
           </div>
+          
+          <button onClick={() => { logout(); navigate('/login'); }} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-[15px] cursor-pointer group mt-2">
+            <div className="flex items-center gap-3">
+              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
+              Đăng xuất
+            </div>
+          </button>
         </div>
       </aside>
 

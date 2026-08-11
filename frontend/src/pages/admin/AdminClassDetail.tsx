@@ -5,6 +5,10 @@ import { cn } from '../../lib/utils';
 import Button from '../../components/Button';
 import toast from 'react-hot-toast';
 import { classService } from '../../services/class.service';
+import { adminService } from '../../services/admin.service';
+import { AssignTeacherModal } from './components/AssignTeacherModal';
+import { AddStudentModal } from './components/AddStudentModal';
+import { ChangeTeacherModal } from './components/ChangeTeacherModal';
 
 export default function AdminClassDetail() {
   const { id } = useParams();
@@ -18,9 +22,11 @@ export default function AdminClassDetail() {
     grade: '',
     teacher: 'Đang tải...',
     totalStudents: 0,
-    status: 'Đang tải...'
+    status: 'Đang tải...',
+    id: null
   });
   const [students, setStudents] = useState<any[]>([]);
+  const [targetClasses, setTargetClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,52 +36,129 @@ export default function AdminClassDetail() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  useEffect(() => {
-    const fetchClassDetail = async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const classData = await classService.getClassById(Number(id));
-        const studentsData = await classService.getStudentsByClass(Number(id));
-        
-        setClassInfo({
-          name: classData.tenLop || `Lớp ${id}`,
-          grade: classData.khoiLop,
-          teacher: classData.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
-          totalStudents: studentsData.length,
-          status: classData.trangThai === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa'
-        });
+  const fetchClassDetail = async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const classData = await classService.getClassById(Number(id));
+      const studentsData = await classService.getStudentsByClass(Number(id));
+      
+      setClassInfo({
+        name: classData.tenLop || `Lớp ${id}`,
+        grade: classData.khoiLop,
+        teacher: classData.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
+        totalStudents: studentsData.length,
+        status: classData.trangThai === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa',
+        id: classData.lopHocId,
+        rawClassData: classData // Store for updating later if needed
+      });
 
-        const mapped = studentsData.map((s: any) => ({
-          id: s.hocSinhId,
-          maHs: s.maHocSinh || `HS${1000 + s.hocSinhId}`,
-          name: s.fullName,
-          dob: new Date(s.ngaySinh).toLocaleDateString('vi-VN'),
-          gender: s.gioiTinh === 'MALE' ? 'Nam' : 'Nữ'
-        }));
-        setStudents(mapped);
-      } catch (err) {
-        console.error(err);
-        toast.error('Lỗi tải chi tiết lớp học');
-      } finally {
-        setLoading(false);
-      }
-    };
+      const mapped = studentsData.map((s: any) => ({
+        id: s.id,
+        hsId: s.hocSinhId,
+        maHs: s.maHocSinh || `HS${1000 + s.hocSinhId}`,
+        name: s.fullName,
+        dob: new Date(s.ngaySinh).toLocaleDateString('vi-VN'),
+        gender: s.gioiTinh === 'MALE' ? 'Nam' : 'Nữ'
+      }));
+      setStudents(mapped);
+      
+      // Fetch all classes for transfer dropdown
+      const all = await classService.getAllClasses();
+      const availableTargets = all.filter((c: any) => c.lopHocId !== Number(id) && c.khoiLop === classData.khoiLop);
+      setTargetClasses(availableTargets);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi tải chi tiết lớp học');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchClassDetail();
   }, [id]);
+
+  const [activeTab, setActiveTab] = useState<'STUDENTS' | 'TEACHERS'>('STUDENTS');
+  const [phanCongs, setPhanCongs] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [monHocs, setMonHocs] = useState<any[]>([]);
+  const [hocKys, setHocKys] = useState<any[]>([]);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+  const [isChangeTeacherModalOpen, setIsChangeTeacherModalOpen] = useState(false);
+
+  const [namHocs, setNamHocs] = useState<any[]>([]);
+
+  const fetchPhanCongData = async () => {
+    if (!id) return;
+    try {
+      const { academicService } = await import('../../services/academic.service');
+      const [pcData, tData, mData, nData, hData] = await Promise.all([
+        adminService.getPhanCongByLop(Number(id)),
+        adminService.getTeachers(),
+        adminService.getMonHocList(),
+        academicService.getNamHocs(),
+        academicService.getAllHocKy()
+      ]);
+      setPhanCongs(pcData);
+      setTeachers(tData);
+      setMonHocs(mData);
+      setNamHocs(nData);
+      setHocKys(hData);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'TEACHERS') {
+      fetchPhanCongData();
+    }
+  }, [activeTab, id]);
+
+  const handleDeletePhanCong = async (pcId: number) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa phân công này?')) return;
+    try {
+      await adminService.deletePhanCong(pcId);
+      toast.success('Đã xóa phân công');
+      fetchPhanCongData();
+    } catch (err) {
+      toast.error('Lỗi khi xóa phân công');
+    }
+  };
 
   const filteredStudents = students.filter(s => 
     s.name.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
-  const handleTransfer = (e: React.FormEvent) => {
+  const handleTransfer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const lopHocMoiId = formData.get('lopHocMoiId') as string;
+    if (!lopHocMoiId) {
+      toast.error('Vui lòng chọn lớp đến!');
+      return;
+    }
+    
     setIsTransferring(true);
-    setTimeout(() => {
-      setIsTransferring(false);
-      setTransferStudentId(null);
+    try {
+      const selectedStudent = students.find(s => s.id === transferStudentId);
+      await classService.chuyenLop({
+        hocSinhId: selectedStudent.hsId,
+        lopHocCuId: classInfo.id,
+        lopHocMoiId: Number(lopHocMoiId)
+      });
       toast.success('Chuyển lớp thành công!');
-    }, 800);
+      setTransferStudentId(null);
+      // Remove student from list locally
+      setStudents(prev => prev.filter(s => s.id !== transferStudentId));
+      setClassInfo((prev: any) => ({ ...prev, totalStudents: prev.totalStudents - 1 }));
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi khi chuyển lớp');
+    } finally {
+      setIsTransferring(false);
+    }
   };
 
   return (
@@ -95,7 +178,15 @@ export default function AdminClassDetail() {
               </span>
             </h2>
             <div className="text-sm text-slate-500 mt-2 flex items-center gap-4">
-              <span className="flex items-center gap-1.5"><GraduationCap className="w-4 h-4" /> GVCN: {classInfo.teacher}</span>
+              <span className="flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4" /> GVCN: <strong className="text-slate-700">{classInfo.teacher}</strong>
+                <button 
+                  onClick={() => setIsChangeTeacherModalOpen(true)}
+                  className="text-xs ml-1 text-blue-600 hover:text-blue-800 underline font-medium"
+                >
+                  (Đổi)
+                </button>
+              </span>
               <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> Sĩ số: {classInfo.totalStudents} học sinh</span>
             </div>
           </div>
@@ -104,14 +195,32 @@ export default function AdminClassDetail() {
             type="button" 
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsAddStudentModalOpen(true)}
           >
             Thêm học sinh
           </Button>
         </div>
       </div>
 
+      <div className="flex gap-4 border-b border-slate-200 mt-2">
+        <button 
+          onClick={() => setActiveTab('STUDENTS')}
+          className={`pb-3 border-b-2 font-medium ${activeTab === 'STUDENTS' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          Danh sách học sinh
+        </button>
+        <button 
+          onClick={() => setActiveTab('TEACHERS')}
+          className={`pb-3 border-b-2 font-medium ${activeTab === 'TEACHERS' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          Phân công giáo viên
+        </button>
+      </div>
+
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
-        {/* Toolbar */}
+        {activeTab === 'STUDENTS' ? (
+          <>
+            {/* Toolbar */}
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
           <div className="relative w-full sm:w-80">
             <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -172,6 +281,55 @@ export default function AdminClassDetail() {
             </tbody>
           </table>
         </div>
+        </>
+        ) : (
+          <>
+            <div className="p-4 border-b border-slate-100 flex justify-between bg-slate-50/50">
+              <h3 className="font-bold text-slate-800">Danh sách môn học được phân công</h3>
+              <Button type="button" variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setIsAssignModalOpen(true)}>
+                Thêm phân công
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Môn học</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Giáo viên</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Học kỳ</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {phanCongs.map((pc, idx) => (
+                    <tr key={pc.phanCongId} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4 font-bold text-slate-900">{pc.monHoc?.tenMon}</td>
+                      <td className="px-6 py-4">{pc.giaoVien?.hoTen} ({pc.giaoVien?.maGiaoVien})</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {pc.hocKy ? `Học kỳ ${pc.hocKy.soHocKy} (${pc.hocKy.namHoc?.tenNamHoc})` : 'Cả năm'}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleDeletePhanCong(pc.phanCongId)}
+                          className="text-sm font-bold text-red-600 hover:text-red-800 transition px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg"
+                        >
+                          Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {phanCongs.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-16 text-center text-slate-500">
+                        Chưa có môn học nào được phân công.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
       
       {/* MODAL CHUYỂN LỚP */}
@@ -203,11 +361,13 @@ export default function AdminClassDetail() {
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Chuyển đến lớp mới</label>
-                <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium">
+                <select name="lopHocMoiId" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium">
                   <option value="">-- Chọn lớp đến --</option>
-                  <option value="1">Lớp 1A2 (Sĩ số: 42)</option>
-                  <option value="2">Lớp 1A3 (Sĩ số: 40)</option>
-                  <option value="3">Lớp 1A4 (Sĩ số: 44)</option>
+                  {targetClasses.map((c: any) => (
+                    <option key={c.lopHocId} value={c.lopHocId}>
+                      Lớp {c.tenLop} (Sĩ số: {c.siSoHienTai || 0}/{c.siSoToiDa})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -232,6 +392,42 @@ export default function AdminClassDetail() {
           </div>
         </div>
       )}
+
+      {/* MODAL PHÂN CÔNG GIÁO VIÊN */}
+      <AssignTeacherModal 
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        onSuccess={() => {
+          setIsAssignModalOpen(false);
+          fetchPhanCongData();
+        }}
+        lopHocId={Number(id)}
+        teachers={teachers}
+        monHocs={monHocs}
+        namHocs={namHocs}
+        hocKys={hocKys}
+      />
+
+      <AddStudentModal
+        isOpen={isAddStudentModalOpen}
+        onClose={() => setIsAddStudentModalOpen(false)}
+        onSuccess={() => {
+          setIsAddStudentModalOpen(false);
+          fetchClassDetail(); // Tải lại danh sách học sinh
+        }}
+        lopHocMoiId={Number(id)}
+      />
+
+      <ChangeTeacherModal
+        isOpen={isChangeTeacherModalOpen}
+        onClose={() => setIsChangeTeacherModalOpen(false)}
+        onSuccess={() => {
+          setIsChangeTeacherModalOpen(false);
+          fetchClassDetail(); // Tải lại thông tin lớp học
+        }}
+        classId={Number(id)}
+        currentTeacherId={classInfo.rawClassData?.giaoVienChuNhiem?.giaoVienId || classInfo.rawClassData?.giaoVienChuNhiemId}
+      />
 
     </div>
   );

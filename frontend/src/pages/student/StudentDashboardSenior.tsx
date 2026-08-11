@@ -59,8 +59,8 @@ export default function StudentDashboardSenior() {
                 const isPriority = index === 0;
                 
                 const handleStartTask = () => {
-                  if (task.loaiBaiTap === 'TRAC_NGHIEM') {
-                    navigate(`/student/quiz?id=${task.id}`);
+                  if (task.loaiBaiTap === 'TRAC_NGHIEM' || task.loaiBaiTap === 'NOI_CAP' || task.loaiBaiTap === 'DIEN_KHUYET' || task.loaiBaiTap === 'NHIEU_CAU') {
+                    navigate(`/student/tasks/${task.id}/quiz`);
                   } else if (task.loaiBaiTap === 'GAME') {
                     navigate(`/student/game?id=${task.id}`);
                   } else {

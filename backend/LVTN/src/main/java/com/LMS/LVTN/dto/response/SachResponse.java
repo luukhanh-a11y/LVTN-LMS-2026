@@ -16,9 +16,9 @@ public class SachResponse {
     private LoaiSach loaiSach;
     private String boSach;
     private Short khoiLop;
-    private Short monHocId;
+    private String maMon;
     private String tenMonHoc; // Flattened
-    private Short hocKy;
+    private Integer hocKyId;
     private String tenSach;
     private String slug;
     private String moTa;
@@ -30,7 +30,4 @@ public class SachResponse {
     private TrangThaiMonHoc trangThai;
     private LocalDateTime ngayTao;
     private LocalDateTime ngayCapNhat;
-
-    // null = sách dùng chung mọi năm học; có giá trị = đã tách riêng cho đúng 1 học kỳ/năm học.
-    private Integer hocKyCuTheId;
 }

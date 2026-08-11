@@ -14,7 +14,8 @@ public class PhanCongGiangDayResponse {
     private String tenGiaoVien; // Flattened
     private Long lopHocId;
     private String tenLop; // Flattened
-    private Short monHocId;
+    private Integer monHocId;
+    private String maMon;
     private String tenMon; // Flattened
     private Integer hocKyId;
     private Short soHocKy; // Flattened

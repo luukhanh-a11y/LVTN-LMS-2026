@@ -35,6 +35,12 @@ public class NamHocService {
     public NamHocResponse create(NamHocRequest request) {
         if (namHocRepository.existsByTenNamHoc(request.getTenNamHoc()))
             throw new AppExceptions(Errorcode.DATA_EXISTED);
+            
+        if (request.getNgayBatDau() != null && request.getNgayKetThuc() != null) {
+            if (!request.getNgayBatDau().isBefore(request.getNgayKetThuc())) {
+                throw new AppExceptions(Errorcode.INVALID_DATA);
+            }
+        }
 
         NamHoc namHoc = namHocMapper.toEntity(request);
         NamHoc savedNamHoc = namHocRepository.save(namHoc);

@@ -34,6 +34,7 @@ public class TienDoHocSinhService {
     TienDoHocSinhMapper tienDoHocSinhMapper;
     KhenThuongHocSinhRepository khenThuongHocSinhRepository;
     BaiTapRepository baiTapRepository;
+    MonHocRepository monHocRepository;
 
     private HocKy resolveHocKyHienTai(HoSoHocSinh hocSinh, BaiHoc baiHoc) {
         LopHoc lopHoc = hocSinh.getLopHoc();
@@ -42,7 +43,7 @@ public class TienDoHocSinhService {
         }
 
         Integer namHocId = lopHoc.getNamHoc().getNamHocId();
-        Short soHocKySach = baiHoc.getChuDe().getSach().getHocKy();
+        Short soHocKySach = baiHoc.getChuDe().getSach().getHocKy().getSoHocKy();
 
         return hocKyRepository.findByNamHoc_NamHocIdAndSoHocKy(namHocId, soHocKySach)
                 .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
@@ -185,8 +186,11 @@ public class TienDoHocSinhService {
                 lessonName = tienDo.getBaiHoc().getTenBaiHoc();
                 if (tienDo.getBaiHoc().getChuDe() != null && 
                     tienDo.getBaiHoc().getChuDe().getSach() != null && 
-                    tienDo.getBaiHoc().getChuDe().getSach().getMonHoc() != null) {
-                    subjectName = tienDo.getBaiHoc().getChuDe().getSach().getMonHoc().getTenMon();
+                    tienDo.getBaiHoc().getChuDe().getSach().getMaMon() != null) {
+                    String maMon = tienDo.getBaiHoc().getChuDe().getSach().getMaMon();
+                    subjectName = monHocRepository.findByMaMon(maMon)
+                            .map(MonHoc::getTenMon)
+                            .orElse(maMon);
                 }
             }
 
@@ -264,8 +268,11 @@ public class TienDoHocSinhService {
             if (bt.getDangBai() != null && bt.getDangBai().getBaiHoc() != null &&
                 bt.getDangBai().getBaiHoc().getChuDe() != null &&
                 bt.getDangBai().getBaiHoc().getChuDe().getSach() != null &&
-                bt.getDangBai().getBaiHoc().getChuDe().getSach().getMonHoc() != null) {
-                subjectName = bt.getDangBai().getBaiHoc().getChuDe().getSach().getMonHoc().getTenMon();
+                bt.getDangBai().getBaiHoc().getChuDe().getSach().getMaMon() != null) {
+                String maMon = bt.getDangBai().getBaiHoc().getChuDe().getSach().getMaMon();
+                subjectName = monHocRepository.findByMaMon(maMon)
+                        .map(MonHoc::getTenMon)
+                        .orElse(maMon);
             }
             
             int xpReward = 50;

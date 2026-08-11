@@ -117,9 +117,9 @@ export default function DashboardLayout({ role }: { role: Role }) {
     teacher: [
       { name: 'Tổng quan', path: '/teacher', icon: LayoutDashboard },
       { name: 'Lớp học', path: '/teacher/classes', icon: Users },
+      { name: 'Bài tập', path: '/teacher/assignments/create', icon: PenTool },
       { name: 'Bảng tin', path: '/teacher/announcements', icon: Bell },
       { name: 'Kho học liệu', path: '/teacher/materials', icon: BookOpen },
-      { name: 'Xét lên lớp', path: '/teacher/ket-qua-cuoi-nam', icon: GraduationCap },
       { name: 'Chấm bài', path: '/teacher/grading', icon: Award },
       { name: 'Sổ điểm', path: '/teacher/reports', icon: FileText },
       { name: 'Hỗ trợ', path: '/teacher/tickets', icon: MessageSquare, badge: teacherTicketsCount },

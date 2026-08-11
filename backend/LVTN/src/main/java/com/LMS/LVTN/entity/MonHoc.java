@@ -19,13 +19,13 @@ public class MonHoc {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "mon_hoc_id")
-    private Short monHocId;
+    private Integer monHocId;
+
+    @Column(name = "ma_mon", length = 20, nullable = false, unique = true)
+    private String maMon;
 
     @Column(name = "ten_mon", nullable = false, length = 100, unique = true)
     private String tenMon;
-
-    @Column(name = "ma_mon", length = 20)
-    private String maMon;
 
     @Column(name = "mo_ta", columnDefinition = "TEXT")
     private String moTa;
@@ -37,8 +37,5 @@ public class MonHoc {
     // ── Quan hệ 1-N ──
     @OneToMany(mappedBy = "monHoc", fetch = FetchType.LAZY)
     private List<PhanCongGiangDay> phanCongGiangDays = new ArrayList<>();
-
-    @OneToMany(mappedBy = "monHoc", fetch = FetchType.LAZY)
-    private List<Sach> sachs = new ArrayList<>();
 
 }

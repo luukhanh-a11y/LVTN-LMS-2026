@@ -18,10 +18,12 @@ export interface ClassRoom {
 }
 
 export interface ClassRoomDto {
-  name: string;
-  grade: number;
-  academicYear: string;
-  maxCapacity: number;
+  tenLop: string;
+  khoiLop: number;
+  namHocId?: number;
+  giaoVienChuNhiemId?: number | string | null;
+  siSoToiDa: number;
+  trangThai?: string;
 }
 
 export const classService = {

@@ -17,6 +17,7 @@ public interface PhanCongGiangDayMapper {
     @Mapping(source = "lopHoc.lopHocId", target = "lopHocId")
     @Mapping(source = "lopHoc.tenLop", target = "tenLop")
     @Mapping(source = "monHoc.monHocId", target = "monHocId")
+    @Mapping(source = "monHoc.maMon", target = "maMon")
     @Mapping(source = "monHoc.tenMon", target = "tenMon")
     @Mapping(source = "hocKy.hocKyId", target = "hocKyId")
     @Mapping(source = "hocKy.soHocKy", target = "soHocKy")

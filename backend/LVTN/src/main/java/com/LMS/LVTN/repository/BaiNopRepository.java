@@ -24,7 +24,7 @@ public interface BaiNopRepository extends JpaRepository<BaiNop, Long> {
     @Query("SELECT AVG(COALESCE(b.danhGiaBaiLam.diemSo, b.diemTuDong)) FROM BaiNop b " +
            "WHERE b.hocSinh.hocSinhId = :hocSinhId " +
            "AND b.trangThai = com.LMS.LVTN.enums.TrangThaiBaiNop.DA_CHAM " +
-           "AND b.baiTap.dangBai.baiHoc.chuDe.sach.monHoc.monHocId = :monHocId " +
+           "AND b.baiTap.dangBai.baiHoc.chuDe.sach.maMon = :maMon " +
            "AND b.baiTap.hocKy.hocKyId = :hocKyId")
-    Optional<Double> tinhDiemTrungBinhBaiTapTheoMonAndHocKy(@Param("hocSinhId") Long hocSinhId, @Param("monHocId") Short monHocId, @Param("hocKyId") Integer hocKyId);
+    Optional<Double> tinhDiemTrungBinhBaiTapTheoMonAndHocKy(@Param("hocSinhId") Long hocSinhId, @Param("maMon") String maMon, @Param("hocKyId") Integer hocKyId);
 }

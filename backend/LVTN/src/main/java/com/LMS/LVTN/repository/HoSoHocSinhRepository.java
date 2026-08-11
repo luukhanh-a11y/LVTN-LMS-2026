@@ -13,4 +13,5 @@ public interface HoSoHocSinhRepository extends JpaRepository<HoSoHocSinh, Long> 
     HoSoHocSinh findByMaHocSinh(String maHocSinh);
     boolean existsByNguoiDung_NguoiDungId(String nguoiDungId);
     List<HoSoHocSinh> findByLopHoc_LopHocId(Long lopHocId);
+    boolean existsByMaHocSinh(String maHocSinh);
 }

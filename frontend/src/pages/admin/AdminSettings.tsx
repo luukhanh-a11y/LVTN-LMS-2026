@@ -25,17 +25,9 @@ export default function AdminSettings() {
     systemEmail: 'admin@school.edu.vn',
     maintenanceMode: false,
   });
-  const [subjects, setSubjects] = useState([
-    { id: 1, name: 'Toán học', code: 'TOAN' },
-    { id: 2, name: 'Tiếng Việt', code: 'TV' },
-    { id: 3, name: 'Tiếng Anh', code: 'TA' },
-    { id: 4, name: 'Tự nhiên và Xã hội', code: 'TNXH' },
-    { id: 5, name: 'Đạo đức', code: 'DD' },
-    { id: 6, name: 'Tin học', code: 'TIN' },
-  ]);
 
   // State for academic tab (from old UI)
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<any>({
     cauHinhId: 1,
     hocKyHienTaiId: undefined as number | undefined,
   });
@@ -54,10 +46,12 @@ export default function AdminSettings() {
   const fetchConfig = async () => {
     try {
       const data = await adminService.getSystemConfig();
-      setConfig({
-        cauHinhId: data.cauHinhId ?? 1,
-        hocKyHienTaiId: data.hocKyHienTaiId,
-      });
+      if (data) {
+        setConfig(data);
+        if (data.tenTruong) {
+          setSettings(prev => ({ ...prev, schoolName: data.tenTruong }));
+        }
+      }
     } catch (err) {
       console.error(err);
     }
@@ -76,9 +70,19 @@ export default function AdminSettings() {
     academicService.getHocKysByNamHoc(Number(selectedNamHocIdForHocKy)).then(setHocKyOptions).catch(() => setHocKyOptions([]));
   }, [selectedNamHocIdForHocKy]);
 
-  const handleSaveMock = (e: React.FormEvent) => {
+  const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Đã lưu cấu hình hệ thống thành công!');
+    try {
+      await adminService.updateSystemConfig({
+        ...config,
+        tenTruong: settings.schoolName,
+      });
+      toast.success('Đã lưu cấu hình hệ thống thành công!');
+      fetchConfig();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi lưu cấu hình');
+    }
   };
 
   const handleSetCurrentHocKy = async () => {
@@ -118,7 +122,7 @@ export default function AdminSettings() {
       </div>
 
       {activeTab === 'general' && (
-        <form onSubmit={handleSaveMock} className="space-y-6">
+        <form onSubmit={handleSaveGeneral} className="space-y-6">
           {/* THÔNG TIN CHUNG */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
@@ -159,15 +163,15 @@ export default function AdminSettings() {
             
             <div className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {subjects.map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-emerald-300 transition group bg-white shadow-sm hover:shadow-md">
+                {monHocList.map(sub => (
+                  <div key={sub.monHocId} className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-emerald-300 transition group bg-white shadow-sm hover:shadow-md">
                     <div>
-                      <h4 className="font-bold text-slate-900">{sub.name}</h4>
-                      <p className="text-xs text-slate-500 font-medium mt-1">Mã môn: {sub.code}</p>
+                      <h4 className="font-bold text-slate-900">{sub.tenMonHoc || sub.tenMon}</h4>
+                      <p className="text-xs text-slate-500 font-medium mt-1">Mã môn: {sub.maMon}</p>
                     </div>
                     <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"><Edit2 className="w-4 h-4" /></button>
-                      <button type="button" className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      <button type="button" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" onClick={() => toast('Chức năng đang phát triển')}><Edit2 className="w-4 h-4" /></button>
+                      <button type="button" className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors" onClick={() => toast('Chức năng đang phát triển')}><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
                 ))}

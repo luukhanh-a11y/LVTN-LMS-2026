@@ -89,6 +89,10 @@ public class QuanLyNguoiDungService {
         NguoiDung user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
 
+        if (user.getVaiTro() == VaiTro.ADMIN) {
+            throw new RuntimeException("Không thể khóa tài khoản quản trị viên");
+        }
+
         if (user.getTrangThai() == TrangThaiNguoiDung.ACTIVE) {
             user.setTrangThai(TrangThaiNguoiDung.LOCKED);
         } else {
@@ -106,6 +110,10 @@ public class QuanLyNguoiDungService {
             user.setSoDienThoai(updateDto.getSoDienThoai());
         }
         if (updateDto.getTrangThai() != null) {
+            if (user.getVaiTro() == VaiTro.ADMIN && 
+               (updateDto.getTrangThai() == TrangThaiNguoiDung.LOCKED || updateDto.getTrangThai() == TrangThaiNguoiDung.DISABLED)) {
+                throw new RuntimeException("Không thể khóa tài khoản quản trị viên");
+            }
             user.setTrangThai(updateDto.getTrangThai());
         }
         return userRepository.save(user);

@@ -32,32 +32,51 @@ export default function ClassDetail() {
   // Nếu đã tải danh sách học sinh (hoặc F5 mất state) thì ưu tiên lấy số lượng thực tế
   const displayStudentsCount = tongQuanStudents.length > 0 ? tongQuanStudents.length : stateStudentsCount;
 
-  const isSystemEvaluationOpen = true; 
+  const [isSystemEvaluationOpen, setIsSystemEvaluationOpen] = useState(false); 
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const { academicService } = await import('../../services/academic.service');
+        const config = await academicService.getCauHinhHeThong();
+        setIsSystemEvaluationOpen(config?.danhGiaCuoiNamDangMo || false);
+      } catch (err) {
+        console.error('Failed to fetch system config', err);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   useEffect(() => {
     const fetchStudents = async () => {
       setLoading(true);
       try {
-        // Giai đoạn API thực tế:
-        const data = await teacherService.getDanhSachXetLopHoc(classId);
-        // Assuming data is an array of student evaluation info
-        // fallback to empty if missing
-        if (Array.isArray(data)) {
-          setStudentsData(data.map((s: any) => ({
-            id: s.hocSinhId || s.id,
-            name: s.hoTen || s.fullName || 'Học sinh',
-            dob: s.ngaySinh ? new Date(s.ngaySinh).toLocaleDateString('vi-VN') : 'N/A',
-            avgScore: s.diemTrungBinh || 0,
-            academic: s.hocLuc || 'Chưa xếp',
-            conduct: s.hanhKiem || 'Tốt',
-            result: s.quyetDinh === 'LEN_LOP' ? 'LEN_LOP' : 'O_LAI'
-          })));
+        const [allStudents, ketQuaList] = await Promise.all([
+          teacherService.getHocSinhByLop(classId),
+          teacherService.getDanhSachXetLopHoc(classId).catch(() => []) // Fallback to empty array if error
+        ]);
+
+        if (Array.isArray(allStudents)) {
+          const mergedData = allStudents.map((hs: any) => {
+            const studentId = hs.hocSinhId || hs.id;
+            const kq = (ketQuaList || []).find((k: any) => k.hocSinh?.hocSinhId === studentId || k.hocSinhId === studentId);
+            return {
+              id: studentId,
+              name: hs.hoTen || hs.name || hs.fullName || 'Học sinh',
+              dob: hs.ngaySinh ? new Date(hs.ngaySinh).toLocaleDateString('vi-VN') : (hs.dob || 'N/A'),
+              avgScore: kq?.diemTrungBinh || 0,
+              academic: kq?.ketQuaHocTap || 'Chưa xếp',
+              conduct: kq?.ketQuaRenLuyen || 'Tốt',
+              result: kq?.quyetDinh === 'LEN_LOP' ? 'LEN_LOP' : (kq?.quyetDinh === 'O_LAI' ? 'O_LAI' : 'CHUA_XET')
+            };
+          });
+          setStudentsData(mergedData);
         } else {
           setStudentsData([]);
         }
       } catch (err) {
         console.error(err);
-        toast.error('Chưa có dữ liệu xét lớp học');
+        toast.error('Lỗi khi tải danh sách học sinh');
         setStudentsData([]);
       } finally {
         setLoading(false);
@@ -134,13 +153,55 @@ export default function ClassDetail() {
     else setSelectedStudents([...selectedStudents, id]);
   };
 
-  const handleBulkApprove = () => {
+  const [bulkConduct, setBulkConduct] = useState('TOT');
+  const [bulkDecision, setBulkDecision] = useState('LEN_LOP');
+
+  const handleBulkApprove = async () => {
     if (selectedStudents.length === 0) {
       toast.error('Vui lòng chọn ít nhất 1 học sinh để duyệt!');
       return;
     }
-    toast.success(`Đã duyệt kết quả cuối năm cho ${selectedStudents.length} học sinh!`);
-    setSelectedStudents([]);
+    
+    try {
+      setLoading(true);
+      await Promise.all(
+        selectedStudents.map(studentId => 
+          teacherService.luuKetQuaCuoiNam(classId, studentId, {
+            ketQuaHocTap: 'HOAN_THANH',
+            ketQuaRenLuyen: bulkConduct,
+            quyetDinh: bulkDecision,
+            duocXetDacCach: false
+          })
+        )
+      );
+      toast.success(`Đã duyệt kết quả cuối năm cho ${selectedStudents.length} học sinh!`);
+      setSelectedStudents([]);
+      // Refresh students
+      const [allStudents, ketQuaList] = await Promise.all([
+        teacherService.getHocSinhByLop(classId),
+        teacherService.getDanhSachXetLopHoc(classId).catch(() => [])
+      ]);
+      if (Array.isArray(allStudents)) {
+        const mergedData = allStudents.map((hs: any) => {
+          const studentId = hs.hocSinhId || hs.id;
+          const kq = (ketQuaList || []).find((k: any) => k.hocSinh?.hocSinhId === studentId || k.hocSinhId === studentId);
+          return {
+            id: studentId,
+            name: hs.hoTen || hs.name || hs.fullName || 'Học sinh',
+            dob: hs.ngaySinh ? new Date(hs.ngaySinh).toLocaleDateString('vi-VN') : (hs.dob || 'N/A'),
+            avgScore: kq?.diemTrungBinh || 0,
+            academic: kq?.ketQuaHocTap || 'Chưa xếp',
+            conduct: kq?.ketQuaRenLuyen || 'Tốt',
+            result: kq?.quyetDinh === 'LEN_LOP' ? 'LEN_LOP' : (kq?.quyetDinh === 'O_LAI' ? 'O_LAI' : 'CHUA_XET')
+          };
+        });
+        setStudentsData(mergedData);
+      }
+    } catch (err) {
+      toast.error('Có lỗi xảy ra khi lưu kết quả cuối năm');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -196,8 +257,8 @@ export default function ClassDetail() {
           Bảng điểm môn
         </button>
         
-        {/* TAB ĐÁNH GIÁ CUỐI NĂM - CHỈ GVCN MỚI THẤY */}
-        {isHomeroomTeacher && (
+        {/* TAB ĐÁNH GIÁ CUỐI NĂM - CHỈ GVCN MỚI THẤY KHI ADMIN MỞ */}
+        {isHomeroomTeacher && isSystemEvaluationOpen && (
           <button 
             onClick={() => setActiveTab('danh-gia')}
             className={cn("pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer flex items-center gap-2", activeTab === 'danh-gia' ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700")}
@@ -210,8 +271,8 @@ export default function ClassDetail() {
       {/* Main Content Area */}
       <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
         
-        {/* Tab Nội dung Đánh giá (Chỉ render nếu là GVCN và đang chọn tab này) */}
-        {activeTab === 'danh-gia' && isHomeroomTeacher && (
+        {/* Tab Nội dung Đánh giá (Chỉ render nếu là GVCN, có mở đợt và đang chọn tab này) */}
+        {activeTab === 'danh-gia' && isHomeroomTeacher && isSystemEvaluationOpen && (
           <>
             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -220,13 +281,13 @@ export default function ClassDetail() {
                 </span>
                 {selectedStudents.length > 0 && (
                   <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200 border-l border-slate-300 pl-4">
-                    <select className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
-                      <option>Đồng loạt Hạnh kiểm: Tốt</option>
-                      <option>Đồng loạt Hạnh kiểm: Khá</option>
+                    <select value={bulkConduct} onChange={e => setBulkConduct(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
+                      <option value="TOT">Đồng loạt Hạnh kiểm: Tốt</option>
+                      <option value="KHA">Đồng loạt Hạnh kiểm: Khá</option>
                     </select>
-                    <select className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
-                      <option>Quyết định: Lên lớp</option>
-                      <option>Quyết định: Ở lại lớp</option>
+                    <select value={bulkDecision} onChange={e => setBulkDecision(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
+                      <option value="LEN_LOP">Quyết định: Lên lớp</option>
+                      <option value="O_LAI">Quyết định: Ở lại lớp</option>
                     </select>
                   </div>
                 )}

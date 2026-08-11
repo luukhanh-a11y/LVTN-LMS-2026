@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DiemTrungBinhMonResponse {
-    private Short monHocId;
     private String maMon;
     private String tenMon;
     private Double diemTrungBinhBaiTap; // Điểm TB các bài tập được giáo viên giao & chấm

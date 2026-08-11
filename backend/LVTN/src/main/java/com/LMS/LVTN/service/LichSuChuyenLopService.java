@@ -37,6 +37,9 @@ public class LichSuChuyenLopService {
 
     @Transactional
     public LichSuChuyenLopResponse create(LichSuChuyenLopRequest request) {
+        if (request.getNamHocCu() != null && request.getNamHocMoi() != null && request.getNamHocCu().equals(request.getNamHocMoi())) {
+            throw new AppExceptions(Errorcode.INVALID_DATA);
+        }
         LichSuChuyenLop lichSu = lichSuChuyenLopMapper.toEntity(request);
 
         if (request.getHocSinhId() != null) {

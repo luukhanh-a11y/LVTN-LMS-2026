@@ -217,6 +217,11 @@ public class NguoiDungService {
             NguoiDung nguoiDung = nguoiDungRepository.findById(id)
                     .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
 
+            if (nguoiDung.getVaiTro() == VaiTro.ADMIN && 
+                (request.getTrangThai() == TrangThaiNguoiDung.LOCKED || request.getTrangThai() == TrangThaiNguoiDung.DISABLED)) {
+                throw new AppExceptions(Errorcode.UNAUTHORIZED);
+            }
+            
             nguoiDungMapper.updateTrangThaiUser(request, nguoiDung);
             return nguoiDungMapper.toResponse(nguoiDungRepository.save(nguoiDung));
         } catch (ParseException e) {
@@ -227,6 +232,12 @@ public class NguoiDungService {
     public NguoiDungResponse createNguoiDung(NguoiDungCreateRequest request) {
         if (request.getVaiTro() == null || request.getTrangThai() == null) {
             throw new AppExceptions(Errorcode.INVALID_KEY);
+        }
+        if (request.getTenDangNhap() != null && nguoiDungRepository.existsByTenDangNhap(request.getTenDangNhap())) {
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
+        }
+        if (request.getEmail() != null && nguoiDungRepository.existsByEmail(request.getEmail())) {
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
         }
 
         NguoiDung nguoiDung = nguoiDungMapper.toEntity(request);

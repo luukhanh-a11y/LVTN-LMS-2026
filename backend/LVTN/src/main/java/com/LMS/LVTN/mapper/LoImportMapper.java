@@ -5,6 +5,7 @@ import com.LMS.LVTN.dto.response.LoImportResponse;
 import com.LMS.LVTN.entity.LoImport;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -16,5 +17,5 @@ public interface LoImportMapper {
     @Mapping(source = "nguoiThucHien.tenDangNhap", target = "tenNguoiThucHien")
     LoImportResponse toResponse(LoImport entity);
 
-    void updateLoImport(LoImportRequest request, @org.mapstruct.MappingTarget LoImport entity);
+    void updateLoImport(LoImportRequest request, @MappingTarget LoImport entity);
 }

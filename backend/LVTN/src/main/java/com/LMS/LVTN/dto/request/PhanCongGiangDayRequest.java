@@ -9,6 +9,6 @@ public class PhanCongGiangDayRequest {
 
     private Long giaoVienId;
     private Long lopHocId;
-    private Short monHocId;
+    private Integer monHocId;
     private Integer hocKyId;
 }

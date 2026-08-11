@@ -24,9 +24,9 @@ import AdminCurriculum from './pages/admin/Curriculum';
 import TeacherDashboard from './pages/teacher/Dashboard';
 import TeacherClasses from './pages/teacher/MyClasses';
 import TeacherClassDetails from './pages/teacher/ClassDetail';
+import TeacherCreateAssignment from './pages/teacher/CreateAssignment';
 import TeacherMaterials from './pages/teacher/Materials';
 import TeacherMaterialDetail from './pages/teacher/MaterialDetail';
-import TeacherKetQuaCuoiNam from './pages/teacher/KetQuaCuoiNam';
 import AdminKetQuaCuoiNam from './pages/admin/KetQuaCuoiNam';
 import TeacherGrading from './pages/teacher/GradingWorkspace';
 import TeacherGradingDetail from './pages/teacher/GradingDetail';
@@ -129,11 +129,11 @@ function App() {
           <Route path="classes" element={<TeacherClasses />} />
           <Route path="classes/:classId" element={<TeacherClassDetails />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
+          <Route path="assignments/create" element={<TeacherCreateAssignment />} />
           <Route path="materials" element={<TeacherMaterials />} />
           <Route path="materials/:materialId" element={<TeacherMaterialDetail />} />
           <Route path="editor" element={<TeacherEditor />} />
           <Route path="editor/:contentId" element={<TeacherEditor />} />
-          <Route path="ket-qua-cuoi-nam" element={<TeacherKetQuaCuoiNam />} />
           <Route path="grading" element={<TeacherGrading />} />
           <Route path="grading/:submissionId" element={<TeacherGradingDetail />} />
           <Route path="reports" element={<TeacherReports />} />

@@ -13,4 +13,5 @@ public interface HoSoGiaoVienRepository extends JpaRepository<HoSoGiaoVien, Long
     HoSoGiaoVien findByMaGiaoVien(String maGiaoVien);
 
     Optional<HoSoGiaoVien> findByNguoiDung_NguoiDungId(String nguoiDungId);
+    boolean existsByMaGiaoVien(String maGiaoVien);
 }

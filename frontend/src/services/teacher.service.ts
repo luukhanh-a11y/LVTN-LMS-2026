@@ -154,7 +154,7 @@ export const teacherService = {
       if (!byLop.has(p.lopHocId)) {
         byLop.set(p.lopHocId, { lopHocId: p.lopHocId, tenLop: p.tenLop, monHocList: [] as any[] });
       }
-      byLop.get(p.lopHocId).monHocList.push({ monHocId: p.monHocId, tenMon: p.tenMon, hocKyId: p.hocKyId });
+      byLop.get(p.lopHocId).monHocList.push({ monHocId: p.monHocId, maMon: p.maMon, tenMon: p.tenMon, hocKyId: p.hocKyId });
     });
 
     // Bổ sung thêm các lớp mà giáo viên này làm GVCN (kể cả khi không có phân công giảng dạy nào)
@@ -243,7 +243,7 @@ export const teacherService = {
   },
 
   // === Sách bài tập đúng bộ môn/lớp/học kỳ giáo viên được phân công (Giao bài tập) ===
-  getSachBaiTapTheoPhanCong: async (params: { giaoVienId: number; lopHocId: number; monHocId: number; hocKyId: number }): Promise<any[]> => {
+  getSachBaiTapTheoPhanCong: async (params: { giaoVienId: number; lopHocId: number; maMon: string; hocKyId: number }): Promise<any[]> => {
     const response = await api.get('/sach/sach-bai-tap/phan-cong', { params });
     return response.data?.data || response.data || [];
   },
@@ -417,8 +417,8 @@ export const teacherService = {
   },
 
   getDanhSachXetLopHoc: async (classId: number): Promise<any[]> => {
-    const response = await api.get(`/teachers/me/classes/${classId}/ket-qua-cuoi-nam`);
-    return response.data;
+    const response = await api.get(`/ket-qua-cuoi-nam/lop-hoc/${classId}`);
+    return response.data?.data || response.data || [];
   },
 
   luuKetQuaCuoiNam: async (classId: number, hocSinhId: number, dto: {
@@ -429,7 +429,7 @@ export const teacherService = {
     lyDoDacCach?: string;
     ghiChu?: string;
   }): Promise<void> => {
-    await api.put(`/teachers/me/classes/${classId}/students/${hocSinhId}/ket-qua-cuoi-nam`, dto);
+    await api.put(`/ket-qua-cuoi-nam/lop-hoc/${classId}/hoc-sinh/${hocSinhId}`, dto);
   },
 
   getMorningReport: async (classId?: number): Promise<{

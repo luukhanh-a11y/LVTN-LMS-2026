@@ -39,6 +39,9 @@ public class HoSoHocSinhService {
     public HoSoHocSinhResponse create(HoSoHocSinhRequest request){
         if (hoSoHocSinhRepository.existsByNguoiDung_NguoiDungId(request.getNguoiDungId()))
             throw new AppExceptions(Errorcode.DATA_EXISTED);
+            
+        if (request.getMaHocSinh() != null && hoSoHocSinhRepository.existsByMaHocSinh(request.getMaHocSinh()))
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
 
         return hoSoHocSinhMapper.toResponse(hoSoHocSinhRepository
                 .save(hoSoHocSinhMapper.toEntity(request)));

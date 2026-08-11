@@ -13,8 +13,8 @@ public class SachRequest {
     private LoaiSach loaiSach;
     private String boSach;
     private Short khoiLop;
-    private Short monHocId;
-    private Short hocKy;
+    private String maMon;
+    private Integer hocKyId;
     private String tenSach;
     private String slug;
     private String moTa;

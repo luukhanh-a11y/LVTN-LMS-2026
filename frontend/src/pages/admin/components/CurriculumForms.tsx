@@ -8,6 +8,7 @@ import { adminService } from '../../../services/admin.service';
 export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initialData }: any) {
   const isEdit = !!initialData;
   const [tenSach, setTenSach] = useState('');
+  const [boSach, setBoSach] = useState('');
   const [khoiLop, setKhoiLop] = useState(1);
   const [monHocId, setMonHocId] = useState('');
   const [hocKy, setHocKy] = useState(1);
@@ -17,19 +18,26 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
   useEffect(() => {
     if (!isOpen) return;
     setTenSach(initialData?.tenSach ?? '');
+    setBoSach(initialData?.boSach ?? '');
     setKhoiLop(initialData?.khoiLop ?? 1);
     setMonHocId(initialData?.monHocId ?? '');
-    setHocKy(initialData?.hocKy ?? 1);
+    setHocKy(initialData?.hocKyId ?? 1);
     setLoaiSach(initialData?.loaiSach ?? 'SACH_GIAO_KHOA');
   }, [isOpen, initialData]);
 
   const handleSubmit = async () => {
-    if (!tenSach || !monHocId) return toast.error('Vui lòng nhập tên sách và chọn môn học');
+    if (!tenSach || !monHocId || !boSach) return toast.error('Vui lòng nhập tên sách, bộ sách và chọn môn học');
     setLoading(true);
     try {
+      const selectedMonHoc = monHocList.find((m: any) => String(m.monHocId) === String(monHocId));
       const payload = {
-        tenSach, khoiLop: Number(khoiLop), monHocId: Number(monHocId), hocKy: Number(hocKy),
-        loaiSach, trangThai: 'ACTIVE',
+        tenSach, 
+        boSach,
+        khoiLop: Number(khoiLop), 
+        maMon: selectedMonHoc?.maMon, 
+        hocKyId: hocKy === 3 ? null : Number(hocKy), // 3 means whole year (null)
+        loaiSach, 
+        trangThai: 'ACTIVE',
       };
       if (isEdit) {
         await adminService.updateSach(initialData.sachId, payload);
@@ -49,7 +57,8 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Sửa Bộ Sách' : 'Thêm Bộ Sách Mới'}>
       <div className="p-6 space-y-4">
-        <Input label="Tên Bộ Sách" value={tenSach} onChange={e => setTenSach(e.target.value)} placeholder="VD: Toán 1 Cánh Diều" />
+        <Input label="Tên Cuốn Sách" value={tenSach} onChange={e => setTenSach(e.target.value)} placeholder="VD: Toán 1" />
+        <Input label="Bộ Sách" value={boSach} onChange={e => setBoSach(e.target.value)} placeholder="VD: Cánh Diều, Kết nối tri thức..." />
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Loại sách</label>

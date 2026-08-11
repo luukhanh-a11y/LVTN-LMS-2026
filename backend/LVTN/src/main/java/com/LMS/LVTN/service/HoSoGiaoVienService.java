@@ -38,6 +38,9 @@ public class HoSoGiaoVienService {
     public HoSoGiaoVienResponse create(HoSoGiaoVienRequest request){
         if (hoSoGiaoVienRepository.existsByNguoiDung_NguoiDungId(request.getNguoiDungId()))
             throw new AppExceptions(Errorcode.DATA_EXISTED);
+            
+        if (request.getMaGiaoVien() != null && hoSoGiaoVienRepository.existsByMaGiaoVien(request.getMaGiaoVien()))
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
 
         return hoSoGiaoVienMapper.toResponse(hoSoGiaoVienRepository
                 .save(hoSoGiaoVienMapper.toEntity(request)));

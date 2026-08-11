@@ -40,6 +40,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        var userOpt = userRepository.findByTenDangNhap(loginRequest.getUsername());
+        if (userOpt.isPresent()) {
+            com.titkul.lms.entity.TrangThaiNguoiDung status = userOpt.get().getTrangThai();
+            if (status == com.titkul.lms.entity.TrangThaiNguoiDung.LOCKED) {
+                return ResponseEntity.status(403).body(Map.of("message", "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên."));
+            }
+            if (status == com.titkul.lms.entity.TrangThaiNguoiDung.DISABLED) {
+                return ResponseEntity.status(403).body(Map.of("message", "Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên."));
+            }
+        }
+
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(

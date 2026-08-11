@@ -33,8 +33,8 @@ public abstract class DangBaiMapper {
     @Mapping(source = "baiHoc.baiHocId", target = "baiHocId")
     @Mapping(source = "baiHoc.tenBaiHoc", target = "tenBaiHoc")
     @Mapping(source = "baiHoc.chuDe.sach.khoiLop", target = "khoiLop")
-    @Mapping(source = "baiHoc.chuDe.sach.monHoc.monHocId", target = "monHocId")
-    @Mapping(source = "baiHoc.chuDe.sach.monHoc.tenMon", target = "tenMon")
+    @Mapping(source = "baiHoc.chuDe.sach.maMon", target = "maMon")
+    @Mapping(target = "tenMon", ignore = true)
     @Mapping(source = "giaoVien.giaoVienId", target = "giaoVienId")
     @Mapping(source = "giaoVien.hoTen", target = "tenGiaoVien")
     public abstract DangBaiResponse toResponse(DangBai entity);

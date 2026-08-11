@@ -18,6 +18,8 @@ public interface NguoiDungRepository extends JpaRepository<NguoiDung, String>, J
 
     Optional<NguoiDung> findByTenDangNhap(String tenDangNhap);
     Optional<NguoiDung> findByEmail(String email);
+    boolean existsByTenDangNhap(String tenDangNhap);
+    boolean existsByEmail(String email);
     
     List<NguoiDung> findByTrangThai(TrangThaiNguoiDung trangThai);
     Page<NguoiDung> findByTrangThai(TrangThaiNguoiDung trangThai, Pageable pageable);

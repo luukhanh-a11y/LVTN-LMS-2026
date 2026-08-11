@@ -223,6 +223,92 @@ export const studentService = {
     }
   },
 
+  getQuizAssignmentDetail: async (id: number) => {
+    const res = await api.get(`/bai-tap/${id}`);
+    const t = res.data?.data || res.data;
+    const cauHinhRaw = t.dangBai?.duLieuGame || t.cauHinhGiaoDien;
+    const cauHinh = typeof cauHinhRaw === 'string' ? JSON.parse(cauHinhRaw) : (cauHinhRaw || {});
+    return {
+      assignmentId: t.baiTapId || t.id,
+      title: t.tenBaiTap || t.tieuDe,
+      loai: t.dangBai?.loaiNoiDung || t.loaiBaiTap || 'TRAC_NGHIEM',
+      cauHinh: cauHinh,
+      allowResubmit: true,
+      maxResubmitCount: 3,
+      attemptsUsed: 0,
+      canSubmit: true,
+      deadline: t.deadline || t.hanNop,
+      isPastDeadline: false
+    };
+  },
+
+  submitQuizAssignment: async (id: number, baiLam: any) => {
+    const hsRes = await api.get('/hoso-hocsinh/my-profile');
+    const hoSo = hsRes.data.data || hsRes.data;
+    const hocSinhId = hoSo.hocSinhId || hoSo.id;
+    const res = await api.post('/bai-nop', {
+      hocSinhId: hocSinhId,
+      baiTapId: id,
+      chiTietBaiLam: JSON.stringify(baiLam),
+      thoiGianNop: new Date().toISOString(),
+      trangThai: "DA_NOP"
+    });
+    const data = res.data?.data || res.data;
+    return { score: data.diemTuDong || 0, xpEarned: data.diemTuDong || 10, totalXp: 100, status: data.trangThai || 'DA_NOP', isLate: false };
+  },
+
+  getH5PAssignmentDetail: async (id: number) => {
+    const res = await api.get(`/bai-tap/${id}`);
+    const t = res.data?.data || res.data;
+    return {
+      assignmentId: t.baiTapId || t.id,
+      title: t.tenBaiTap || t.tieuDe,
+      h5pContentId: t.dangBai?.h5pNoiDungId || '',
+      xpReward: t.xpReward || 10
+    };
+  },
+
+  submitH5PAssignment: async (id: number, data: any) => {
+    const hsRes = await api.get('/hoso-hocsinh/my-profile');
+    const hoSo = hsRes.data.data || hsRes.data;
+    const hocSinhId = hoSo.hocSinhId || hoSo.id;
+    const res = await api.post('/bai-nop', {
+      hocSinhId: hocSinhId,
+      baiTapId: id,
+      chiTietBaiLam: JSON.stringify(data),
+      thoiGianNop: new Date().toISOString(),
+      trangThai: "DA_NOP"
+    });
+    return res.data?.data || res.data;
+  },
+
+  getEssayAssignmentDetail: async (id: number) => {
+    const res = await api.get(`/bai-tap/${id}`);
+    const t = res.data?.data || res.data;
+    return {
+      assignmentId: t.baiTapId || t.id,
+      title: t.tenBaiTap || t.tieuDe,
+      description: t.moTa || '',
+      deadline: t.deadline || t.hanNop,
+      status: 'CHUA_NOP',
+      submission: null
+    };
+  },
+
+  submitEssay: async (id: number, data: any) => {
+    const hsRes = await api.get('/hoso-hocsinh/my-profile');
+    const hoSo = hsRes.data.data || hsRes.data;
+    const hocSinhId = hoSo.hocSinhId || hoSo.id;
+    const res = await api.post('/bai-nop', {
+      hocSinhId: hocSinhId,
+      baiTapId: id,
+      chiTietBaiLam: JSON.stringify(data),
+      thoiGianNop: new Date().toISOString(),
+      trangThai: data.isDraft ? "CHUA_NOP" : "DA_NOP"
+    });
+    return res.data?.data || res.data;
+  },
+
   getNotifications: async () => {
     try {
       const infoRes = await api.get('/nguoi-dung/my-info');
@@ -248,7 +334,6 @@ export const studentService = {
         id: n.thongBaoId,
         title: n.tieuDe,
         content: n.noiDung,
-        createdAt: n.ngayDang || n.ngayTao,
         date: (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '',
         read: !!n.daDoc || !!n.trangThaiDoc,
         pinned: false,

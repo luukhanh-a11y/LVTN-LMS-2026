@@ -90,6 +90,7 @@ export const adminService = {
         maHocSinh: u.maHocSinh,
         tenLop: u.tenLop,
         khoiLop: u.khoiLop,
+        lopHocId: u.lopHocId,
         tenCon: u.tenCon,
         lopCuaCon: u.lopCuaCon,
         maGiaoVien: u.maGiaoVien,
@@ -347,6 +348,26 @@ export const adminService = {
   updateHoSoPhuHuynh: async (id: number, data: any): Promise<any> => {
     const response = await api.put(`/hoso-phuhuynh/${id}`, data);
     return response.data?.data || response.data;
+  },
+
+  // === Phân công giảng dạy ===
+  getPhanCongByLop: async (lopHocId: number): Promise<any[]> => {
+    const response = await api.get(`/phan-cong-giang-day/lop-hoc/${lopHocId}`);
+    return response.data?.data || response.data || [];
+  },
+
+  createPhanCong: async (data: { giaoVienId: number; lopHocId: number; maMon: string; hocKyId: number | null }): Promise<any> => {
+    const response = await api.post('/phan-cong-giang-day', data);
+    return response.data?.data || response.data;
+  },
+
+  deletePhanCong: async (id: number): Promise<void> => {
+    await api.delete(`/phan-cong-giang-day/${id}`);
+  },
+
+  getTeachers: async (): Promise<any[]> => {
+    const response = await api.get('/hoso-giaovien');
+    return response.data?.data || response.data || [];
   },
 };
 

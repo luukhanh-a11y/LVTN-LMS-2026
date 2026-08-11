@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Library, Search, BookOpen, Layers, LayoutTemplate, HelpCircle, PlusCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { teacherService } from '../../services/teacher.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function Materials() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -61,15 +62,16 @@ export default function Materials() {
     }
 
     teacherService.getMyTeacherProfile().then(profile => {
+      const currentHocKyId = useAcademicStore.getState().currentHocKyId;
       const promises = subjects.map((subj: any) => 
         teacherService.getSachBaiTapTheoPhanCong({
           giaoVienId: profile.giaoVienId,
           lopHocId: subj.lopHocId,
-          monHocId: subj.monHocId,
-          hocKyId: subj.hocKyId
+          maMon: subj.maMon,
+          hocKyId: subj.hocKyId || currentHocKyId || 1 // Fallback to currentHocKyId
         }).catch(err => {
           // Bỏ qua lỗi 404 (DATA_NOT_FOUND) nếu giáo viên không có phân công hoặc môn đó không có sách
-          console.warn(`Không tìm thấy sách cho môn ${subj.monHocId}`);
+          console.warn(`Không tìm thấy sách cho môn ${subj.tenMon} (Mã: ${subj.maMon})`);
           return [];
         })
       );

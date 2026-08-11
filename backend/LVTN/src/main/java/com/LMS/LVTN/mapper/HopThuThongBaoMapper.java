@@ -5,6 +5,7 @@ import com.LMS.LVTN.dto.response.HopThuThongBaoResponse;
 import com.LMS.LVTN.entity.HopThuThongBao;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -24,6 +25,6 @@ public interface HopThuThongBaoMapper {
     @Mapping(source = "thongBao.ngayDang", target = "ngayDang")
     HopThuThongBaoResponse toResponse(HopThuThongBao entity);
 
-    void updateHopThuThongBao(HopThuThongBaoRequest request, @org.mapstruct.MappingTarget HopThuThongBao entity);
+    void updateHopThuThongBao(HopThuThongBaoRequest request, @MappingTarget HopThuThongBao entity);
 }
 

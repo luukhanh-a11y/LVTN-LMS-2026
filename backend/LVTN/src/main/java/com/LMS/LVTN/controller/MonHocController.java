@@ -34,21 +34,21 @@ public class MonHocController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<MonHocResponse> getById(@PathVariable Short id) {
+    public ApiResponse<MonHocResponse> getById(@PathVariable int id) {
         return ApiResponse.<MonHocResponse>builder()
                 .data(monHocService.getById(id))
                 .build();
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<MonHocResponse> update(@PathVariable Short id, @RequestBody MonHocRequest request) {
+    public ApiResponse<MonHocResponse> update(@PathVariable int id, @RequestBody MonHocRequest request) {
         return ApiResponse.<MonHocResponse>builder()
                 .data(monHocService.update(id, request))
                 .build();
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<String> delete(@PathVariable Short id) {
+    public ApiResponse<String> delete(@PathVariable int id) {
         monHocService.delete(id);
         return ApiResponse.<String>builder()
                 .data("Môn học đã được xóa thành công")

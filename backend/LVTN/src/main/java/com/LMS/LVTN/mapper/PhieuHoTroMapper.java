@@ -3,10 +3,7 @@ package com.LMS.LVTN.mapper;
 import com.LMS.LVTN.dto.request.PhieuHoTroRequest;
 import com.LMS.LVTN.dto.response.PhieuHoTroResponse;
 import com.LMS.LVTN.entity.PhieuHoTro;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 @Mapper(
     componentModel = "spring",
@@ -25,5 +22,5 @@ public interface PhieuHoTroMapper {
     @Mapping(source = "adminXuLy.tenDangNhap", target = "tenAdminXuLy")
     PhieuHoTroResponse toResponse(PhieuHoTro entity);
 
-    void updatePhieuHoTro(PhieuHoTroRequest request, @org.mapstruct.MappingTarget PhieuHoTro entity);
+    void updatePhieuHoTro(PhieuHoTroRequest request, @MappingTarget PhieuHoTro entity);
 }

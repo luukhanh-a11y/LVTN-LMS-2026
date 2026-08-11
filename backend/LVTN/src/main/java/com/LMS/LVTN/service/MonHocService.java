@@ -24,6 +24,9 @@ public class MonHocService {
     MonHocMapper monHocMapper;
 
     public MonHocResponse create(MonHocRequest request) {
+        if (monHocRepository.existsByMaMon(request.getMaMon())) {
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
+        }
         MonHoc monHoc = monHocMapper.toEntity(request);
         return monHocMapper.toResponse(monHocRepository.save(monHoc));
     }
@@ -34,24 +37,24 @@ public class MonHocService {
                 .collect(Collectors.toList());
     }
 
-    public MonHocResponse getById(Short id) {
-        MonHoc monHoc = monHocRepository.findById(id)
+    public MonHocResponse getById(int monHocId) {
+        MonHoc monHoc = monHocRepository.findById(monHocId)
                 .orElseThrow(() -> new AppExceptions(Errorcode.MON_HOC_NOT_FOUND));
         return monHocMapper.toResponse(monHoc);
     }
 
-    public MonHocResponse update(Short id, MonHocRequest request) {
-        MonHoc monHoc = monHocRepository.findById(id)
+    public MonHocResponse update(int monHocId, MonHocRequest request) {
+        MonHoc monHoc = monHocRepository.findById(monHocId)
                 .orElseThrow(() -> new AppExceptions(Errorcode.MON_HOC_NOT_FOUND));
 
         monHocMapper.updateMonHoc(request, monHoc);
         return monHocMapper.toResponse(monHocRepository.save(monHoc));
     }
 
-    public void delete(Short id) {
-        if (!monHocRepository.existsById(id)) {
+    public void delete(int monHocId) {
+        if (!monHocRepository.existsById(monHocId)) {
             throw new AppExceptions(Errorcode.MON_HOC_NOT_FOUND);
         }
-        monHocRepository.deleteById(id);
+        monHocRepository.deleteById(monHocId);
     }
 }

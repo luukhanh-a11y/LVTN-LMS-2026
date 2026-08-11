@@ -40,7 +40,7 @@ public class ThongKeDiemService {
                 .collect(Collectors.toList());
     }
 
-    public DiemTrungBinhMonResponse getDiemTrungBinhChiTietMon(Long hocSinhId, Integer hocKyId, Short monHocId) {
+    public DiemTrungBinhMonResponse getDiemTrungBinhChiTietMon(Long hocSinhId, Integer hocKyId, int idMonHoc) {
         if (!hoSoHocSinhRepository.existsById(hocSinhId)) {
             throw new AppExceptions(Errorcode.HO_SO_HOC_SINH_NOT_FOUND);
         }
@@ -48,7 +48,7 @@ public class ThongKeDiemService {
         HocKy hocKy = hocKyRepository.findById(hocKyId)
                 .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
 
-        MonHoc monHoc = monHocRepository.findById(monHocId)
+        MonHoc monHoc = monHocRepository.findById(idMonHoc)
                 .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
 
         return buildDiemTrungBinhResponse(hocSinhId, hocKy, monHoc);
@@ -56,11 +56,11 @@ public class ThongKeDiemService {
 
     private DiemTrungBinhMonResponse buildDiemTrungBinhResponse(Long hocSinhId, HocKy hocKy, MonHoc monHoc) {
         Double diemBaiTap = baiNopRepository.tinhDiemTrungBinhBaiTapTheoMonAndHocKy(
-                hocSinhId, monHoc.getMonHocId(), hocKy.getHocKyId()
+                hocSinhId, monHoc.getMaMon(), hocKy.getHocKyId()
         ).orElse(0.0);
 
         Double diemTuHoc = lichSuTuHocRepository.tinhDiemTrungBinhTuHocTheoMonAndHocKy(
-                hocSinhId, monHoc.getMonHocId(), hocKy.getSoHocKy()
+                hocSinhId, monHoc.getMaMon(), hocKy.getSoHocKy()
         ).map(BigDecimal::doubleValue).orElse(0.0);
 
         diemBaiTap = roundToTwoDecimals(diemBaiTap);
@@ -76,7 +76,6 @@ public class ThongKeDiemService {
         }
 
         return DiemTrungBinhMonResponse.builder()
-                .monHocId(monHoc.getMonHocId())
                 .maMon(monHoc.getMaMon())
                 .tenMon(monHoc.getTenMon())
                 .diemTrungBinhBaiTap(diemBaiTap)

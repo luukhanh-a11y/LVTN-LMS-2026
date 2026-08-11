@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { adminService } from '../../services/admin.service';
 import { classService } from '../../services/class.service';
 import { academicService, type CauHinhHeThong, type NamHoc } from '../../services/academic.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 const NHAN_QUYET_DINH: Record<string, { label: string; variant: 'success' | 'outline' | 'danger' }> = {
   LEN_LOP: { label: 'Lên lớp', variant: 'success' },
@@ -19,6 +20,8 @@ export default function AdminKetQuaCuoiNam() {
   const [classes, setClasses] = useState<any[]>([]);
   const [namHocList, setNamHocList] = useState<NamHoc[]>([]);
   const [cauHinh, setCauHinh] = useState<CauHinhHeThong | null>(null);
+  
+  const currentNamHoc = useAcademicStore((state) => state.currentNamHoc);
   const [namHocCu, setNamHocCu] = useState('');
 
   const [targetClassId, setTargetClassId] = useState('');
@@ -31,7 +34,11 @@ export default function AdminKetQuaCuoiNam() {
   const loadCauHinh = () => {
     academicService.getCauHinhHeThong().then((c) => {
       setCauHinh(c);
-      if (c.namHocDanhGia) setNamHocCu(c.namHocDanhGia);
+      if (c.namHocDanhGia) {
+        setNamHocCu(c.namHocDanhGia);
+      } else if (currentNamHoc) {
+        setNamHocCu(currentNamHoc);
+      }
     }).catch(console.error);
   };
 

@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class MonHocResponse {
 
-    private Short monHocId;
-    private String tenMon;
+    private Integer monHocId;
     private String maMon;
+    private String tenMon;
     private String moTa;
     private TrangThaiMonHoc trangThai;
     private LocalDateTime ngayTao;

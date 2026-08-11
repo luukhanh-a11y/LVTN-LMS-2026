@@ -37,8 +37,8 @@ public class GoiYAiBaiTapService {
             "Đề xuất 1 bài tập bổ sung có độ khó cao hơn một chút dành cho học sinh khá giỏi, mở rộng thêm từ chủ đề."
     );
 
-    public List<String> generateExerciseSuggestions(Integer grade, Short subjectId, String topicHint) {
-        MonHoc subject = subjectId != null ? monHocRepository.findById(subjectId).orElse(null) : null;
+    public List<String> generateExerciseSuggestions(Integer grade, int subjectId, String topicHint) {
+        MonHoc subject = monHocRepository.findById(subjectId).orElse(null);
 
         List<String> suggestions = new ArrayList<>();
         for (String instruction : EXERCISE_INSTRUCTIONS) {

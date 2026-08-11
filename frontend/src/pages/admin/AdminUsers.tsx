@@ -65,27 +65,56 @@ export default function AdminUsers() {
   // Use the fetched users directly
   const filteredUsers = users;
 
-  const handleImport = (e: React.FormEvent) => {
+  const [newUserFullName, setNewUserFullName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  
+  const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!importFile) {
+      toast.error('Vui lòng chọn file Excel');
+      return;
+    }
     setIsImporting(true);
-    
-    // Simulate upload delay
-    setTimeout(() => {
-      setIsImporting(false);
+    try {
+      await adminService.importUsers(importFile);
+      toast.success('Import thành công!');
       setShowImportModal(false);
-      toast.success('Tính năng đang được tích hợp API!');
-    }, 2000);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi import');
+    } finally {
+      setIsImporting(false);
+    }
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAdding(true);
-    
-    setTimeout(() => {
-      setIsAdding(false);
+    try {
+      const roleMap: Record<string, string> = {
+        'Giáo viên': 'GIAO_VIEN',
+        'Học sinh': 'HOC_SINH',
+        'Phụ huynh': 'PHU_HUYNH'
+      };
+      
+      await adminService.createUser({
+        tenDangNhap: newUserEmail.includes('@') ? newUserEmail.split('@')[0] : newUserEmail,
+        matKhau: newUserPassword,
+        email: newUserEmail.includes('@') ? newUserEmail : undefined,
+        vaiTro: roleMap[newUserRole],
+        trangThai: 'ACTIVE',
+      });
+      
+      toast.success('Thêm tài khoản thành công!');
       setShowAddModal(false);
-      toast.success('Tính năng đang được tích hợp API!');
-    }, 800);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo');
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleToggleLock = async (userId: number) => {
@@ -198,6 +227,9 @@ export default function AdminUsers() {
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-900">{user.name}</div>
                     <div className="text-xs text-slate-400 mt-0.5">Đăng nhập: {user.lastLogin}</div>
+                    {user.role === 'Học sinh' && user.maHocSinh && <div className="text-xs font-medium text-blue-600 mt-1">MHS: {user.maHocSinh} {user.tenLop ? `- Lớp ${user.tenLop}` : ''}</div>}
+                    {user.role === 'Giáo viên' && user.maGiaoVien && <div className="text-xs font-medium text-purple-600 mt-1">MGV: {user.maGiaoVien} {user.boMon ? `- ${user.boMon}` : ''}</div>}
+                    {user.role === 'Phụ huynh' && user.tenCon && <div className="text-xs font-medium text-orange-600 mt-1">Con: {user.tenCon} {user.lopCuaCon ? `- Lớp ${user.lopCuaCon}` : ''}</div>}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
                   <td className="px-6 py-4">
@@ -278,20 +310,26 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Loại tài khoản cần Import</label>
                 <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-                  <option>Danh sách Học sinh & Phụ huynh</option>
+                  <option>Danh sách Học sinh</option>
                   <option>Danh sách Giáo viên</option>
+                   <option>Danh sách Phụ huynh</option>
                 </select>
                 <p className="text-xs text-slate-500">Lưu ý: Nếu SĐT phụ huynh trùng nhau, hệ thống sẽ tự động gộp vào chung một tài khoản Phụ huynh.</p>
               </div>
 
-              {/* Vùng kéo thả file */}
-              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center bg-white hover:bg-emerald-50/50 hover:border-emerald-300 transition cursor-pointer group">
+              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center bg-white hover:bg-emerald-50/50 hover:border-emerald-300 transition cursor-pointer group relative">
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls"
+                  onChange={(e) => setImportFile(e.target.files ? e.target.files[0] : null)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
                 <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
                   <Upload className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-lg mb-1">Kéo thả file Excel vào đây</h4>
+                <h4 className="font-bold text-slate-900 text-lg mb-1">{importFile ? importFile.name : 'Kéo thả file Excel vào đây'}</h4>
                 <p className="text-sm text-slate-500 mb-4">hoặc nhấn để duyệt file (.xlsx, .xls)</p>
-                <button type="button" className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 shadow-sm">
+                <button type="button" className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 shadow-sm pointer-events-none">
                   Chọn file
                 </button>
               </div>
@@ -301,7 +339,7 @@ export default function AdminUsers() {
                   <AlertCircle className="w-5 h-5" />
                   Bạn chưa có file mẫu?
                 </div>
-                <button type="button" className="text-sm font-bold text-blue-600 hover:underline">Tải file mẫu Excel</button>
+                <button type="button" onClick={() => adminService.downloadTemplate()} className="text-sm font-bold text-blue-600 hover:underline">Tải file mẫu Excel</button>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -357,6 +395,8 @@ export default function AdminUsers() {
                 <input 
                   type="text"
                   required
+                  value={newUserFullName}
+                  onChange={(e) => setNewUserFullName(e.target.value)}
                   placeholder="Nhập họ tên đầy đủ..." 
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                 />
@@ -367,6 +407,8 @@ export default function AdminUsers() {
                 <input 
                   type="text"
                   required
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
                   placeholder="email@truong.edu.vn hoặc tên đăng nhập..." 
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                 />
@@ -390,6 +432,8 @@ export default function AdminUsers() {
                   <input 
                     type="password"
                     required
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
                     placeholder="••••••••" 
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />

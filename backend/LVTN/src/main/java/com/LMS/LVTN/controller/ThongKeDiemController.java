@@ -27,13 +27,13 @@ public class ThongKeDiemController {
                 .build();
     }
 
-    @GetMapping("/hoc-sinh/{hocSinhId}/hoc-ky/{hocKyId}/mon-hoc/{monHocId}")
+    @GetMapping("/hoc-sinh/{hocSinhId}/hoc-ky/{hocKyId}/mon-hoc/{maMon}")
     public ApiResponse<DiemTrungBinhMonResponse> getDiemTrungBinhChiTietMon(
             @PathVariable Long hocSinhId,
             @PathVariable Integer hocKyId,
-            @PathVariable Short monHocId) {
+            @PathVariable int maMon) {
         return ApiResponse.<DiemTrungBinhMonResponse>builder()
-                .data(thongKeDiemService.getDiemTrungBinhChiTietMon(hocSinhId, hocKyId, monHocId))
+                .data(thongKeDiemService.getDiemTrungBinhChiTietMon(hocSinhId, hocKyId, maMon))
                 .build();
     }
 }

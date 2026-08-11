@@ -148,6 +148,7 @@ export default function AdminLayout() {
             Hệ thống
           </div>
           <NavItem to="/admin/tickets" icon={Ticket} label="Phiếu Hỗ trợ" badge={pendingTicketsCount} />
+          <NavItem to="/admin/ket-qua-cuoi-nam" icon={GraduationCap} label="Đánh giá Cuối Năm" />
           <NavItem to="/admin/settings" icon={Settings} label="Cấu hình trường" />
         </nav>
         

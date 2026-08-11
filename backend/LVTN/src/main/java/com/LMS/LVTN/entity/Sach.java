@@ -36,18 +36,14 @@ public class Sach {
     @Column(name = "khoi_lop", nullable = false)
     private Short khoiLop;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mon_hoc_id", nullable = false)
-    private MonHoc monHoc;
-
-    @Column(name = "hoc_ky")
-    private Short hocKy;
+    @Column(name = "ma_mon", length = 20, nullable = false)
+    private String maMon;
 
     // NULL = sách dùng chung mọi năm học có cùng số học kỳ (mặc định).
     // Có giá trị = bản đã tách riêng cho đúng 1 học kỳ của 1 năm học cụ thể (qua Nhân bản).
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hoc_ky_id")
-    private HocKy hocKyCuThe;
+    private HocKy hocKy;
 
     @Column(name = "ten_sach", nullable = false, length = 300)
     private String tenSach;

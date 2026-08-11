@@ -148,8 +148,8 @@ export default function TeacherLayout() {
           <NavItem to="/teacher" icon={Home} label="Tổng quan" />
           <NavItem to="/teacher/classes" icon={Users} label="Lớp học của tôi" />
           <NavItem to="/teacher/announcements" icon={Megaphone} label="Bảng tin" />
+          <NavItem to="/teacher/assignments/create" icon={FileText} label="Giao bài tập" />
           <NavItem to="/teacher/materials" icon={Library} label="Kho Học liệu" />
-          <NavItem to="/teacher/ket-qua-cuoi-nam" icon={GraduationCap} label="Xét lên lớp" />
           <NavItem to="/teacher/grading" icon={CheckSquare} label="Chấm bài" />
           <NavItem to="/teacher/reports" icon={FileText} label="Sổ điểm" />
         </nav>

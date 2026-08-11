@@ -37,6 +37,8 @@ export default function GradingWorkspace() {
 
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [comment, setComment] = useState('');
+  const [classification, setClassification] = useState('HOAN_THANH_TOT');
+  const [manualScore, setManualScore] = useState('');
   
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
@@ -144,7 +146,26 @@ export default function GradingWorkspace() {
     setSelectedStudent(submissions[0].baiNopId || submissions[0].id);
   }
 
-  const currentSubmission = submissions.find(s => (s.baiNopId || s.id) === selectedStudent);
+  const currentSubmissionRaw = submissions.find(s => (s.baiNopId || s.id) === selectedStudent);
+  
+  // Parse chiTietBaiLam from JSON string to object
+  let parsedChiTiet = {};
+  if (currentSubmissionRaw?.chiTietBaiLam) {
+    try {
+      parsedChiTiet = typeof currentSubmissionRaw.chiTietBaiLam === 'string' 
+        ? JSON.parse(currentSubmissionRaw.chiTietBaiLam) 
+        : currentSubmissionRaw.chiTietBaiLam;
+    } catch (e) {
+      console.error("Failed to parse chiTietBaiLam", e);
+    }
+  }
+
+  const currentSubmission = currentSubmissionRaw ? {
+    ...currentSubmissionRaw,
+    cauHinh: (parsedChiTiet as any).cauHinh || { cauHoi: "Câu hỏi không có cấu hình", luaChon: [] },
+    chiTietBaiLam: parsedChiTiet
+  } : undefined;
+
   const isAutoGraded = activeAssignment?.loaiBaiTap === 'TRAC_NGHIEM' || currentSubmission?.type === 'TRAC_NGHIEM';
 
   const getStatusIcon = (status: string) => {
@@ -190,8 +211,24 @@ export default function GradingWorkspace() {
     setSelectedBadge(null);
   };
 
-  const handleSubmitGrade = () => {
-    toast.success('Đã lưu điểm và cộng XP cho học sinh!');
+  const handleSubmitGrade = async (action: 'DUYET' | 'YC_LAM_LAI') => {
+    if (!currentSubmission?.baiNopId) return;
+    try {
+      const profile = await teacherService.getMyTeacherProfile();
+      await teacherService.evaluateSubmission(currentSubmission.baiNopId, {
+        teacherId: profile.giaoVienId,
+        grade: classification,
+        comment: comment,
+        action: action,
+        diemSo: !isAutoGraded ? Number(manualScore) : undefined
+      } as any);
+      toast.success('Đã lưu đánh giá thành công!');
+      // Refresh submissions
+      const updatedSubmissions = await teacherService.getSubmissions(selectedAssignmentId!);
+      setSubmissions(updatedSubmissions);
+    } catch (err) {
+      toast.error('Có lỗi xảy ra khi chấm bài');
+    }
   };
 
   return (
@@ -377,6 +414,8 @@ export default function GradingWorkspace() {
                   type="number" 
                   key={selectedStudent} 
                   placeholder="0.0"
+                  value={manualScore}
+                  onChange={(e) => setManualScore(e.target.value)}
                   className="w-32 text-center text-6xl font-black text-blue-600 bg-transparent border-b-2 border-slate-200 focus:border-blue-600 focus:outline-none pb-2 mx-auto tracking-tighter placeholder:text-slate-200" 
                 />
               )}
@@ -386,11 +425,10 @@ export default function GradingWorkspace() {
             <div className="space-y-8">
               <div className="space-y-3">
                 <label className="text-sm font-bold text-slate-700">Xếp loại học lực</label>
-                <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-400 bg-slate-50">
-                  <option>Giỏi (8.0 - 10)</option>
-                  <option>Khá (6.5 - 7.9)</option>
-                  <option>Trung bình (5.0 - 6.4)</option>
-                  <option>Yếu (Dưới 5.0)</option>
+                <select value={classification} onChange={e => setClassification(e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-400 bg-slate-50">
+                  <option value="HOAN_THANH_TOT">Hoàn thành tốt (Giỏi)</option>
+                  <option value="HOAN_THANH">Hoàn thành (Khá / TB)</option>
+                  <option value="CHUA_HOAN_THANH">Chưa hoàn thành (Yếu)</option>
                 </select>
               </div>
 
@@ -418,10 +456,10 @@ export default function GradingWorkspace() {
 
           {/* Footer Panel (Action Buttons) */}
           <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-3">
-            <button type="button" onClick={handleSubmitGrade} className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition font-bold cursor-pointer shadow-sm">
+            <button type="button" onClick={() => handleSubmitGrade('DUYET')} className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition font-bold cursor-pointer shadow-sm">
               <CheckCircle2 className="w-5 h-5" /> Lưu kết quả
             </button>
-            <button type="button" className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition font-bold cursor-pointer border border-slate-200">
+            <button type="button" onClick={() => handleSubmitGrade('YC_LAM_LAI')} className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition font-bold cursor-pointer border border-slate-200">
               <RotateCcw className="w-4 h-4" /> Yêu cầu làm lại
             </button>
           </div>

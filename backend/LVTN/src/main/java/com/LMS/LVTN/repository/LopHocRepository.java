@@ -13,4 +13,5 @@ public interface LopHocRepository extends JpaRepository<LopHoc, Long>, JpaSpecif
     Page<LopHoc> findAll(Pageable pageable);
     java.util.List<LopHoc> findByNamHoc_TenNamHoc(String tenNamHoc);
     java.util.List<LopHoc> findByGiaoVienChuNhiem_GiaoVienId(Long giaoVienId);
+    boolean existsByTenLop(String tenLop);
 }

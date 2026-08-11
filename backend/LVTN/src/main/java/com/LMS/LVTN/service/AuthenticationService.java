@@ -11,6 +11,7 @@ import com.LMS.LVTN.entity.InvalidatedToken;
 import com.LMS.LVTN.entity.NguoiDung;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
+import com.LMS.LVTN.enums.TrangThaiNguoiDung;
 import com.LMS.LVTN.repository.InvalidatedTokenRepository;
 import com.LMS.LVTN.repository.NguoiDungRepository;
 import com.nimbusds.jose.*;
@@ -56,6 +57,10 @@ public class AuthenticationService {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         var user = nguoiDungRepository.findByTenDangNhap(request.getTenDangNhap())
                 .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+
+        if (user.getTrangThai() == TrangThaiNguoiDung.LOCKED || user.getTrangThai() == TrangThaiNguoiDung.DISABLED) {
+            throw new AppExceptions(Errorcode.USER_INACTIVE);
+        }
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getMatKhauHash());
 

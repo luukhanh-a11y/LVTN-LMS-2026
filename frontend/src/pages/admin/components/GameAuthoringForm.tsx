@@ -6,6 +6,8 @@ import { Plus, Trash2, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { adminService } from '../../../services/admin.service';
 
+import { RichTextEditor } from '../../../components/ui/RichTextEditor';
+
 interface GameAuthoringFormProps {
   dangBaiId: number; // 0 if new
   baiHocId: number;
@@ -14,67 +16,80 @@ interface GameAuthoringFormProps {
 }
 
 type LoaiGame = 'LY_THUYET' | 'TU_LUAN' | 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET';
-type GiaoDien = 'MAC_DINH' | 'DAO_VANG' | 'DUOI_BAT' | 'NOI_CAP' | 'PHAN_LOAI' | 'THU_HOACH_NONG_SAN' | 'ECH_QUA_SONG' | 'BAN_BONG_BAY' | 'TRIEU_PHU' | 'ONG_TIM_MAT';
+type GiaoDien = 'MAC_DINH' | 'DAO_VANG' | 'DUOI_BAT' | 'PHAN_LOAI' | 'THU_HOACH_NONG_SAN' | 'ECH_QUA_SONG' | 'BAN_BONG_BAY' | 'TRIEU_PHU' | 'ONG_TIM_MAT';
 
-// Helper for unique IDs
 let uidCounter = 0;
 const uid = () => `id${Date.now()}_${uidCounter++}`;
 
 export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, onCancel }: GameAuthoringFormProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [teachers, setTeachers] = useState<any[]>([]);
+
+  // === KHUNG THÔNG TIN CHUNG ===
   const [title, setTitle] = useState('');
-  const [xp, setXp] = useState(10);
+  const [soThuTu, setSoThuTu] = useState<number>(0);
+  const [soTrang, setSoTrang] = useState<number>(1);
+  const [xp, setXp] = useState<number>(10);
+  const [loaiNoiDung, setLoaiNoiDung] = useState('JSON_TEXT');
+  const [nguonGoc, setNguonGoc] = useState('HE_THONG');
+  const [giaoVienId, setGiaoVienId] = useState<number | ''>('');
+  const [h5pNoiDungId, setH5pNoiDungId] = useState('');
   
-  // Trạng thái cấu hình Game
-  const [loai, setLoai] = useState<LoaiGame>('TRAC_NGHIEM');
+  const [loai, setLoai] = useState<LoaiGame>('LY_THUYET'); // Loại Game/Form chi tiết
   const [giaoDien, setGiaoDien] = useState<GiaoDien>('MAC_DINH');
 
-  // Lý thuyết & Tự luận
+  // === TRƯỜNG MEDIA CHUNG ===
+  const [cauHoi, setCauHoi] = useState('');
   const [noiDung, setNoiDung] = useState('');
-  
-  // Media chung
   const [hinhAnh, setHinhAnh] = useState('');
   const [amThanh, setAmThanh] = useState('');
   const [video, setVideo] = useState('');
 
-  // Trắc nghiệm (Đào Vàng, Đuổi bắt, etc)
-  const [cauHoi, setCauHoi] = useState('');
-  const [luaChon, setLuaChon] = useState<{id: string; noiDung: string}[]>([
+  // === STATE CHO TRẮC NGHIỆM ===
+  const [thanhPhanCauHoi, setThanhPhanCauHoi] = useState<{id: string; noiDung: string; hinhAnh?: string; amThanh?: string}[]>([]);
+  const [luaChon, setLuaChon] = useState<{id: string; noiDung: string; hinhAnh?: string; amThanh?: string}[]>([
     { id: uid(), noiDung: '' },
     { id: uid(), noiDung: '' }
   ]);
   const [dapAnDungId, setDapAnDungId] = useState('');
 
-  // Nối Cặp / Phân loại
-  const [cotTrai, setCotTrai] = useState<{id: string; noiDung: string}[]>([{ id: uid(), noiDung: '' }]);
-  const [cotPhai, setCotPhai] = useState<{id: string; noiDung: string}[]>([{ id: uid(), noiDung: '' }]);
+  // === STATE CHO NỐI CẶP ===
+  const [cotTrai, setCotTrai] = useState<{id: string; noiDung: string; hinhAnh?: string; amThanh?: string}[]>([{ id: uid(), noiDung: '' }]);
+  const [cotPhai, setCotPhai] = useState<{id: string; noiDung: string; hinhAnh?: string; amThanh?: string}[]>([{ id: uid(), noiDung: '' }]);
   const [capDung, setCapDung] = useState<{traiId: string; phaiId: string}[]>([]);
 
-  // Điền khuyết
-  const [danhSachCho, setDanhSachCho] = useState<{id: string; vanBanTruoc: string; vanBanSau: string; dapAn: string}[]>([
-    { id: uid(), vanBanTruoc: 'Hôm nay là', vanBanSau: 'rất đẹp.', dapAn: 'một ngày' }
+  // === STATE CHO ĐIỀN KHUYẾT ===
+  const [thanhPhanDoanVan, setThanhPhanDoanVan] = useState<{id: string; noiDung: string; type?: string}[]>([]);
+  const [danhSachCho, setDanhSachCho] = useState<{id: string; vanBanTruoc: string; vanBanSau: string; dapAn: string; danhSachLuaChon?: string}[]>([
+    { id: uid(), vanBanTruoc: 'Hôm nay là', vanBanSau: 'rất đẹp.', dapAn: 'một ngày', danhSachLuaChon: 'một ngày,một đêm' }
   ]);
 
-  const [activeTab, setActiveTab] = useState<'EDIT' | 'CHANGE_TYPE'>('EDIT');
-
   useEffect(() => {
+    // Load dropdown teachers
+    adminService.searchUsers({ role: 'GIAO_VIEN', size: 100 })
+      .then(res => setTeachers(res.content || []))
+      .catch(err => console.error(err));
+
     if (dangBaiId > 0) {
-      setActiveTab('EDIT');
-      // Fetch details
       adminService.getDangBaiDetail(dangBaiId).then(dangBai => {
-        setTitle(dangBai.tenDangBai);
+        setTitle(dangBai.tenDangBai || '');
         setXp(dangBai.xpThuong || 10);
+        setSoThuTu(dangBai.soThuTu || 0);
+        setSoTrang(dangBai.soTrang || 1);
+        setLoaiNoiDung(dangBai.loaiNoiDung || 'JSON_TEXT');
+        setNguonGoc(dangBai.nguonGoc || 'HE_THONG');
+        setGiaoVienId(dangBai.giaoVien?.giaoVienId || '');
+        setH5pNoiDungId(dangBai.h5pNoiDungId || '');
+
         let parsed: any = {};
         try { parsed = JSON.parse(dangBai.duLieuGame); } catch(e) {}
         let ans: any = {};
         try { ans = JSON.parse(dangBai.dapAnChuan); } catch(e) {}
         
-        const type = parsed.loai || 'TRAC_NGHIEM';
-        // Note: Old PHAN_LOAI was converted to NOI_CAP with giaoDien PHAN_LOAI
+        const type = parsed.loai || 'LY_THUYET';
         if (type === 'PHAN_LOAI') {
           setLoai('NOI_CAP');
           setGiaoDien('PHAN_LOAI');
-          // Try to map old structure to new structure if it exists
           if (parsed.danhSachThung && parsed.danhSachVatPham) {
             setCotTrai(parsed.danhSachThung.map((t: any) => ({ id: t.id, noiDung: t.ten })));
             setCotPhai(parsed.danhSachVatPham.map((v: any) => ({ id: v.id, noiDung: v.noiDung || v.ten })));
@@ -87,14 +102,14 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
           setGiaoDien(parsed.giaoDien || 'MAC_DINH');
         }
 
+        setCauHoi(parsed.cauHoi || '');
+        setNoiDung(parsed.noiDung || '');
         setHinhAnh(parsed.hinhAnh || '');
         setAmThanh(parsed.amThanh || '');
         setVideo(parsed.video || '');
 
-        if (type === 'LY_THUYET' || type === 'TU_LUAN') {
-          setNoiDung(parsed.noiDung || '');
-        } else if (type === 'TRAC_NGHIEM') {
-          setCauHoi(parsed.cauHoi || '');
+        if (type === 'TRAC_NGHIEM') {
+          setThanhPhanCauHoi(parsed.thanhPhanCauHoi || []);
           setLuaChon(parsed.danhSachLuaChon || [{ id: uid(), noiDung: '' }]);
           setDapAnDungId(ans.dapAnDungId || '');
         } else if (type === 'NOI_CAP') {
@@ -102,79 +117,56 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
           setCotPhai(parsed.cotPhai || []);
           setCapDung(ans.danhSachCapDung || []);
         } else if (type === 'DIEN_KHUYET') {
+          setThanhPhanDoanVan(parsed.thanhPhanDoanVan || []);
           const places = parsed.danhSachCho || [];
           const answers = ans.dapAnChoTrong || [];
           const mergedCho = places.map((p: any) => {
             const mapped = answers.find((m: any) => m.id === p.id);
-            return { id: p.id, vanBanTruoc: p.vanBanTruoc, vanBanSau: p.vanBanSau, dapAn: mapped ? mapped.dapAn : '' };
+            return { 
+              id: p.id, 
+              vanBanTruoc: p.vanBanTruoc, 
+              vanBanSau: p.vanBanSau, 
+              danhSachLuaChon: (p.danhSachLuaChon || []).join(','),
+              dapAn: mapped ? mapped.dapAn : '' 
+            };
           });
           setDanhSachCho(mergedCho);
         }
       }).catch(err => {
         console.error(err);
-        toast.error('Không thể tải dữ liệu Game');
+        toast.error('Không thể tải dữ liệu Dạng Bài');
       });
-    } else {
-      setActiveTab('EDIT');
-      setTitle('');
-      setCauHoi('');
-      setNoiDung('');
-      setHinhAnh('');
-      setAmThanh('');
-      setVideo('');
-      setGiaoDien('MAC_DINH');
-      setLoai('TRAC_NGHIEM');
-      setXp(10);
     }
   }, [dangBaiId]);
 
   const handleTypeChange = (newLoai: LoaiGame) => {
-    if (dangBaiId > 0 && activeTab === 'EDIT') return; // Cannot change in EDIT mode
-    if (newLoai !== loai) {
-      if (dangBaiId > 0 && !window.confirm('Việc thay đổi Dạng bài sẽ làm lại dữ liệu từ đầu. Bạn có chắc chắn không?')) {
-        return;
-      }
-      setLoai(newLoai);
-      // Reset defaults based on newLoai
-      if (newLoai === 'TRAC_NGHIEM') setGiaoDien('MAC_DINH');
-      else if (newLoai === 'NOI_CAP') setGiaoDien('MAC_DINH');
-      else if (newLoai === 'DIEN_KHUYET') setGiaoDien('MAC_DINH');
-      else if (newLoai === 'LY_THUYET' || newLoai === 'TU_LUAN') setGiaoDien('MAC_DINH');
-      
-      setNoiDung('');
-      setCauHoi('');
-      setHinhAnh('');
-      setAmThanh('');
-      setVideo('');
-      setLuaChon([{ id: uid(), noiDung: '' }, { id: uid(), noiDung: '' }]);
-      setDapAnDungId('');
-      setCotTrai([{ id: uid(), noiDung: '' }]);
-      setCotPhai([{ id: uid(), noiDung: '' }]);
-      setCapDung([]);
-      setDanhSachCho([{ id: uid(), vanBanTruoc: '', vanBanSau: '', dapAn: '' }]);
+    if (dangBaiId > 0 && newLoai !== loai) {
+      if (!window.confirm('Thay đổi Loại Game sẽ xoá dữ liệu chi tiết hiện tại. Chắc chắn không?')) return;
     }
+    setLoai(newLoai);
+    setGiaoDien('MAC_DINH');
   };
 
   const buildPayload = () => {
-    let duLieuGame = {};
-    let dapAnChuan = {};
+    let duLieuGame: any = { loai, giaoDien, cauHoi, noiDung, hinhAnh, amThanh, video };
+    let dapAnChuan: any = {};
 
-    if (loai === 'LY_THUYET' || loai === 'TU_LUAN') {
-      duLieuGame = { loai, noiDung, hinhAnh, amThanh, video };
-      dapAnChuan = {};
-    } else if (loai === 'TRAC_NGHIEM') {
-      duLieuGame = { loai: 'TRAC_NGHIEM', cauHoi, giaoDien, hinhAnh, amThanh, video, danhSachLuaChon: luaChon };
+    if (loai === 'TRAC_NGHIEM') {
+      duLieuGame.thanhPhanCauHoi = thanhPhanCauHoi;
+      duLieuGame.danhSachLuaChon = luaChon;
       dapAnChuan = { dapAnDungId };
     } else if (loai === 'NOI_CAP') {
-      duLieuGame = { loai: 'NOI_CAP', cauHoi: title, giaoDien, hinhAnh, amThanh, video, cotTrai, cotPhai };
+      duLieuGame.cotTrai = cotTrai;
+      duLieuGame.cotPhai = cotPhai;
       dapAnChuan = { danhSachCapDung: capDung };
     } else if (loai === 'DIEN_KHUYET') {
-      duLieuGame = {
-        loai: 'DIEN_KHUYET', cauHoi: title, giaoDien, hinhAnh, amThanh, video,
-        danhSachCho: danhSachCho.map(c => ({
-          id: c.id, vanBanTruoc: c.vanBanTruoc, vanBanSau: c.vanBanSau
-        }))
-      };
+      duLieuGame.thanhPhanDoanVan = thanhPhanDoanVan;
+      duLieuGame.danhSachCho = danhSachCho.map(c => ({
+        id: c.id, 
+        vanBanTruoc: c.vanBanTruoc, 
+        vanBanSau: c.vanBanSau,
+        danhSachLuaChon: c.danhSachLuaChon ? c.danhSachLuaChon.split(',').map(s => s.trim()) : []
+      }));
       dapAnChuan = {
         dapAnChoTrong: danhSachCho.map(c => ({
           id: c.id,
@@ -185,23 +177,23 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
 
     return {
       tenDangBai: title,
-      loaiNoiDung: 'JSON_TEXT', // Luôn gửi JSON_TEXT để Frontend Student nhận diện và parse
       baiHocId,
+      giaoVienId: giaoVienId ? Number(giaoVienId) : null,
+      loaiNoiDung,
+      nguonGoc,
+      soThuTu,
+      soTrang,
       xpThuong: xp,
+      h5pNoiDungId,
       duLieuGame: JSON.stringify(duLieuGame),
       dapAnChuan: JSON.stringify(dapAnChuan)
     };
   };
 
   const handleSave = async () => {
-    if (!title) {
-      toast.error('Vui lòng nhập tên dạng bài (Game Title)');
-      return;
-    }
+    if (!title) return toast.error('Vui lòng nhập Tên dạng bài');
     
     const payload = buildPayload();
-    console.log("Saving payload:", payload);
-    
     setIsSaving(true);
     try {
       if (dangBaiId === 0) {
@@ -209,282 +201,29 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
       } else {
         await adminService.updateDangBai(dangBaiId, payload);
       }
-      toast.success('Lưu bài tập/Game thành công!');
+      toast.success('Lưu dữ liệu thành công!');
       onSaveSuccess();
     } catch (err) {
-      toast.error('Lỗi khi lưu');
+      toast.error('Có lỗi xảy ra khi lưu');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // --- Render Functions cho từng Loại ---
+  // Components Render Media
   const renderMediaFields = () => (
-    <div className="grid grid-cols-3 gap-4 mb-6">
-      <Input label="URL Hình ảnh (Tùy chọn)" placeholder="https://..." value={hinhAnh} onChange={(e) => setHinhAnh(e.target.value)} />
-      <Input label="URL Âm thanh (Tùy chọn)" placeholder="https://..." value={amThanh} onChange={(e) => setAmThanh(e.target.value)} />
-      <Input label="URL Video (Tùy chọn)" placeholder="https://..." value={video} onChange={(e) => setVideo(e.target.value)} />
-    </div>
-  );
-
-  const renderHocLieuThuan = () => (
-    <div className="space-y-4">
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Nội dung (Đề bài / Lý thuyết)</label>
-        <textarea 
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500 min-h-[150px]"
-          placeholder="Nhập nội dung văn bản..."
-          value={noiDung}
-          onChange={(e) => setNoiDung(e.target.value)}
-        />
-      </div>
-    </div>
-  );
-
-  const renderTracNghiem = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện Game</label>
-          <select 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500"
-            value={giaoDien}
-            onChange={(e) => setGiaoDien(e.target.value as GiaoDien)}
-          >
-            <option value="MAC_DINH">Trắc nghiệm chuẩn</option>
-            <option value="DAO_VANG">Đào Vàng</option>
-            <option value="DUOI_BAT">Đuổi Bắt</option>
-            <option value="THU_HOACH_NONG_SAN">Thu hoạch Nông sản</option>
-            <option value="ECH_QUA_SONG">Ếch qua sông</option>
-            <option value="BAN_BONG_BAY">Bắn bóng bay</option>
-            <option value="TRIEU_PHU">Ai là triệu phú</option>
-          </select>
-        </div>
-      </div>
-      
-      <Input
-        label="Nội dung Câu hỏi"
-        value={cauHoi}
-        onChange={(e) => setCauHoi(e.target.value)}
-        placeholder="VD: Quả táo tiếng Anh là gì?"
-      />
-      
-      <div className="space-y-3 pt-2">
-        <label className="block text-sm font-medium text-slate-700">Các lựa chọn (Tối thiểu 2, tối đa 4 cho Game)</label>
-        {luaChon.map((lc, idx) => (
-          <div key={lc.id} className="flex items-center gap-3">
-            <input 
-              type="radio" 
-              name="tracnghiem_dapan" 
-              className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-              checked={dapAnDungId === lc.id}
-              onChange={() => setDapAnDungId(lc.id)}
-            />
-            <Input 
-              className="flex-1"
-              value={lc.noiDung}
-              onChange={(e) => {
-                const nw = [...luaChon];
-                nw[idx].noiDung = e.target.value;
-                setLuaChon(nw);
-              }}
-              placeholder={`Lựa chọn ${idx + 1}`}
-            />
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="px-2 text-slate-400 hover:text-red-500"
-              onClick={() => {
-                setLuaChon(luaChon.filter(l => l.id !== lc.id));
-                if (dapAnDungId === lc.id) setDapAnDungId('');
-              }}
-              disabled={luaChon.length <= 2}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-        {luaChon.length < 4 && (
-          <Button variant="outline" size="sm" onClick={() => setLuaChon([...luaChon, { id: uid(), noiDung: '' }])}>
-            <Plus className="w-4 h-4 mr-1" /> Thêm lựa chọn
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderNoiCap = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện Game</label>
-          <select 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500"
-            value={giaoDien}
-            onChange={(e) => setGiaoDien(e.target.value as GiaoDien)}
-          >
-            <option value="MAC_DINH">Nối cặp (Kéo dây)</option>
-            <option value="PHAN_LOAI">Phân loại (Kéo thả vào thùng)</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* Cột trái */}
-        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-          <label className="block text-sm font-medium text-slate-700">Cột Trái (Thùng chứa / Từ vựng)</label>
-          {cotTrai.map((item, idx) => (
-            <div key={item.id} className="flex gap-2">
-              <Input 
-                className="flex-1"
-                value={item.noiDung}
-                onChange={(e) => {
-                  const nw = [...cotTrai];
-                  nw[idx].noiDung = e.target.value;
-                  setCotTrai(nw);
-                }}
-                placeholder="Nội dung trái"
-              />
-              <Button variant="outline" className="px-2" onClick={() => setCotTrai(cotTrai.filter(c => c.id !== item.id))}>
-                <Trash2 className="w-4 h-4 text-red-400" />
-              </Button>
-            </div>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => setCotTrai([...cotTrai, { id: uid(), noiDung: '' }])}>Thêm mục</Button>
-        </div>
-
-        {/* Cột phải */}
-        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-          <label className="block text-sm font-medium text-slate-700">Cột Phải (Vật phẩm / Nghĩa)</label>
-          {cotPhai.map((item, idx) => (
-            <div key={item.id} className="flex gap-2">
-              <Input 
-                className="flex-1"
-                value={item.noiDung}
-                onChange={(e) => {
-                  const nw = [...cotPhai];
-                  nw[idx].noiDung = e.target.value;
-                  setCotPhai(nw);
-                }}
-                placeholder="Nội dung phải"
-              />
-              <Button variant="outline" className="px-2" onClick={() => setCotPhai(cotPhai.filter(c => c.id !== item.id))}>
-                <Trash2 className="w-4 h-4 text-red-400" />
-              </Button>
-            </div>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => setCotPhai([...cotPhai, { id: uid(), noiDung: '' }])}>Thêm mục</Button>
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-slate-100">
-        <label className="block text-sm font-medium text-slate-700 mb-2">Định nghĩa Cặp Đúng (Đáp án)</label>
-        {capDung.map((cap, idx) => (
-          <div key={idx} className="flex items-center gap-3 mb-2">
-            <select 
-              className="flex-1 border rounded-md px-3 py-2 text-sm"
-              value={cap.traiId}
-              onChange={(e) => {
-                const nw = [...capDung];
-                nw[idx].traiId = e.target.value;
-                setCapDung(nw);
-              }}
-            >
-              <option value="">-- Chọn cột trái --</option>
-              {cotTrai.map(c => <option key={c.id} value={c.id}>{c.noiDung || c.id}</option>)}
-            </select>
-            <span className="text-slate-400">---</span>
-            <select 
-              className="flex-1 border rounded-md px-3 py-2 text-sm"
-              value={cap.phaiId}
-              onChange={(e) => {
-                const nw = [...capDung];
-                nw[idx].phaiId = e.target.value;
-                setCapDung(nw);
-              }}
-            >
-              <option value="">-- Chọn cột phải --</option>
-              {cotPhai.map(c => <option key={c.id} value={c.id}>{c.noiDung || c.id}</option>)}
-            </select>
-            <Button variant="outline" size="sm" className="px-2 text-red-400" onClick={() => setCapDung(capDung.filter((_, i) => i !== idx))}>
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-        <Button size="sm" variant="outline" onClick={() => setCapDung([...capDung, { traiId: '', phaiId: '' }])}>
-          <Plus className="w-4 h-4 mr-1" /> Thêm Cặp
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderDienKhuyet = () => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện Game</label>
-          <select 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-indigo-500"
-            value={giaoDien}
-            onChange={(e) => setGiaoDien(e.target.value as GiaoDien)}
-          >
-            <option value="MAC_DINH">Nhập liệu chuẩn</option>
-            <option value="ONG_TIM_MAT">Game Ong Tìm Mật</option>
-          </select>
-        </div>
-      </div>
-      
-      <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-        <label className="block text-sm font-medium text-slate-700">Danh sách Chỗ trống</label>
-        {danhSachCho.map((cho, idx) => (
-          <div key={cho.id} className="flex gap-2 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-            <div className="flex-1 grid grid-cols-3 gap-2">
-              <Input 
-                placeholder="Văn bản TRƯỚC ô trống" 
-                value={cho.vanBanTruoc}
-                onChange={(e) => {
-                  const nw = [...danhSachCho];
-                  nw[idx].vanBanTruoc = e.target.value;
-                  setDanhSachCho(nw);
-                }}
-              />
-              <Input 
-                className="font-bold text-indigo-600 bg-indigo-50"
-                placeholder="ĐÁP ÁN (ô trống)" 
-                value={cho.dapAn}
-                onChange={(e) => {
-                  const nw = [...danhSachCho];
-                  nw[idx].dapAn = e.target.value;
-                  setDanhSachCho(nw);
-                }}
-              />
-              <Input 
-                placeholder="Văn bản SAU ô trống" 
-                value={cho.vanBanSau}
-                onChange={(e) => {
-                  const nw = [...danhSachCho];
-                  nw[idx].vanBanSau = e.target.value;
-                  setDanhSachCho(nw);
-                }}
-              />
-            </div>
-            <Button variant="outline" className="px-2" onClick={() => setDanhSachCho(danhSachCho.filter(c => c.id !== cho.id))}>
-              <Trash2 className="w-4 h-4 text-red-400" />
-            </Button>
-          </div>
-        ))}
-        <Button size="sm" variant="outline" onClick={() => setDanhSachCho([...danhSachCho, { id: uid(), vanBanTruoc: '', vanBanSau: '', dapAn: '' }])}>
-          <Plus className="w-4 h-4 mr-1" /> Thêm chỗ trống
-        </Button>
-      </div>
+    <div className="grid grid-cols-3 gap-4 mb-4">
+      <Input label="Hình ảnh (URL)" value={hinhAnh} onChange={e => setHinhAnh(e.target.value)} placeholder="https://" />
+      <Input label="Âm thanh (URL)" value={amThanh} onChange={e => setAmThanh(e.target.value)} placeholder="https://" />
+      <Input label="Video (URL)" value={video} onChange={e => setVideo(e.target.value)} placeholder="https://" />
     </div>
   );
 
   return (
     <Card className="shadow-lg border-indigo-200 ring-4 ring-indigo-50">
       <CardHeader className="py-4 border-b border-indigo-100 bg-white rounded-t-xl flex flex-row justify-between items-center">
-        <CardTitle className="text-lg font-bold text-indigo-900 flex items-center">
-          {dangBaiId === 0 ? 'Tạo Bài tập / Học liệu Mới' : 'Chỉnh sửa Bài tập / Học liệu'}
+        <CardTitle className="text-lg font-bold text-indigo-900">
+          {dangBaiId === 0 ? 'Thêm mới Bài tập / Học liệu' : 'Chỉnh sửa Bài tập / Học liệu'}
         </CardTitle>
         <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 bg-slate-100 p-1.5 rounded-full">
           <X className="w-4 h-4" />
@@ -492,89 +231,324 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
       </CardHeader>
       
       <CardContent className="p-0 bg-white rounded-b-xl">
-        {dangBaiId > 0 && (
-          <div className="flex border-b border-slate-200 px-6 pt-2 bg-slate-50/50">
-            <button 
-              onClick={() => setActiveTab('EDIT')} 
-              className={`pb-3 px-4 font-semibold text-sm border-b-2 transition-colors ${activeTab === 'EDIT' ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-            >
-              Chỉnh sửa Giao diện & Dữ liệu
-            </button>
-            <button 
-              onClick={() => setActiveTab('CHANGE_TYPE')} 
-              className={`pb-3 px-4 font-semibold text-sm border-b-2 transition-colors ${activeTab === 'CHANGE_TYPE' ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-            >
-              Thay đổi Dạng bài (Reset)
-            </button>
-          </div>
-        )}
+        <div className="p-6 space-y-8">
+          
+          {/* ========================================================== */}
+          {/* 1. KHUNG THÔNG TIN CHUNG */}
+          {/* ========================================================== */}
+          <section className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+            <h2 className="text-base font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Khung Thông Tin Chung</h2>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-8">
+                <Input label="Tên Dạng Bài" placeholder="VD: Ôn tập Từ vựng" value={title} onChange={e => setTitle(e.target.value)} />
+              </div>
+              <div className="col-span-4">
+                <Input label="Bài học ID (Read-only)" value={baiHocId} disabled />
+              </div>
 
-        <div className="p-6 space-y-6">
-          {/* Thông tin chung */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <Input
-                label="Tiêu đề Bài / Tiêu đề Game"
-                placeholder="VD: Ôn tập Từ Vựng Chủ Đề Gia đình"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+              <div className="col-span-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Loại Game / Dạng Bài</label>
+                <select className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-indigo-50 font-semibold text-indigo-700" value={loai} onChange={e => handleTypeChange(e.target.value as LoaiGame)}>
+                  <option value="LY_THUYET">Lý Thuyết</option>
+                  <option value="TU_LUAN">Tự Luận</option>
+                  <option value="TRAC_NGHIEM">Trắc Nghiệm</option>
+                  <option value="NOI_CAP">Nối Cặp</option>
+                  <option value="DIEN_KHUYET">Điền Khuyết</option>
+                </select>
+              </div>
+              <div className="col-span-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Nguồn gốc</label>
+                <div className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-slate-100">Hệ Thống</div>
+              </div>
+              <div className="col-span-4">
+                <Input label="XP Thưởng" type="number" value={xp} onChange={e => setXp(Number(e.target.value))} />
+              </div>
             </div>
-            <div>
-              <Input
-                label="Điểm XP Thưởng"
-                type="number"
-                value={xp}
-                onChange={(e) => setXp(Number(e.target.value))}
-              />
-            </div>
-          </div>
+          </section>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Loại Dạng Bài / Học liệu</label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { val: 'LY_THUYET', label: 'Lý Thuyết' },
-                { val: 'TU_LUAN', label: 'Tự Luận' },
-                { val: 'TRAC_NGHIEM', label: 'Trắc Nghiệm' },
-                { val: 'NOI_CAP', label: 'Nối Cặp / Phân loại' },
-                { val: 'DIEN_KHUYET', label: 'Điền Khuyết' }
-              ].map(type => {
-                const disabled = dangBaiId > 0 && activeTab === 'EDIT' && loai !== type.val;
-                return (
-                <button
-                  key={type.val}
-                  onClick={() => handleTypeChange(type.val as LoaiGame)}
-                  disabled={disabled}
-                  className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${loai === type.val ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'} ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}`}
-                >
-                  {type.label}
-                </button>
-              )})}
-            </div>
-          </div>
+          {/* ========================================================== */}
+          {/* 2. FORM CHI TIẾT THEO LOẠI */}
+          {/* ========================================================== */}
+          
+          <section className="bg-indigo-50/30 p-5 rounded-xl border border-indigo-100">
+            <h2 className="text-base font-bold text-indigo-900 mb-6 border-b border-indigo-200 pb-2">
+              Chi tiết Form: {loai}
+            </h2>
 
-          {/* Khu vực Form Động tùy theo Loại */}
-        <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
-            Cấu hình Nội dung: {loai}
-          </h3>
-          {renderMediaFields()}
-          {(loai === 'LY_THUYET' || loai === 'TU_LUAN') && renderHocLieuThuan()}
-          {loai === 'TRAC_NGHIEM' && renderTracNghiem()}
-          {loai === 'NOI_CAP' && renderNoiCap()}
-          {loai === 'DIEN_KHUYET' && renderDienKhuyet()}
+            {/* --- FORM 1: LÝ THUYẾT --- */}
+            {loai === 'LY_THUYET' && (
+              <div className="space-y-4">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện (Layout)</label>
+                  <select className="w-full md:w-1/3 px-3 py-2 border border-slate-300 rounded-lg" value={giaoDien} onChange={e => setGiaoDien(e.target.value as GiaoDien)}>
+                    <option value="MAC_DINH">Bố cục Mặc định</option>
+                  </select>
+                </div>
+                <Input label="Tiêu đề Bài Giảng (cauHoi)" value={cauHoi} onChange={e => setCauHoi(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Nội dung Bài Học (noiDung)</label>
+                  <RichTextEditor value={noiDung} onChange={setNoiDung} placeholder="Nhập văn bản bài giảng..." />
+                </div>
+                {renderMediaFields()}
+              </div>
+            )}
+
+            {/* --- FORM 2: TỰ LUẬN --- */}
+            {loai === 'TU_LUAN' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Yêu cầu Đề Bài (cauHoi)</label>
+                  <textarea className="w-full px-3 py-2 border border-slate-300 rounded-lg min-h-[80px]" value={cauHoi} onChange={e => setCauHoi(e.target.value)} placeholder="Nhập câu hỏi tự luận..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Gợi ý / Hướng dẫn giải (noiDung)</label>
+                  <RichTextEditor value={noiDung} onChange={setNoiDung} placeholder="Nhập đáp án mẫu..." />
+                </div>
+                {renderMediaFields()}
+              </div>
+            )}
+
+            {/* --- FORM 3: TRẮC NGHIỆM --- */}
+            {loai === 'TRAC_NGHIEM' && (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện (Template)</label>
+                  <select className="w-full md:w-1/3 px-3 py-2 border border-slate-300 rounded-lg" value={giaoDien} onChange={e => setGiaoDien(e.target.value as GiaoDien)}>
+                    <option value="MAC_DINH">Trắc nghiệm chuẩn</option>
+                    <option value="DAO_VANG">Đào Vàng</option>
+                    <option value="DUOI_BAT">Đuổi Bắt</option>
+                    <option value="THU_HOACH_NONG_SAN">Thu hoạch Nông sản</option>
+                    <option value="ECH_QUA_SONG">Ếch qua sông</option>
+                    <option value="BAN_BONG_BAY">Bắn bóng bay</option>
+                    <option value="TRIEU_PHU">Ai là triệu phú</option>
+                  </select>
+                </div>
+                <Input label="Lời dẫn câu hỏi (cauHoi)" value={cauHoi} onChange={e => setCauHoi(e.target.value)} placeholder="Mô tả chung cho câu hỏi..." />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Lời giải thích (noiDung)</label>
+                  <RichTextEditor value={noiDung} onChange={setNoiDung} placeholder="Nhập lời giải thích..." minHeight="80px" />
+                </div>
+                {renderMediaFields()}
+
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Thành phần Câu hỏi (Dành cho câu ghép từ nhiều đoạn text/ảnh)</label>
+                  {thanhPhanCauHoi.map((item, idx) => (
+                    <div key={item.id} className="flex gap-2 mb-2">
+                      <Input className="flex-1" placeholder="Text đoạn câu hỏi" value={item.noiDung} onChange={e => {
+                        const nw = [...thanhPhanCauHoi]; nw[idx].noiDung = e.target.value; setThanhPhanCauHoi(nw);
+                      }} />
+                      <Input className="w-1/4" placeholder="Ảnh URL" value={item.hinhAnh} onChange={e => {
+                        const nw = [...thanhPhanCauHoi]; nw[idx].hinhAnh = e.target.value; setThanhPhanCauHoi(nw);
+                      }} />
+                      <Button variant="outline" className="px-2" onClick={() => setThanhPhanCauHoi(thanhPhanCauHoi.filter(x => x.id !== item.id))}><Trash2 className="w-4 h-4 text-red-500"/></Button>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => setThanhPhanCauHoi([...thanhPhanCauHoi, {id: uid(), noiDung: ''}])}>+ Thêm đoạn câu hỏi</Button>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-bold text-slate-700 mb-3">Quản lý Đáp án (Lựa chọn)</label>
+                  {luaChon.map((lc, idx) => (
+                    <div key={lc.id} className="flex gap-3 items-start p-3 rounded-lg border mb-3 bg-slate-50">
+                      <div className="pt-2">
+                        <input type="radio" name="tn_ans" className="w-5 h-5 cursor-pointer accent-indigo-600" checked={dapAnDungId === lc.id} onChange={() => setDapAnDungId(lc.id)} />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Input placeholder={`Lựa chọn ${idx + 1}`} value={lc.noiDung} onChange={e => {
+                          const nw = [...luaChon]; nw[idx].noiDung = e.target.value; setLuaChon(nw);
+                        }} />
+                        <div className="flex gap-2">
+                          <Input className="text-xs h-8" placeholder="Hình ảnh URL (Tùy chọn)" value={lc.hinhAnh || ''} onChange={e => {
+                            const nw = [...luaChon]; nw[idx].hinhAnh = e.target.value; setLuaChon(nw);
+                          }} />
+                          <Input className="text-xs h-8" placeholder="Âm thanh URL (Tùy chọn)" value={lc.amThanh || ''} onChange={e => {
+                            const nw = [...luaChon]; nw[idx].amThanh = e.target.value; setLuaChon(nw);
+                          }} />
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setLuaChon(luaChon.filter(x => x.id !== lc.id));
+                        if(dapAnDungId === lc.id) setDapAnDungId('');
+                      }}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => setLuaChon([...luaChon, { id: uid(), noiDung: '' }])}>
+                    <Plus className="w-4 h-4 mr-1" /> Thêm lựa chọn
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* --- FORM 4: NỐI CẶP --- */}
+            {loai === 'NOI_CAP' && (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện (Template)</label>
+                  <select className="w-full md:w-1/3 px-3 py-2 border border-slate-300 rounded-lg" value={giaoDien} onChange={e => setGiaoDien(e.target.value as GiaoDien)}>
+                    <option value="MAC_DINH">Nối cặp (Kéo dây)</option>
+                    <option value="PHAN_LOAI">Phân loại (Thùng rác)</option>
+                  </select>
+                </div>
+                <Input label="Tiêu đề / Yêu cầu (cauHoi)" value={cauHoi} onChange={e => setCauHoi(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Hướng dẫn cách nối (noiDung)</label>
+                  <RichTextEditor value={noiDung} onChange={setNoiDung} placeholder="Hướng dẫn cách nối..." minHeight="80px" />
+                </div>
+                {renderMediaFields()}
+
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Cột trái */}
+                  <div className="bg-white p-4 border rounded-xl space-y-3 shadow-sm">
+                    <h4 className="font-bold text-sm text-slate-700 border-b pb-2">Thẻ Cột Trái</h4>
+                    {cotTrai.map((item, idx) => (
+                      <div key={item.id} className="space-y-2 border p-2 rounded-lg bg-slate-50">
+                        <div className="flex gap-2">
+                          <Input className="flex-1" placeholder="Văn bản..." value={item.noiDung} onChange={e => {
+                            const nw = [...cotTrai]; nw[idx].noiDung = e.target.value; setCotTrai(nw);
+                          }} />
+                          <Button variant="outline" className="px-2" onClick={() => setCotTrai(cotTrai.filter(c => c.id !== item.id))}><Trash2 className="w-4 h-4 text-red-500"/></Button>
+                        </div>
+                        <Input className="h-8 text-xs" placeholder="Hình ảnh (URL)" value={item.hinhAnh || ''} onChange={e => {
+                            const nw = [...cotTrai]; nw[idx].hinhAnh = e.target.value; setCotTrai(nw);
+                        }} />
+                      </div>
+                    ))}
+                    <Button size="sm" variant="outline" onClick={() => setCotTrai([...cotTrai, { id: uid(), noiDung: '' }])}>+ Thêm thẻ bên trái</Button>
+                  </div>
+                  
+                  {/* Cột phải */}
+                  <div className="bg-white p-4 border rounded-xl space-y-3 shadow-sm">
+                    <h4 className="font-bold text-sm text-slate-700 border-b pb-2">Thẻ Cột Phải</h4>
+                    {cotPhai.map((item, idx) => (
+                      <div key={item.id} className="space-y-2 border p-2 rounded-lg bg-slate-50">
+                        <div className="flex gap-2">
+                          <Input className="flex-1" placeholder="Văn bản..." value={item.noiDung} onChange={e => {
+                            const nw = [...cotPhai]; nw[idx].noiDung = e.target.value; setCotPhai(nw);
+                          }} />
+                          <Button variant="outline" className="px-2" onClick={() => setCotPhai(cotPhai.filter(c => c.id !== item.id))}><Trash2 className="w-4 h-4 text-red-500"/></Button>
+                        </div>
+                        <Input className="h-8 text-xs" placeholder="Hình ảnh (URL)" value={item.hinhAnh || ''} onChange={e => {
+                            const nw = [...cotPhai]; nw[idx].hinhAnh = e.target.value; setCotPhai(nw);
+                        }} />
+                      </div>
+                    ))}
+                    <Button size="sm" variant="outline" onClick={() => setCotPhai([...cotPhai, { id: uid(), noiDung: '' }])}>+ Thêm thẻ bên phải</Button>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 border rounded-xl shadow-sm">
+                  <h4 className="font-bold text-sm text-slate-700 mb-4">Thiết lập Cặp Đúng</h4>
+                  {capDung.map((cap, idx) => (
+                    <div key={idx} className="flex gap-3 mb-3 items-center">
+                      <select className="flex-1 border p-2 rounded-lg bg-slate-50" value={cap.traiId} onChange={e => {
+                        const nw = [...capDung]; nw[idx].traiId = e.target.value; setCapDung(nw);
+                      }}>
+                        <option value="">-- Chọn thẻ trái --</option>
+                        {cotTrai.map(c => <option key={c.id} value={c.id}>{c.noiDung || 'Thẻ ảnh'}</option>)}
+                      </select>
+                      <span className="font-bold text-slate-400">GHÉP VỚI</span>
+                      <select className="flex-1 border p-2 rounded-lg bg-slate-50" value={cap.phaiId} onChange={e => {
+                        const nw = [...capDung]; nw[idx].phaiId = e.target.value; setCapDung(nw);
+                      }}>
+                        <option value="">-- Chọn thẻ phải --</option>
+                        {cotPhai.map(c => <option key={c.id} value={c.id}>{c.noiDung || 'Thẻ ảnh'}</option>)}
+                      </select>
+                      <Button variant="outline" onClick={() => setCapDung(capDung.filter((_, i) => i !== idx))}><Trash2 className="w-4 h-4 text-red-500"/></Button>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => setCapDung([...capDung, { traiId: '', phaiId: '' }])}>+ Thêm cặp nối</Button>
+                </div>
+              </div>
+            )}
+
+            {/* --- FORM 5: ĐIỀN KHUYẾT --- */}
+            {loai === 'DIEN_KHUYET' && (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giao diện (Template)</label>
+                  <select className="w-full md:w-1/3 px-3 py-2 border border-slate-300 rounded-lg" value={giaoDien} onChange={e => setGiaoDien(e.target.value as GiaoDien)}>
+                    <option value="MAC_DINH">Nhập liệu chuẩn</option>
+                    <option value="ONG_TIM_MAT">Game Ong Tìm Mật</option>
+                  </select>
+                </div>
+                <Input label="Yêu cầu đề bài (cauHoi)" value={cauHoi} onChange={e => setCauHoi(e.target.value)} />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Giải thích (noiDung)</label>
+                  <RichTextEditor value={noiDung} onChange={setNoiDung} placeholder="Giải thích..." minHeight="80px" />
+                </div>
+                {renderMediaFields()}
+
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Khung văn bản chính (Thành phần Đoạn văn)</label>
+                  {thanhPhanDoanVan.map((item, idx) => (
+                    <div key={item.id} className="flex gap-2 mb-2">
+                      <Input className="flex-1" placeholder="Nội dung văn bản..." value={item.noiDung} onChange={e => {
+                        const nw = [...thanhPhanDoanVan]; nw[idx].noiDung = e.target.value; setThanhPhanDoanVan(nw);
+                      }} />
+                      <Button variant="outline" className="px-2" onClick={() => setThanhPhanDoanVan(thanhPhanDoanVan.filter(x => x.id !== item.id))}><Trash2 className="w-4 h-4 text-red-500"/></Button>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => setThanhPhanDoanVan([...thanhPhanDoanVan, {id: uid(), noiDung: ''}])}>+ Thêm đoạn text</Button>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                  <label className="block text-sm font-bold text-slate-700 mb-3">Thiết lập Chỗ trống (Blank Spaces)</label>
+                  {danhSachCho.map((cho, idx) => (
+                    <div key={cho.id} className="p-3 rounded-lg border border-slate-300 mb-3 bg-slate-50 space-y-3">
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">Mã vị trí: {cho.id.substring(0, 8)}</span>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500" onClick={() => setDanhSachCho(danhSachCho.filter(x => x.id !== cho.id))}><Trash2 className="w-4 h-4"/></Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4">
+                          <label className="text-xs font-bold text-slate-500 block mb-1">Văn bản trước</label>
+                          <Input placeholder="..." value={cho.vanBanTruoc} onChange={e => {
+                            const nw = [...danhSachCho]; nw[idx].vanBanTruoc = e.target.value; setDanhSachCho(nw);
+                          }} />
+                        </div>
+                        <div className="col-span-4">
+                          <label className="text-xs font-bold text-indigo-600 block mb-1">ĐÁP ÁN ĐÚNG</label>
+                          <Input className="font-bold text-indigo-700 bg-indigo-50 border-indigo-300" placeholder="vd: một ngày" value={cho.dapAn} onChange={e => {
+                            const nw = [...danhSachCho]; nw[idx].dapAn = e.target.value; setDanhSachCho(nw);
+                          }} />
+                        </div>
+                        <div className="col-span-4">
+                          <label className="text-xs font-bold text-slate-500 block mb-1">Văn bản sau</label>
+                          <Input placeholder="..." value={cho.vanBanSau} onChange={e => {
+                            const nw = [...danhSachCho]; nw[idx].vanBanSau = e.target.value; setDanhSachCho(nw);
+                          }} />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 block mb-1">Danh sách mồi nhử (Nhập các từ cách nhau bằng dấu phẩy)</label>
+                        <Input className="text-sm" placeholder="VD: một ngày, một đêm, buổi sáng" value={cho.danhSachLuaChon} onChange={e => {
+                          const nw = [...danhSachCho]; nw[idx].danhSachLuaChon = e.target.value; setDanhSachCho(nw);
+                        }} />
+                      </div>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => setDanhSachCho([...danhSachCho, { id: uid(), vanBanTruoc: '', vanBanSau: '', dapAn: '', danhSachLuaChon: '' }])}>
+                    + Thêm chỗ trống
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+          </section>
         </div>
 
-        {/* Hành động */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-          <Button variant="outline" onClick={onCancel}>Hủy</Button>
-          <Button onClick={handleSave} isLoading={isSaving} className="bg-indigo-600 hover:bg-indigo-700">
-            <Save className="w-4 h-4 mr-2" /> Lưu Dữ Liệu
+        {/* Footer Actions */}
+        <div className="p-4 bg-slate-100 flex justify-end gap-3 rounded-b-xl border-t border-slate-200">
+          <Button variant="outline" onClick={onCancel}>Hủy bỏ</Button>
+          <Button onClick={handleSave} isLoading={isSaving} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+            <Save className="w-4 h-4 mr-2" /> LƯU THÔNG TIN
           </Button>
-        </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
+

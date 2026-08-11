@@ -9,4 +9,8 @@ import java.util.Optional;
 @Repository
 public interface KetQuaCuoiNamRepository extends JpaRepository<KetQuaCuoiNam, Long> {
     Optional<KetQuaCuoiNam> findByHocSinh_HocSinhIdAndNamHoc(Long hocSinhId, String namHoc);
+    
+    java.util.List<KetQuaCuoiNam> findByLopHoc_LopHocId(Long lopHocId);
+    
+    Optional<KetQuaCuoiNam> findByHocSinh_HocSinhIdAndLopHoc_LopHocId(Long hocSinhId, Long lopHocId);
 }

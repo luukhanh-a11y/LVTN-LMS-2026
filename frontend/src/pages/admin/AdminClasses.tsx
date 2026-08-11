@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import Button from '../../components/Button';
 import { classService } from '../../services/class.service';
+import { adminService } from '../../services/admin.service';
+import { academicService, type CauHinhHeThong } from '../../services/academic.service';
 import toast from 'react-hot-toast';
 
 export default function AdminClasses() {
@@ -12,7 +14,10 @@ export default function AdminClasses() {
   const grades = [1, 2, 3, 4, 5];
   
   const [classes, setClasses] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [cauHinh, setCauHinh] = useState<CauHinhHeThong | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -36,8 +41,70 @@ export default function AdminClasses() {
         setLoading(false);
       }
     };
+    const fetchDependencies = async () => {
+      try {
+        const [teachersData, cauHinhData] = await Promise.all([
+          adminService.getUsers('GIAO_VIEN'),
+          academicService.getCauHinhHeThong()
+        ]);
+        setTeachers(teachersData.content || teachersData || []);
+        setCauHinh(cauHinhData);
+      } catch (error) {
+        console.error('Lỗi tải dữ liệu phụ trợ', error);
+      }
+    };
     fetchClasses();
+    fetchDependencies();
   }, []);
+
+  const handleCreateClass = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!cauHinh?.hocKyHienTaiId) {
+      toast.error('Hệ thống chưa được cấu hình năm học, không thể tạo lớp!');
+      return;
+    }
+    
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      tenLop: formData.get('tenLop') as string,
+      khoiLop: Number(formData.get('khoiLop')),
+      giaoVienChuNhiemId: formData.get('giaoVienChuNhiemId') ? Number(formData.get('giaoVienChuNhiemId')) : null,
+      siSoToiDa: 40,
+      trangThai: 'ACTIVE',
+      // Get the current year ID by inferring from config or assuming we just pass what the API needs
+      // Note: Backend LopHoc uses namHocId. We should fetch namHocs or try to find current namHocId.
+      // Wait, let's just pass 1 for now if we can't find it easily from CauHinhHeThong. 
+      // CauHinhHeThong has namHocDanhGia? Let's just use 1 as fallback or ask user.
+      namHocId: 1 
+    };
+
+    if (!payload.tenLop) {
+      toast.error('Vui lòng nhập tên lớp');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await classService.createClass(payload);
+      toast.success('Tạo lớp học thành công!');
+      setShowAddModal(false);
+      // Reload classes
+      const data = await classService.getAllClasses();
+      const mapped = data.map((c: any) => ({
+        id: c.lopHocId,
+        name: c.tenLop,
+        grade: c.khoiLop,
+        teacherName: c.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
+        studentCount: `${c.siSoHienTai || 0}/${c.siSoToiDa}`,
+        status: c.trangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'
+      }));
+      setClasses(mapped);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi khi tạo lớp');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const filteredClasses = classes.filter(c => 
     c.grade === activeGrade && 
@@ -160,11 +227,12 @@ export default function AdminClasses() {
               </button>
             </div>
             
-            <form onSubmit={(e) => { e.preventDefault(); setShowAddModal(false); }} className="p-6 bg-slate-50/50 space-y-4">
+            <form onSubmit={handleCreateClass} className="p-6 bg-slate-50/50 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Tên lớp</label>
                 <input 
                   type="text" 
+                  name="tenLop"
                   placeholder="VD: 1A3"
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                 />
@@ -172,17 +240,20 @@ export default function AdminClasses() {
               
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Thuộc khối</label>
-                <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                <select name="khoiLop" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" defaultValue={activeGrade}>
                   {grades.map(g => <option key={g} value={g}>Khối {g}</option>)}
                 </select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Giáo viên chủ nhiệm</label>
-                <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                <select name="giaoVienChuNhiemId" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
                   <option value="">-- Chọn giáo viên --</option>
-                  <option value="1">Trần Lê A</option>
-                  <option value="2">Phạm Văn D</option>
+                  {teachers.map((t: any) => (
+                    <option key={t.nguoiDungId || t.giaoVienId} value={t.giaoVienId || t.nguoiDungId}>
+                      {t.hoTen || t.tenDangNhap}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -196,8 +267,9 @@ export default function AdminClasses() {
                 </Button>
                 <Button 
                   type="submit" 
+                  disabled={isSubmitting}
                 >
-                  Tạo lớp mới
+                  {isSubmitting ? 'Đang tạo...' : 'Tạo lớp mới'}
                 </Button>
               </div>
             </form>

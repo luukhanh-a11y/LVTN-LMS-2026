@@ -36,6 +36,9 @@ public class LopHocService {
     HoSoGiaoVienRepository hoSoGiaoVienRepository;
 
     public LopHocResponse create(LopHocRequest request) {
+        if (lopHocRepository.existsByTenLop(request.getTenLop())) {
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
+        }
         LopHoc lopHoc = lopHocMapper.toEntity(request);
         
         if (request.getNamHocId() != null) {

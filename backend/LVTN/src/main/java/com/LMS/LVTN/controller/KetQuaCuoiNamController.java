@@ -47,6 +47,24 @@ public class KetQuaCuoiNamController {
                 .build();
     }
 
+    @GetMapping("/lop-hoc/{lopHocId}")
+    public ApiResponse<List<KetQuaCuoiNamResponse>> getByLopHocId(@PathVariable Long lopHocId) {
+        return ApiResponse.<List<KetQuaCuoiNamResponse>>builder()
+                .data(ketQuaCuoiNamService.getByLopHocId(lopHocId))
+                .build();
+    }
+
+    @PutMapping("/lop-hoc/{lopHocId}/hoc-sinh/{hocSinhId}")
+    public ApiResponse<KetQuaCuoiNamResponse> saveOrUpdateKetQuaCuoiNam(
+            @PathVariable Long lopHocId,
+            @PathVariable Long hocSinhId,
+            @RequestBody KetQuaCuoiNamRequest request,
+            @RequestHeader("Authorization") String token) {
+        return ApiResponse.<KetQuaCuoiNamResponse>builder()
+                .data(ketQuaCuoiNamService.saveOrUpdateKetQuaCuoiNam(lopHocId, hocSinhId, request, token))
+                .build();
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<KetQuaCuoiNamResponse> update(@PathVariable Long id, @RequestBody KetQuaCuoiNamRequest request) {
         return ApiResponse.<KetQuaCuoiNamResponse>builder()
@@ -63,8 +81,10 @@ public class KetQuaCuoiNamController {
     }
 
     @PostMapping("/thong-bao-mo-danh-gia")
-    public ApiResponse<String> thongBaoMoDanhGia(@RequestParam String namHoc) {
-        ketQuaCuoiNamService.thongBaoMoDanhGia(namHoc);
+    public ApiResponse<String> thongBaoMoDanhGia(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestParam String namHoc) {
+        ketQuaCuoiNamService.thongBaoMoDanhGia(token, namHoc);
         return ApiResponse.<String>builder()
                 .data("Đã gửi thông báo mở đợt đánh giá cho tất cả Giáo viên chủ nhiệm.")
                 .build();

@@ -133,7 +133,7 @@ export const teacherService = {
   },
 
   // Danh sách lớp giáo viên được phân công giảng dạy, lọc theo học kỳ hiện tại (useAcademicStore)
-  getClasses: async (): Promise<ClassRoom[]> => {
+  getClasses: async (options?: { onlyTeaching?: boolean }): Promise<ClassRoom[]> => {
     const profile = await teacherService.getMyTeacherProfile();
     const phanCongs = await classService.getPhanCongByGiaoVien(profile.giaoVienId);
     const currentHocKyId = useAcademicStore.getState().currentHocKyId;
@@ -141,10 +141,12 @@ export const teacherService = {
 
     // Lấy tất cả lớp học để kiểm tra xem có lớp nào mình làm GVCN mà không có phân công giảng dạy không
     let tatCaLopHoc: any[] = [];
-    try {
-      tatCaLopHoc = await classService.getAllClasses();
-    } catch (e) {
-      console.error("Failed to fetch all classes", e);
+    if (!options?.onlyTeaching) {
+      try {
+        tatCaLopHoc = await classService.getAllClasses();
+      } catch (e) {
+        console.error("Failed to fetch all classes", e);
+      }
     }
 
     const byLop = new Map<number, any>();
@@ -158,17 +160,19 @@ export const teacherService = {
     });
 
     // Bổ sung thêm các lớp mà giáo viên này làm GVCN (kể cả khi không có phân công giảng dạy nào)
-    const selectedNamHocId = useAcademicStore.getState().selectedNamHocId;
-    tatCaLopHoc.forEach((lop: any) => {
-      // Chỉ lấy các lớp thuộc năm học đang được chọn
-      if (selectedNamHocId && lop.namHoc?.namHocId !== selectedNamHocId) return;
+    if (!options?.onlyTeaching) {
+      const selectedNamHocId = useAcademicStore.getState().selectedNamHocId;
+      tatCaLopHoc.forEach((lop: any) => {
+        // Chỉ lấy các lớp thuộc năm học đang được chọn
+        if (selectedNamHocId && lop.namHoc?.namHocId !== selectedNamHocId) return;
 
-      if (lop.giaoVienChuNhiem?.giaoVienId === profile.giaoVienId) {
-        if (!byLop.has(lop.lopHocId)) {
-          byLop.set(lop.lopHocId, { lopHocId: lop.lopHocId, tenLop: lop.tenLop, monHocList: [] as any[] });
+        if (lop.giaoVienChuNhiem?.giaoVienId === profile.giaoVienId) {
+          if (!byLop.has(lop.lopHocId)) {
+            byLop.set(lop.lopHocId, { lopHocId: lop.lopHocId, tenLop: lop.tenLop, monHocList: [] as any[] });
+          }
         }
-      }
-    });
+      });
+    }
 
     let allStudents: any[] = [];
     try {
@@ -343,8 +347,20 @@ export const teacherService = {
 
 
   getReports: async (classId?: number, semesterId?: number): Promise<any> => {
-    const response = await api.get('/teachers/me/reports', { params: { classId, semesterId } });
-    return response.data;
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error('Not logged in');
+    
+    // Default to current semester if not provided, assuming ID = 1 for now (or let backend handle if semesterId is null - wait, the API requires it)
+    const effectiveSemesterId = semesterId || 1; // You may want to fetch the active semester here or require the component to pass it.
+    
+    const response = await api.get('/gradebook/classes', { 
+      params: { 
+        giaoVienId: user.userId, 
+        classId, 
+        semesterId: effectiveSemesterId 
+      } 
+    });
+    return response.data?.data || response.data;
   },
 
   getStudentProgress: async (studentId: number): Promise<any> => {

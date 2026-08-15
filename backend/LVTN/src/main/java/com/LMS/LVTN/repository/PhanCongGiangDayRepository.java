@@ -11,5 +11,6 @@ import java.util.Optional;
 public interface PhanCongGiangDayRepository extends JpaRepository<PhanCongGiangDay, Long> {
     List<PhanCongGiangDay> findByGiaoVien_GiaoVienId(Long giaoVienId);
     List<PhanCongGiangDay> findByLopHoc_LopHocId(Long lopHocId);
+    List<PhanCongGiangDay> findByLopHoc_LopHocIdAndHocKy_HocKyId(Long lopHocId, Integer hocKyId);
     Optional<PhanCongGiangDay> findByGiaoVien_GiaoVienIdAndLopHoc_LopHocIdAndMonHoc_MaMonAndHocKy_HocKyId(Long giaoVienId, Long lopHocId, String maMon, Integer hocKyId);
 }

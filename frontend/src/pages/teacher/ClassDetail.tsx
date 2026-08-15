@@ -4,6 +4,7 @@ import { ChevronLeft, CheckSquare, Users, Award, ShieldAlert, AlertCircle, Info,
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
+import Gradebook from './Gradebook';
 
 export default function ClassDetail() {
   const { classId: classIdParam } = useParams();
@@ -154,6 +155,7 @@ export default function ClassDetail() {
   };
 
   const [bulkConduct, setBulkConduct] = useState('TOT');
+  const [bulkAcademic, setBulkAcademic] = useState('HOAN_THANH');
   const [bulkDecision, setBulkDecision] = useState('LEN_LOP');
 
   const handleBulkApprove = async () => {
@@ -165,16 +167,17 @@ export default function ClassDetail() {
     try {
       setLoading(true);
       await Promise.all(
-        selectedStudents.map(studentId => 
-          teacherService.luuKetQuaCuoiNam(classId, studentId, {
-            ketQuaHocTap: 'HOAN_THANH',
-            ketQuaRenLuyen: bulkConduct,
-            quyetDinh: bulkDecision,
+        selectedStudents.map(studentId => {
+          const student = studentsData.find(s => s.id === studentId);
+          return teacherService.luuKetQuaCuoiNam(classId, studentId, {
+            ketQuaHocTap: student?.academic === 'Chưa xếp' ? 'HOAN_THANH' : (student?.academic || 'HOAN_THANH'),
+            ketQuaRenLuyen: student?.conduct === 'Chưa xét' ? 'TOT' : (student?.conduct || 'TOT'),
+            quyetDinh: student?.result === 'CHUA_XET' ? 'LEN_LOP' : (student?.result || 'LEN_LOP'),
             duocXetDacCach: false
-          })
-        )
+          });
+        })
       );
-      toast.success(`Đã duyệt kết quả cuối năm cho ${selectedStudents.length} học sinh!`);
+      toast.success(`Đã lưu và duyệt kết quả cho ${selectedStudents.length} học sinh!`);
       setSelectedStudents([]);
       // Refresh students
       const [allStudents, ketQuaList] = await Promise.all([
@@ -191,8 +194,8 @@ export default function ClassDetail() {
             dob: hs.ngaySinh ? new Date(hs.ngaySinh).toLocaleDateString('vi-VN') : (hs.dob || 'N/A'),
             avgScore: kq?.diemTrungBinh || 0,
             academic: kq?.ketQuaHocTap || 'Chưa xếp',
-            conduct: kq?.ketQuaRenLuyen || 'Tốt',
-            result: kq?.quyetDinh === 'LEN_LOP' ? 'LEN_LOP' : (kq?.quyetDinh === 'O_LAI' ? 'O_LAI' : 'CHUA_XET')
+            conduct: kq?.ketQuaRenLuyen || 'Chưa xét',
+            result: kq?.quyetDinh || 'CHUA_XET'
           };
         });
         setStudentsData(mergedData);
@@ -204,8 +207,23 @@ export default function ClassDetail() {
     }
   };
 
+  const updateStudentField = (id: number, field: string, value: string) => {
+    setStudentsData(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  };
+
+  const applyBulkValues = () => {
+    if (selectedStudents.length === 0) return;
+    setStudentsData(prev => prev.map(s => {
+      if (selectedStudents.includes(s.id)) {
+        return { ...s, academic: bulkAcademic, conduct: bulkConduct, result: bulkDecision };
+      }
+      return s;
+    }));
+    toast.success('Đã áp dụng thông tin cho các học sinh được chọn!');
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6 flex flex-col h-[calc(100vh-8rem)]">
+    <div className="max-w-6xl mx-auto space-y-6 flex flex-col min-h-[calc(100vh-8rem)]">
       
       {/* Banner thông báo - CHỈ HIỆN CHO GVCN */}
       {isSystemEvaluationOpen && isHomeroomTeacher && (
@@ -281,14 +299,26 @@ export default function ClassDetail() {
                 </span>
                 {selectedStudents.length > 0 && (
                   <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200 border-l border-slate-300 pl-4">
+                    <select value={bulkAcademic} onChange={e => setBulkAcademic(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
+                      <option value="HOAN_THANH_TOT">KQ học tập: Hoàn thành tốt</option>
+                      <option value="HOAN_THANH">KQ học tập: Hoàn thành</option>
+                      <option value="CHUA_HOAN_THANH">KQ học tập: Chưa hoàn thành</option>
+                    </select>
                     <select value={bulkConduct} onChange={e => setBulkConduct(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
-                      <option value="TOT">Đồng loạt Hạnh kiểm: Tốt</option>
-                      <option value="KHA">Đồng loạt Hạnh kiểm: Khá</option>
+                      <option value="TOT">KQ rèn luyện: Tốt</option>
+                      <option value="DAT">KQ rèn luyện: Đạt</option>
+                      <option value="CAN_CO_GANG">KQ rèn luyện: Cần cố gắng</option>
                     </select>
                     <select value={bulkDecision} onChange={e => setBulkDecision(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none bg-white">
                       <option value="LEN_LOP">Quyết định: Lên lớp</option>
                       <option value="O_LAI">Quyết định: Ở lại lớp</option>
                     </select>
+                    <button 
+                      onClick={applyBulkValues}
+                      className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 rounded-lg text-sm font-medium transition cursor-pointer"
+                    >
+                      Áp dụng hàng loạt
+                    </button>
                   </div>
                 )}
               </div>
@@ -318,8 +348,8 @@ export default function ClassDetail() {
                     </th>
                     <th className="px-6 py-4 font-semibold">Họ và tên</th>
                     <th className="px-6 py-4 font-semibold text-center">ĐTB Cả năm</th>
-                    <th className="px-6 py-4 font-semibold">Học lực</th>
-                    <th className="px-6 py-4 font-semibold">Hạnh kiểm</th>
+                    <th className="px-6 py-4 font-semibold">Kết quả học tập</th>
+                    <th className="px-6 py-4 font-semibold">Kết quả rèn luyện</th>
                     <th className="px-6 py-4 font-semibold">Quyết định</th>
                   </tr>
                 </thead>
@@ -347,20 +377,39 @@ export default function ClassDetail() {
                             {student.avgScore.toFixed(1)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-medium">{student.academic}</td>
-                        <td className="px-6 py-4">
-                          <select className="px-2 py-1.5 border border-transparent hover:border-slate-200 rounded text-sm bg-transparent hover:bg-white transition cursor-pointer">
-                            <option selected={student.conduct === 'Tốt'}>Tốt</option>
-                            <option selected={student.conduct === 'Khá'}>Khá</option>
-                            <option selected={student.conduct === 'Trung bình'}>Trung bình</option>
-                            <option selected={student.conduct === 'Yếu'}>Yếu</option>
+                        <td className="px-6 py-4 font-medium">
+                          <select 
+                            value={student.academic === 'Chưa xếp' ? 'HOAN_THANH' : student.academic} 
+                            onChange={(e) => updateStudentField(student.id, 'academic', e.target.value)}
+                            className="px-2 py-1.5 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer"
+                          >
+                            <option value="HOAN_THANH_TOT">Hoàn thành tốt</option>
+                            <option value="HOAN_THANH">Hoàn thành</option>
+                            <option value="CHUA_HOAN_THANH">Chưa hoàn thành</option>
                           </select>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={cn("px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 w-max", isPassed ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200")}>
-                            {isPassed ? <CheckSquare className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
-                            {isPassed ? 'Lên lớp' : 'Ở lại lớp'}
-                          </span>
+                          <select 
+                            value={student.conduct === 'Chưa xét' ? 'TOT' : student.conduct} 
+                            onChange={(e) => updateStudentField(student.id, 'conduct', e.target.value)}
+                            className="px-2 py-1.5 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer"
+                          >
+                            <option value="TOT">Tốt</option>
+                            <option value="DAT">Đạt</option>
+                            <option value="CAN_CO_GANG">Cần cố gắng</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4">
+                          <select 
+                            value={student.result === 'CHUA_XET' ? 'LEN_LOP' : student.result} 
+                            onChange={(e) => updateStudentField(student.id, 'result', e.target.value)}
+                            className={cn("px-2 py-1.5 rounded text-sm font-semibold border cursor-pointer focus:outline-none", 
+                              (student.result === 'CHUA_XET' ? 'LEN_LOP' : student.result) === 'LEN_LOP' ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
+                            )}
+                          >
+                            <option value="LEN_LOP">Lên lớp</option>
+                            <option value="O_LAI">Ở lại lớp</option>
+                          </select>
                         </td>
                       </tr>
                     );
@@ -427,12 +476,9 @@ export default function ClassDetail() {
           </div>
         )}
 
-        {/* Placeholder cho Tab Bảng điểm */}
+        {/* Tab Bảng điểm */}
         {activeTab === 'bang-diem' && (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8">
-            <Users className="w-16 h-16 mb-4 text-slate-200" />
-            <p>Dữ liệu bảng điểm đang được cập nhật...</p>
-          </div>
+          <Gradebook embedded={true} classId={classId} />
         )}
       </div>
 

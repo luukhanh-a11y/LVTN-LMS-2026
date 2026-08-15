@@ -62,8 +62,11 @@ public class BaiTapService {
 
         if (chiTietRequests != null && !chiTietRequests.isEmpty()) {
             for (ChiTietBaiTapRequest ctReq : chiTietRequests) {
-                if (ctReq.getDangBaiId() == null || dangBaiRepository.isSachGiaoKhoa(ctReq.getDangBaiId()) || !dangBaiRepository.existsById(ctReq.getDangBaiId())) {
+                if (ctReq.getDangBaiId() == null || !dangBaiRepository.existsById(ctReq.getDangBaiId())) {
                     throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
+                }
+                if (dangBaiRepository.isSachGiaoKhoa(ctReq.getDangBaiId())) {
+                    throw new AppExceptions(Errorcode.INVALID_DATA, "Không thể giao bài tập từ Sách giáo khoa");
                 }
             }
         }

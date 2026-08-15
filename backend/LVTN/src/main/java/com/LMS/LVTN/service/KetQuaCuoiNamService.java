@@ -126,7 +126,8 @@ public class KetQuaCuoiNamService {
     }
 
     @Transactional
-    public KetQuaCuoiNamResponse saveOrUpdateKetQuaCuoiNam(Long lopHocId, Long hocSinhId, KetQuaCuoiNamRequest request, String token) {
+    public KetQuaCuoiNamResponse saveOrUpdateKetQuaCuoiNam(Long lopHocId, Long hocSinhId, KetQuaCuoiNamRequest request,
+            String token) {
         KetQuaCuoiNam ketQua = ketQuaCuoiNamRepository.findByHocSinh_HocSinhIdAndLopHoc_LopHocId(hocSinhId, lopHocId)
                 .orElse(new KetQuaCuoiNam());
 
@@ -137,23 +138,40 @@ public class KetQuaCuoiNamService {
 
         if (ketQua.getKetQuaId() == null) {
             ketQua.setDaDuyet(false);
-            ketQua.setNamHoc(request.getNamHoc());
             
+            // Luôn ưu tiên lấy năm học từ Lớp học để tránh FE gửi sai định dạng quá 10 ký tự
+            if (ketQua.getLopHoc() != null && ketQua.getLopHoc().getNamHoc() != null) {
+                ketQua.setNamHoc(ketQua.getLopHoc().getNamHoc().getTenNamHoc());
+            } else {
+                ketQua.setNamHoc(request.getNamHoc());
+            }
+
             try {
-                String maGiaoVien = authenticationService.getMaNguoiDungFromToken(token);
-                HoSoGiaoVien giaoVien = hoSoGiaoVienRepository.findByMaGiaoVien(maGiaoVien);
+                String nguoiDungId = authenticationService.getMaNguoiDungFromToken(token);
+                HoSoGiaoVien giaoVien = hoSoGiaoVienRepository.findByNguoiDung_NguoiDungId(nguoiDungId).orElse(null);
+                
+                if (giaoVien == null && ketQua.getLopHoc() != null) {
+                    giaoVien = ketQua.getLopHoc().getGiaoVienChuNhiem();
+                }
+                
                 ketQua.setGiaoVienXet(giaoVien);
             } catch (java.text.ParseException e) {
                 // Ignore or handle
             }
         }
 
-        if (request.getKetQuaHocTap() != null) ketQua.setKetQuaHocTap(request.getKetQuaHocTap());
-        if (request.getKetQuaRenLuyen() != null) ketQua.setKetQuaRenLuyen(request.getKetQuaRenLuyen());
-        if (request.getQuyetDinh() != null) ketQua.setQuyetDinh(request.getQuyetDinh());
-        if (request.getDuocXetDacCach() != null) ketQua.setDuocXetDacCach(request.getDuocXetDacCach());
-        if (request.getLyDoDacCach() != null) ketQua.setLyDoDacCach(request.getLyDoDacCach());
-        if (request.getGhiChu() != null) ketQua.setGhiChu(request.getGhiChu());
+        if (request.getKetQuaHocTap() != null)
+            ketQua.setKetQuaHocTap(request.getKetQuaHocTap());
+        if (request.getKetQuaRenLuyen() != null)
+            ketQua.setKetQuaRenLuyen(request.getKetQuaRenLuyen());
+        if (request.getQuyetDinh() != null)
+            ketQua.setQuyetDinh(request.getQuyetDinh());
+        if (request.getDuocXetDacCach() != null)
+            ketQua.setDuocXetDacCach(request.getDuocXetDacCach());
+        if (request.getLyDoDacCach() != null)
+            ketQua.setLyDoDacCach(request.getLyDoDacCach());
+        if (request.getGhiChu() != null)
+            ketQua.setGhiChu(request.getGhiChu());
 
         ketQua.setNgayXet(java.time.LocalDate.now());
 
@@ -161,7 +179,8 @@ public class KetQuaCuoiNamService {
     }
 
     @Transactional
-    public List<KetQuaCuoiNamResponse> duyetHangLoat(String token, List<com.LMS.LVTN.dto.request.KetQuaCuoiNamDuyetRequest> requests) {
+    public List<KetQuaCuoiNamResponse> duyetHangLoat(String token,
+            List<com.LMS.LVTN.dto.request.KetQuaCuoiNamDuyetRequest> requests) {
         String nguoiThucHienId;
         try {
             nguoiThucHienId = authenticationService.getMaNguoiDungFromToken(token);
@@ -185,7 +204,8 @@ public class KetQuaCuoiNamService {
                 }
                 chuyenLopReq.setLopMoiId(req.getLopMoiId());
                 chuyenLopReq.setNamHocCu(ketQua.getNamHoc());
-                chuyenLopReq.setNamHocMoi(req.getNamHocMoi() != null ? req.getNamHocMoi() : (ketQua.getNamHoc() + " -> Mới"));
+                chuyenLopReq.setNamHocMoi(
+                        req.getNamHocMoi() != null ? req.getNamHocMoi() : (ketQua.getNamHoc() + " -> Mới"));
 
                 if (ketQua.getQuyetDinh() == QuyetDinhCuoiNam.LEN_LOP) {
                     chuyenLopReq.setLyDo(LyDoChuyenLop.LEN_LOP);
@@ -196,7 +216,8 @@ public class KetQuaCuoiNamService {
                 }
 
                 chuyenLopReq.setNguoiThucHienId(nguoiThucHienId);
-                chuyenLopReq.setGhiChu("Admin duyệt Kết quả cuối năm #" + ketQua.getKetQuaId() + " — Quyết định: " + ketQua.getQuyetDinh());
+                chuyenLopReq.setGhiChu("Admin duyệt Kết quả cuối năm #" + ketQua.getKetQuaId() + " — Quyết định: "
+                        + ketQua.getQuyetDinh());
 
                 lichSuChuyenLopService.create(chuyenLopReq);
             }
@@ -232,7 +253,8 @@ public class KetQuaCuoiNamService {
             com.LMS.LVTN.dto.request.ThongBaoRequest tbReq = new com.LMS.LVTN.dto.request.ThongBaoRequest();
             tbReq.setNguoiGuiId(adminId); // Set nguoiGuiId to avoid constraint violation
             tbReq.setTieuDe("MỞ ĐỢT ĐÁNH GIÁ CUỐI NĂM HỌC " + namHoc);
-            tbReq.setNoiDung("Đợt đánh giá xếp loại cuối năm học " + namHoc + " đã được mở. Quý Thầy/Cô vui lòng truy cập hệ thống để nhập kết quả cho lớp chủ nhiệm.");
+            tbReq.setNoiDung("Đợt đánh giá xếp loại cuối năm học " + namHoc
+                    + " đã được mở. Quý Thầy/Cô vui lòng truy cập hệ thống để nhập kết quả cho lớp chủ nhiệm.");
             tbReq.setNguoiNhanId(gv.getNguoiDung().getNguoiDungId());
             tbReq.setLoaiThongBao(com.LMS.LVTN.enums.LoaiThongBao.HE_THONG);
             tbReq.setLaGhim(true);

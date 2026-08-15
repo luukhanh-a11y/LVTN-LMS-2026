@@ -23,6 +23,12 @@ public interface LichSuTuHocRepository extends JpaRepository<LichSuTuHoc, Long> 
     @Query("SELECT COUNT(DISTINCT l.dangBai.dangBaiId) FROM LichSuTuHoc l WHERE l.hocSinh.hocSinhId = :hocSinhId AND l.dangBai.baiHoc.baiHocId = :baiHocId")
     int countDistinctDangBaiByHocSinhAndBaiHoc(@Param("hocSinhId") Long hocSinhId, @Param("baiHocId") Integer baiHocId);
 
+    @Query("SELECT AVG(l.diemSo) FROM LichSuTuHoc l WHERE l.hocSinh.hocSinhId = :hocSinhId AND l.dangBai.baiHoc.chuDe.sach.maMon = :maMon")
+    Double getAverageScoreByStudentAndSubject(@Param("hocSinhId") Long hocSinhId, @Param("maMon") String maMon);
+    
+    @Query("SELECT COUNT(l) FROM LichSuTuHoc l WHERE l.hocSinh.hocSinhId = :hocSinhId AND l.dangBai.baiHoc.chuDe.sach.maMon = :maMon")
+    Integer countByStudentAndSubject(@Param("hocSinhId") Long hocSinhId, @Param("maMon") String maMon);
+
     // Tính điểm trung bình lịch sử tự học của một học sinh trong một bài học
     @Query("SELECT AVG(l.diemSo) FROM LichSuTuHoc l WHERE l.hocSinh.hocSinhId = :hocSinhId AND l.dangBai.baiHoc.baiHocId = :baiHocId")
     Optional<BigDecimal> tinhDiemTrungBinhTuHocTrongBaiHoc(@Param("hocSinhId") Long hocSinhId, @Param("baiHocId") Integer baiHocId);

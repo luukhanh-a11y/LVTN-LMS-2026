@@ -13,4 +13,5 @@ public class NamHocResponse {
     private String tenNamHoc;
     private LocalDate ngayBatDau;
     private LocalDate ngayKetThuc;
+    private String trangThai; // HIEN_TAI, CU, MOI
 }

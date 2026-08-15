@@ -23,7 +23,7 @@ export default function Materials() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    teacherService.getClasses().then(data => {
+    teacherService.getClasses({ onlyTeaching: true }).then(data => {
       setClasses(data);
       const uniqueGrades = Array.from(new Set(data.map((c: any) => c.grade))).sort();
       setGrades(uniqueGrades);
@@ -135,7 +135,7 @@ export default function Materials() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 flex flex-col h-[calc(100vh-8rem)]">
+    <div className="max-w-6xl mx-auto space-y-6 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -231,23 +231,68 @@ export default function Materials() {
           <div className="p-6 flex-1 overflow-y-auto space-y-4">
             {loading ? (
                <div className="text-center py-12 text-slate-500">Đang tải dữ liệu...</div>
-            ) : materials.map((m, idx) => (
-              <Link to={`/teacher/materials/${m.dangBaiId || m.id}`} key={m.dangBaiId || m.id} className="block border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white shadow-sm cursor-pointer group">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1">{getQuestionIcon(m.loaiNoiDung || 'TRAC_NGHIEM')}</div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="font-bold text-slate-700 text-sm">Học liệu {idx + 1}</span>
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded">{m.loaiNoiDung || 'N/A'}</span>
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded">XP: {m.xpThuong || 0}</span>
+            ) : materials.map((m, idx) => {
+              let cauHinh: any = {};
+              let dapAnChuan: any = null;
+              try {
+                if (m.duLieuGame) cauHinh = JSON.parse(m.duLieuGame);
+                if (m.dapAnChuan) dapAnChuan = JSON.parse(m.dapAnChuan);
+              } catch { }
+
+              return (
+                <Link to={`/teacher/materials/${m.dangBaiId || m.id}`} key={m.dangBaiId || m.id} className="block border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white shadow-sm cursor-pointer group">
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">{getQuestionIcon(m.loaiNoiDung || 'TRAC_NGHIEM')}</div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="font-bold text-slate-700 text-sm">Học liệu {idx + 1}</span>
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded">{m.loaiNoiDung || 'N/A'}</span>
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded">XP: {m.xpThuong || 0}</span>
+                        </div>
+                        <p className="text-slate-900 font-bold group-hover:text-blue-600 transition-colors mb-2">{m.tenDangBai || m.content}</p>
+
+                        {/* Hiển thị chi tiết câu hỏi và đáp án */}
+                        <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
+                          <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                          {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
+                            <ul className="mt-2 space-y-1">
+                              {cauHinh.luaChon.map((choice: any, cIdx: number) => {
+                                const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
+                                const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
+                                const isCorrect = dapAnChuan !== null && (
+                                  (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
+                                  (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
+                                  (String(dapAnChuan) === String(val))
+                                );
+                                return (
+                                  <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
+                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
+                                    {hinhAnh ? (
+                                      <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
+                                    ) : (
+                                      <span>{val}</span>
+                                    )}
+                                    {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          ) : (
+                            dapAnChuan && (
+                              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
+                                Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
+                              </div>
+                            )
+                          )}
+                        </div>
+
                       </div>
-                      <p className="text-slate-900 font-medium group-hover:text-blue-600 transition-colors">{m.tenDangBai || m.content}</p>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
 
             {!loading && materials.length === 0 && (
               <div className="text-center py-12 text-slate-500">

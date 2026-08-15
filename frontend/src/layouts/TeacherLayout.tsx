@@ -147,11 +147,7 @@ export default function TeacherLayout() {
         <nav className="flex-1 px-4 flex flex-col gap-1 overflow-y-auto">
           <NavItem to="/teacher" icon={Home} label="Tổng quan" />
           <NavItem to="/teacher/classes" icon={Users} label="Lớp học của tôi" />
-          <NavItem to="/teacher/announcements" icon={Megaphone} label="Bảng tin" />
-          <NavItem to="/teacher/assignments/create" icon={FileText} label="Giao bài tập" />
-          <NavItem to="/teacher/materials" icon={Library} label="Kho Học liệu" />
-          <NavItem to="/teacher/grading" icon={CheckSquare} label="Chấm bài" />
-          <NavItem to="/teacher/reports" icon={FileText} label="Sổ điểm" />
+          <NavItem to="/teacher/materials" icon={Library} label="Học liệu" />
         </nav>
         
         {/* Vùng dưới cùng Sidebar */}
@@ -200,20 +196,20 @@ export default function TeacherLayout() {
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0 z-10">
           <div className="text-sm text-slate-500 font-medium">Hệ thống Quản lý Giảng dạy</div>
           
-          <div className="flex items-center relative">
+          <div className="flex items-center gap-4 relative">
             <AcademicYearSelector />
             
-            <button 
-              type="button" 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-slate-400 hover:bg-slate-100 rounded-full transition cursor-pointer"
-            >
-              <Bell className="w-5 h-5" />
-            </button>
+            <div className="relative group">
+              <button 
+                type="button" 
+                onClick={() => navigate('/teacher/announcements')}
+                className="relative p-2 text-slate-400 hover:bg-slate-100 rounded-full transition cursor-pointer"
+              >
+                <Bell className="w-5 h-5" />
+              </button>
 
-            {/* Dropdown Thông báo */}
-            {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Dropdown Thông báo */}
+              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                   <h3 className="font-bold text-slate-900">Thông báo</h3>
                   <button type="button" className="text-xs text-blue-600 font-medium hover:underline cursor-pointer">Đã đọc tất cả</button>
@@ -222,7 +218,7 @@ export default function TeacherLayout() {
                   Chưa có thông báo nào.
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </header>
 

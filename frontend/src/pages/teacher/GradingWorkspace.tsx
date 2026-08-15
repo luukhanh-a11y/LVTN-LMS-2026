@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, AlertCircle, FileText, Send, RotateCcw, Sparkles, Medal, X, Paperclip, Download, ChevronLeft } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, FileText, Send, RotateCcw, Sparkles, Medal, X, Paperclip, Download, ChevronLeft, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
@@ -14,7 +14,7 @@ export default function GradingWorkspace() {
   const [badges, setBadges] = useState<any[]>([]);
 
   useEffect(() => {
-    teacherService.getClasses().then(setClasses).catch(() => {});
+    teacherService.getClasses({ onlyTeaching: true }).then(setClasses).catch(() => {});
     teacherService.getBadges().then(setBadges).catch(() => {});
   }, []);
 
@@ -42,13 +42,14 @@ export default function GradingWorkspace() {
   
   const [showBadgeModal, setShowBadgeModal] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // MÀN HÌNH CHỌN LỚP VÀ BÀI TẬP (Giao diện 2 cột trực quan)
   if (!selectedAssignmentId) {
     const filteredAssignments = assignments;
 
     return (
-      <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-[calc(100vh-8rem)] flex flex-col">
+      <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Không gian chấm bài</h2>
           <p className="text-sm text-slate-500 mt-1">Chọn lớp học và bài tập để bắt đầu chấm điểm.</p>
@@ -232,7 +233,10 @@ export default function GradingWorkspace() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col relative bg-slate-50/50">
+    <div className={cn(
+      "flex flex-col bg-slate-50/50 transition-all duration-300",
+      isFullscreen ? "fixed inset-0 z-50 p-6 bg-slate-50" : "h-full relative"
+    )}>
       
       {/* Header nhỏ gọn */}
       <div className="mb-6 flex items-start justify-between">
@@ -240,12 +244,24 @@ export default function GradingWorkspace() {
           <h2 className="text-2xl font-bold text-slate-900">{activeAssignment?.className} - {activeAssignment?.title}</h2>
           <p className="text-sm text-slate-500 mt-1">Hạn nộp: {activeAssignment?.deadlineText}</p>
         </div>
-        <button 
-          onClick={() => setSelectedAssignmentId(null)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition shadow-sm cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4" /> Đổi bài tập khác
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="flex items-center justify-center p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition shadow-sm cursor-pointer"
+            title={isFullscreen ? "Thu nhỏ" : "Phóng to toàn màn hình"}
+          >
+            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </button>
+          <button 
+            onClick={() => {
+              setIsFullscreen(false);
+              setSelectedAssignmentId(null);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition shadow-sm cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" /> Đổi bài tập khác
+          </button>
+        </div>
       </div>
 
       {/* Grid Layout Tối ưu khoảng trắng (Quy tắc 2 & 4) */}

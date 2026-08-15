@@ -81,12 +81,6 @@ export default function MyClasses() {
       </div>
 
       <div className="pt-4 border-t border-slate-100 flex gap-2 mt-auto">
-        <Link 
-          to={`/teacher/classes/${cls.id}/grades`}
-          className="flex-1 px-4 py-2 bg-slate-50 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-100 transition text-center flex items-center justify-center"
-        >
-          Bảng điểm
-        </Link>
         {/* TRUYỀN THÊM STATE isHomeroom VÀ className SANG TRANG CHI TIẾT */}
         <Link 
           to={`/teacher/classes/${cls.id}`} 

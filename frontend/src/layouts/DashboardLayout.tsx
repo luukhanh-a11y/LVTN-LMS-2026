@@ -121,7 +121,6 @@ export default function DashboardLayout({ role }: { role: Role }) {
       { name: 'Bảng tin', path: '/teacher/announcements', icon: Bell },
       { name: 'Kho học liệu', path: '/teacher/materials', icon: BookOpen },
       { name: 'Chấm bài', path: '/teacher/grading', icon: Award },
-      { name: 'Sổ điểm', path: '/teacher/reports', icon: FileText },
       { name: 'Hỗ trợ', path: '/teacher/tickets', icon: MessageSquare, badge: teacherTicketsCount },
     ],
     parent: [

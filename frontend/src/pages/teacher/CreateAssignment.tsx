@@ -36,11 +36,14 @@ export default function CreateAssignment() {
   
   // Map dangBaiId -> cheDoGiaoDien
   const [selectedDangBais, setSelectedDangBais] = useState<Record<number, string>>({});
+  
+  // Lưu trữ tất cả các câu hỏi đã từng fetch để hiển thị lại những câu đã chọn từ bài học khác
+  const [allFetchedQuestions, setAllFetchedQuestions] = useState<Record<number, any>>({});
 
   // Fetch initial data
   useEffect(() => {
     teacherService.getMyTeacherProfile().then(setProfile).catch(console.error);
-    teacherService.getClasses().then(setClasses).catch(console.error);
+    teacherService.getClasses({ onlyTeaching: true }).then(setClasses).catch(console.error);
   }, []);
 
   const { currentHocKyId } = useAcademicStore();
@@ -59,7 +62,7 @@ export default function CreateAssignment() {
       lopHocId: Number(selectedClassId),
       maMon: currentSubject?.maMon,
       hocKyId: currentHocKyId
-    }).then(setSachList).catch(() => setSachList([]));
+    }).then(list => setSachList(list.filter((s: any) => s.loaiSach !== 'SACH_GIAO_KHOA'))).catch(() => setSachList([]));
   }, [profile?.giaoVienId, selectedClassId, selectedMonHocId, currentHocKyId, classes]);
 
   // Load ChuDe when Sach changes
@@ -90,6 +93,14 @@ export default function CreateAssignment() {
     try {
       const questions = await teacherService.getDangBaiByBaiHoc(Number(selectedBaiHocId));
       setDangBaiList(questions);
+      
+      setAllFetchedQuestions(prev => {
+        const next = { ...prev };
+        questions.forEach((q: any) => {
+          next[q.dangBaiId] = q;
+        });
+        return next;
+      });
     } catch (err) {
       toast.error('Lỗi khi tải câu hỏi');
     }
@@ -117,7 +128,7 @@ export default function CreateAssignment() {
             hocKyId: currentHocKyId,
             tieuDe: assignmentTitle,
             moTa: "Bài tập giao từ Teacher Portal",
-            loaiBaiTap: "TRAC_NGHIEM_CHAM_TU_DONG", // Default or determine based on questions
+            loaiBaiTap: "TRAC_NGHIEM", // Corrected enum mapping
             thoiDiemBatDau: new Date().toISOString().slice(0, 19),
             deadline: new Date(deadline).toISOString().slice(0, 19),
             soLanNopLaiToiDa: 3,
@@ -148,7 +159,7 @@ export default function CreateAssignment() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col h-[calc(100vh-8rem)]">
+    <div className="max-w-5xl mx-auto flex flex-col h-full">
       
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -241,62 +252,203 @@ export default function CreateAssignment() {
               </div>
 
               {/* Danh sách câu hỏi và Cấu hình Giao diện */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <ListChecks className="w-5 h-5 text-blue-600" />
-                  Danh sách câu hỏi được chọn
-                </h3>
-
-                {dangBaiList.length === 0 ? (
-                  <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-sm">
-                    Chưa lấy câu hỏi hoặc không có dữ liệu. Hãy chọn Bài học và bấm "Lấy câu hỏi".
-                  </div>
-                ) : (
-                  dangBaiList.map((q, idx) => (
-                    <div key={q.dangBaiId} className={cn("bg-white border rounded-xl p-5 shadow-sm transition", selectedDangBais[q.dangBaiId] ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200')}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1">
-                          <input 
-                            type="checkbox" 
-                            className="mt-1 w-4 h-4 cursor-pointer"
-                            checked={!!selectedDangBais[q.dangBaiId]}
-                            onChange={e => {
-                              const newSelections = { ...selectedDangBais };
-                              if (e.target.checked) newSelections[q.dangBaiId] = 'MAC_DINH';
-                              else delete newSelections[q.dangBaiId];
-                              setSelectedDangBais(newSelections);
-                            }}
-                          />
-                          <div>
-                            <div className="flex gap-2 mb-2">
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded">Câu {idx + 1}</span>
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded">{q.loaiNoiDung}</span>
-                            </div>
-                            <p className="text-sm font-medium text-slate-900 mb-2">{q.tenDangBai}</p>
-                          </div>
-                        </div>
-                        
-                        {/* Cấu hình giao diện riêng cho câu này */}
-                        {selectedDangBais[q.dangBaiId] && (
-                          <div className="w-64 bg-slate-50 p-3 rounded-lg border border-slate-200 animate-in fade-in">
-                            <label className="text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1.5">
-                              <LayoutTemplate className="w-3.5 h-3.5" /> Chế độ hiển thị
-                            </label>
-                            <select 
-                              value={selectedDangBais[q.dangBaiId]}
-                              onChange={e => setSelectedDangBais({ ...selectedDangBais, [q.dangBaiId]: e.target.value })}
-                              className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm bg-white focus:outline-none"
-                            >
-                              <option value="MAC_DINH">Mặc định (Tiêu chuẩn)</option>
-                              <option value="GAME_A">Game A: Giải cứu thú cưng</option>
-                              <option value="GAME_B">Game B: Đua xe giải toán</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
+              <div className="space-y-6">
+                
+                {/* Câu hỏi đã chọn */}
+                <div>
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                    <ListChecks className="w-5 h-5 text-blue-600" />
+                    Danh sách câu hỏi được chọn ({Object.keys(selectedDangBais).length})
+                  </h3>
+                  
+                  {Object.keys(selectedDangBais).length === 0 ? (
+                    <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-sm">
+                      Chưa có câu hỏi nào được chọn.
                     </div>
-                  ))
-                )}
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.keys(selectedDangBais).map((idStr, idx) => {
+                        const qId = Number(idStr);
+                        const q = allFetchedQuestions[qId];
+                        if (!q) return null;
+
+                        let cauHinh: any = {};
+                        let dapAnChuan: any = null;
+                        try {
+                          if (q.duLieuGame) cauHinh = JSON.parse(q.duLieuGame);
+                          if (q.dapAnChuan) dapAnChuan = JSON.parse(q.dapAnChuan);
+                        } catch { }
+
+                        return (
+                          <div key={q.dangBaiId} className="bg-white border border-blue-300 ring-1 ring-blue-100 rounded-xl p-5 shadow-sm transition">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-4 flex-1">
+                                <input 
+                                  type="checkbox" 
+                                  className="mt-1 w-4 h-4 cursor-pointer"
+                                  checked={true}
+                                  onChange={() => {
+                                    const newSelections = { ...selectedDangBais };
+                                    delete newSelections[q.dangBaiId];
+                                    setSelectedDangBais(newSelections);
+                                  }}
+                                />
+                                <div>
+                                  <div className="flex gap-2 mb-2">
+                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded">Câu {idx + 1}</span>
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded">{q.loaiNoiDung}</span>
+                                  </div>
+                                  <p className="text-sm font-bold text-slate-900 mb-2">{q.tenDangBai}</p>
+                                  
+                                  {/* Hiển thị chi tiết câu hỏi và đáp án */}
+                                  <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
+                                    <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                                    {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
+                                      <ul className="mt-2 space-y-1">
+                                        {cauHinh.luaChon.map((choice: any, cIdx: number) => {
+                                          const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
+                                          const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
+                                          const isCorrect = dapAnChuan !== null && (
+                                            (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
+                                            (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
+                                            (String(dapAnChuan) === String(val))
+                                          );
+                                          return (
+                                            <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
+                                              <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
+                                              {hinhAnh ? (
+                                                <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
+                                              ) : (
+                                                <span>{val}</span>
+                                              )}
+                                              {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    ) : (
+                                      dapAnChuan && (
+                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
+                                          Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+
+                                </div>
+                              </div>
+                              
+                              {/* Cấu hình giao diện riêng cho câu này */}
+                              <div className="w-64 bg-slate-50 p-3 rounded-lg border border-slate-200 animate-in fade-in">
+                                <label className="text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                  <LayoutTemplate className="w-3.5 h-3.5" /> Chế độ hiển thị
+                                </label>
+                                <select 
+                                  value={selectedDangBais[q.dangBaiId]}
+                                  onChange={e => setSelectedDangBais({ ...selectedDangBais, [q.dangBaiId]: e.target.value })}
+                                  className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm bg-white focus:outline-none"
+                                >
+                                  <option value="MAC_DINH">Mặc định (Tiêu chuẩn)</option>
+                                  <option value="GAME_A">Game A: Giải cứu thú cưng</option>
+                                  <option value="GAME_B">Game B: Đua xe giải toán</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Phân cách */}
+                <hr className="border-slate-200" />
+
+                {/* Câu hỏi có sẵn trong bài học */}
+                <div>
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                    <ListChecks className="w-5 h-5 text-slate-500" />
+                    Các câu hỏi khác trong bài học ({dangBaiList.filter(q => !selectedDangBais[q.dangBaiId]).length})
+                  </h3>
+                  
+                  {dangBaiList.filter(q => !selectedDangBais[q.dangBaiId]).length === 0 ? (
+                    <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-sm">
+                      Không còn câu hỏi nào trong bài học này.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {dangBaiList.filter(q => !selectedDangBais[q.dangBaiId]).map((q, idx) => {
+                        let cauHinh: any = {};
+                        let dapAnChuan: any = null;
+                        try {
+                          if (q.duLieuGame) cauHinh = JSON.parse(q.duLieuGame);
+                          if (q.dapAnChuan) dapAnChuan = JSON.parse(q.dapAnChuan);
+                        } catch { }
+
+                        return (
+                          <div key={q.dangBaiId} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm transition hover:border-blue-300">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-4 flex-1">
+                                <input 
+                                  type="checkbox" 
+                                  className="mt-1 w-4 h-4 cursor-pointer"
+                                  checked={false}
+                                  onChange={() => {
+                                    const newSelections = { ...selectedDangBais };
+                                    newSelections[q.dangBaiId] = 'MAC_DINH';
+                                    setSelectedDangBais(newSelections);
+                                  }}
+                                />
+                                <div>
+                                  <div className="flex gap-2 mb-2">
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded">{q.loaiNoiDung}</span>
+                                  </div>
+                                  <p className="text-sm font-medium text-slate-900 mb-2">{q.tenDangBai}</p>
+                                  
+                                  {/* Hiển thị chi tiết câu hỏi và đáp án */}
+                                  <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
+                                    <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                                    {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
+                                      <ul className="mt-2 space-y-1">
+                                        {cauHinh.luaChon.map((choice: any, cIdx: number) => {
+                                          const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
+                                          const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
+                                          const isCorrect = dapAnChuan !== null && (
+                                            (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
+                                            (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
+                                            (String(dapAnChuan) === String(val))
+                                          );
+                                          return (
+                                            <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
+                                              <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
+                                              {hinhAnh ? (
+                                                <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
+                                              ) : (
+                                                <span>{val}</span>
+                                              )}
+                                              {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    ) : (
+                                      dapAnChuan && (
+                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
+                                          Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
               </div>
             </div>

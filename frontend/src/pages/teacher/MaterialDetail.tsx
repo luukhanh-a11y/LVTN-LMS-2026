@@ -100,7 +100,7 @@ export default function TeacherMaterialDetail() {
   // Fetch classes when assign modal opens
   useEffect(() => {
     if (showAssignModal && classes.length === 0) {
-      teacherService.getClasses().then(data => setClasses(data)).catch(console.error);
+      teacherService.getClasses({ onlyTeaching: true }).then(data => setClasses(data)).catch(console.error);
     }
   }, [showAssignModal]);
 

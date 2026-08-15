@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import com.LMS.LVTN.repository.LopHocRepository;
 import com.LMS.LVTN.repository.HocKyRepository;
+import com.LMS.LVTN.repository.CauHinhHeThongRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -30,6 +31,32 @@ public class NamHocService {
     NamHocMapper namHocMapper;
     LopHocRepository lopHocRepository;
     HocKyRepository hocKyRepository;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
+
+    private NamHoc getNamHocHienTaiTuCauHinh() {
+        return cauHinhHeThongRepository.findById((short) 1)
+                .map(config -> config.getHocKyHienTai() != null ? config.getHocKyHienTai().getNamHoc() : null)
+                .orElse(null);
+    }
+
+    private String xacDinhTrangThaiNamHoc(NamHoc namHocCanKiemTra, NamHoc namHocCauHinhHienTai) {
+        if (namHocCauHinhHienTai != null && namHocCanKiemTra.getNamHocId().equals(namHocCauHinhHienTai.getNamHocId())) {
+            return "HIEN_TAI";
+        }
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (namHocCanKiemTra.getNgayBatDau() != null && namHocCanKiemTra.getNgayBatDau().isAfter(today)) {
+            return "MOI";
+        }
+        
+        return "CU";
+    }
+
+    private NamHocResponse enrichWithTrangThai(NamHoc namHoc, NamHoc namHocCauHinhHienTai) {
+        NamHocResponse response = namHocMapper.toResponse(namHoc);
+        response.setTrangThai(xacDinhTrangThaiNamHoc(namHoc, namHocCauHinhHienTai));
+        return response;
+    }
 
     @Transactional
     public NamHocResponse create(NamHocRequest request) {
@@ -73,19 +100,20 @@ public class NamHocService {
             }
         }
 
-        return namHocMapper.toResponse(savedNamHoc);
+        return enrichWithTrangThai(savedNamHoc, getNamHocHienTaiTuCauHinh());
     }
 
     public List<NamHocResponse> getAll() {
+        NamHoc currentNamHoc = getNamHocHienTaiTuCauHinh();
         return namHocRepository.findAll().stream()
-                .map(namHocMapper::toResponse)
+                .map(nh -> enrichWithTrangThai(nh, currentNamHoc))
                 .collect(Collectors.toList());
     }
 
     public NamHocResponse getById(Integer id) {
         NamHoc namHoc = namHocRepository.findById(id)
                 .orElseThrow(() -> new AppExceptions(Errorcode.NAM_HOC_NOT_FOUND));
-        return namHocMapper.toResponse(namHoc);
+        return enrichWithTrangThai(namHoc, getNamHocHienTaiTuCauHinh());
     }
 
     public NamHocResponse update(Integer id, NamHocRequest request) {
@@ -93,7 +121,7 @@ public class NamHocService {
                 .orElseThrow(() -> new AppExceptions(Errorcode.NAM_HOC_NOT_FOUND));
 
         namHocMapper.updateNamHoc(request, namHoc);
-        return namHocMapper.toResponse(namHocRepository.save(namHoc));
+        return enrichWithTrangThai(namHocRepository.save(namHoc), getNamHocHienTaiTuCauHinh());
     }
 
     public void delete(Integer id) {

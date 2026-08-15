@@ -19,6 +19,7 @@ public interface BaiNopRepository extends JpaRepository<BaiNop, Long> {
     long countByHocSinh_HocSinhIdAndLaNopTreFalse(Long hocSinhId);
     long countByBaiTap_BaiTapIdAndHocSinh_HocSinhId(Long baiTapId, Long hocSinhId);
     List<BaiNop> findByBaiTap_BaiTapIdAndHocSinh_LopHoc_LopHocId(Long baiTapId, Long lopHocId);
+    List<BaiNop> findByBaiTap_BaiTapIdAndHocSinh_HocSinhId(Long baiTapId, Long hocSinhId);
 
     // Tính điểm trung bình của bài tập học sinh làm theo môn trong 1 học kỳ (lấy điểm từ đánh giá thủ công của GV hoặc điểm tự động)
     @Query("SELECT AVG(COALESCE(b.danhGiaBaiLam.diemSo, b.diemTuDong)) FROM BaiNop b " +

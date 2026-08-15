@@ -5,6 +5,7 @@ export interface NamHoc {
   tenNamHoc: string;
   ngayBatDau: string;
   ngayKetThuc: string;
+  trangThai?: 'HIEN_TAI' | 'MOI' | 'CU';
 }
 
 export interface HocKy {

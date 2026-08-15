@@ -109,7 +109,7 @@ export default function TeacherAssignments() {
       try {
         const [profile, classData] = await Promise.all([
           teacherService.getMyTeacherProfile(),
-          teacherService.getClasses(),
+          teacherService.getClasses({ onlyTeaching: true }),
         ]);
         setTeacherProfile(profile);
         setClasses(classData);

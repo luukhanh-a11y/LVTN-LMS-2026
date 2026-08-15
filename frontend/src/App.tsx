@@ -25,6 +25,7 @@ import TeacherDashboard from './pages/teacher/Dashboard';
 import TeacherClasses from './pages/teacher/MyClasses';
 import TeacherClassDetails from './pages/teacher/ClassDetail';
 import TeacherCreateAssignment from './pages/teacher/CreateAssignment';
+import MaterialWorkspaceLayout from './layouts/MaterialWorkspaceLayout';
 import TeacherMaterials from './pages/teacher/Materials';
 import TeacherMaterialDetail from './pages/teacher/MaterialDetail';
 import AdminKetQuaCuoiNam from './pages/admin/KetQuaCuoiNam';
@@ -123,19 +124,25 @@ function App() {
           <Route path="settings" element={<AdminSettings />} />
         </Route>
 
-        {/* Teacher Routes */}
+          {/* Teacher Routes */}
         <Route path="/teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherDashboard />} />
           <Route path="classes" element={<TeacherClasses />} />
           <Route path="classes/:classId" element={<TeacherClassDetails />} />
+          <Route path="classes/:classId/grades" element={<TeacherReports />} />
           <Route path="announcements" element={<TeacherAnnouncements />} />
-          <Route path="assignments/create" element={<TeacherCreateAssignment />} />
-          <Route path="materials" element={<TeacherMaterials />} />
-          <Route path="materials/:materialId" element={<TeacherMaterialDetail />} />
+          
+          <Route path="materials" element={<MaterialWorkspaceLayout />}>
+            <Route index element={<Navigate to="library" replace />} />
+            <Route path="library" element={<TeacherMaterials />} />
+            <Route path="library/:materialId" element={<TeacherMaterialDetail />} />
+            <Route path="assignments" element={<TeacherCreateAssignment />} />
+            <Route path="grading" element={<TeacherGrading />} />
+            <Route path="grading/:submissionId" element={<TeacherGradingDetail />} />
+          </Route>
+          
           <Route path="editor" element={<TeacherEditor />} />
           <Route path="editor/:contentId" element={<TeacherEditor />} />
-          <Route path="grading" element={<TeacherGrading />} />
-          <Route path="grading/:submissionId" element={<TeacherGradingDetail />} />
           <Route path="reports" element={<TeacherReports />} />
           <Route path="tickets" element={<TeacherTickets />} />
           <Route path="profile" element={<TeacherProfile />} />

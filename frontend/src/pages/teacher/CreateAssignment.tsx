@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { teacherService } from '../../services/teacher.service';
 import { useAcademicStore } from '../../stores/useAcademicStore';
+import H5PPlayer from '../../components/h5p/H5PPlayer';
+import { Modal } from '../../components/ui/Modal';
 
 const STEPS = [
   { id: 1, label: 'Thông tin chung', icon: FileText },
@@ -21,6 +23,7 @@ export default function CreateAssignment() {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedMonHocId, setSelectedMonHocId] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   // Step 2 Drill-down State
   const [sachList, setSachList] = useState<any[]>([]);
@@ -36,6 +39,9 @@ export default function CreateAssignment() {
   
   // Map dangBaiId -> cheDoGiaoDien
   const [selectedDangBais, setSelectedDangBais] = useState<Record<number, string>>({});
+
+  // Popup xem toàn bộ nội dung H5P (câu hỏi + đáp án) khi bấm vào 1 câu H5P trong danh sách
+  const [previewH5P, setPreviewH5P] = useState<{ contentId: string; title: string } | null>(null);
   
   // Lưu trữ tất cả các câu hỏi đã từng fetch để hiển thị lại những câu đã chọn từ bài học khác
   const [allFetchedQuestions, setAllFetchedQuestions] = useState<Record<number, any>>({});
@@ -121,6 +127,12 @@ export default function CreateAssignment() {
       }
 
       try {
+        // Nội dung H5P (soạn qua Editor) không có duLieuGame dạng JSON quiz — phải gắn
+        // loaiBaiTap: 'H5P' để học sinh được điều hướng sang trang chơi H5P (/play) thay
+        // vì trang Quiz (/quiz), nơi không có cách nào hiển thị được nội dung H5P.
+        const selectedQuestions = dangBaiIds.map((id) => allFetchedQuestions[Number(id)]).filter(Boolean);
+        const isH5P = selectedQuestions.length > 0 && selectedQuestions.every((q) => q.loaiNoiDung === 'H5P');
+
         const payload = {
           baiTap: {
             giaoVienId: profile.giaoVienId,
@@ -128,7 +140,7 @@ export default function CreateAssignment() {
             hocKyId: currentHocKyId,
             tieuDe: assignmentTitle,
             moTa: "Bài tập giao từ Teacher Portal",
-            loaiBaiTap: "TRAC_NGHIEM", // Corrected enum mapping
+            loaiBaiTap: isH5P ? "H5P" : "TRAC_NGHIEM",
             thoiDiemBatDau: new Date().toISOString().slice(0, 19),
             deadline: new Date(deadline).toISOString().slice(0, 19),
             soLanNopLaiToiDa: 3,
@@ -144,8 +156,8 @@ export default function CreateAssignment() {
         await teacherService.createAssignment(payload);
         toast.success('Đã tạo và giao bài tập thành công!');
         // Redirect or reset form could go here
-      } catch (err) {
-        toast.error('Lỗi khi tạo bài tập. Vui lòng thử lại.');
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || err.message || 'Lỗi khi tạo bài tập. Vui lòng thử lại.');
       }
     }
   };
@@ -154,8 +166,34 @@ export default function CreateAssignment() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleAISuggest = () => {
-    toast('AI đang phân tích chương trình học...', { icon: '🤖' });
+  const handleAISuggest = async () => {
+    if (!selectedClassId || !selectedMonHocId) {
+      toast.error('Vui lòng chọn Lớp và Môn học trước khi nhờ AI gợi ý!');
+      return;
+    }
+
+    const loadingToast = toast.loading('🤖 AI đang phân tích chương trình học...', {
+      style: { minWidth: '250px' }
+    });
+
+    try {
+      const currentClass = classes.find(c => String(c.id) === String(selectedClassId));
+      
+      const response = await teacherService.generateExerciseSuggestions({
+        grade: currentClass?.grade,
+        subjectId: Number(selectedMonHocId),
+      });
+
+      if (response && response.suggestions && response.suggestions.length > 0) {
+        setAiSuggestions(response.suggestions);
+        toast.success('AI đã đưa ra gợi ý tiêu đề!', { id: loadingToast });
+      } else {
+        toast.error('AI không tìm thấy gợi ý nào phù hợp.', { id: loadingToast });
+      }
+    } catch (error) {
+      console.error('AI Suggestion Error:', error);
+      toast.error('Lỗi kết nối AI. Vui lòng thử lại sau.', { id: loadingToast });
+    }
   };
 
   return (
@@ -183,6 +221,21 @@ export default function CreateAssignment() {
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Tiêu đề bài tập <span className="text-red-500">*</span></label>
                   <input type="text" value={assignmentTitle} onChange={e => setAssignmentTitle(e.target.value)} placeholder="VD: Bài tập cuối tuần..." className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
+                  
+                  {aiSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {aiSuggestions.map((sug, idx) => (
+                        <button 
+                          type="button"
+                          key={idx} 
+                          onClick={() => setAssignmentTitle(sug)}
+                          className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-medium hover:bg-purple-100 transition cursor-pointer text-left"
+                        >
+                          ✨ {sug}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -229,7 +282,11 @@ export default function CreateAssignment() {
                   <label className="text-xs font-semibold text-slate-500 mb-1 block">1. Sách</label>
                   <select value={selectedSachId} onChange={e => { setSelectedSachId(e.target.value); setSelectedChuDeId(''); setSelectedBaiHocId(''); setDangBaiList([]); }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none">
                     <option value="">-- Chọn sách --</option>
-                    {sachList.map(s => <option key={s.sachId} value={s.sachId}>{s.tenSach}</option>)}
+                    {sachList.map(s => (
+                      <option key={s.sachId} value={s.sachId} disabled={s.loaiSach === 'SACH_GIAO_KHOA'}>
+                        {s.loaiSach === 'SACH_GIAO_KHOA' ? '[SGK] ' : '[SBT] '} {s.tenSach}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="flex-1">
@@ -302,42 +359,58 @@ export default function CreateAssignment() {
                                   
                                   {/* Hiển thị chi tiết câu hỏi và đáp án */}
                                   <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
-                                    <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
-                                    {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
-                                      <ul className="mt-2 space-y-1">
-                                        {cauHinh.luaChon.map((choice: any, cIdx: number) => {
-                                          const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
-                                          const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
-                                          const isCorrect = dapAnChuan !== null && (
-                                            (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                                            (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
-                                            (String(dapAnChuan) === String(val))
-                                          );
-                                          return (
-                                            <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
-                                              <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
-                                              {hinhAnh ? (
-                                                <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
-                                              ) : (
-                                                <span>{val}</span>
-                                              )}
-                                              {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    ) : (
-                                      dapAnChuan && (
-                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
-                                          Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
-                                        </div>
+                                    {q.loaiNoiDung === 'H5P' ? (
+                                      q.h5pNoiDungId ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewH5P({ contentId: q.h5pNoiDungId, title: q.tenDangBai })}
+                                          className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium text-sm transition cursor-pointer"
+                                        >
+                                          🎮 Xem toàn bộ nội dung H5P (câu hỏi &amp; đáp án)
+                                        </button>
+                                      ) : (
+                                        <p className="text-red-600 font-medium">Nội dung H5P bị thiếu contentId, không xem trước được.</p>
                                       )
+                                    ) : (
+                                      <>
+                                        <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                                        {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
+                                          <ul className="mt-2 space-y-1">
+                                            {cauHinh.luaChon.map((choice: any, cIdx: number) => {
+                                              const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
+                                              const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
+                                              const isCorrect = dapAnChuan !== null && (
+                                                (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
+                                                (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) ||
+                                                (String(dapAnChuan) === String(val))
+                                              );
+                                              return (
+                                                <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
+                                                  <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
+                                                  {hinhAnh ? (
+                                                    <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
+                                                  ) : (
+                                                    <span>{val}</span>
+                                                  )}
+                                                  {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
+                                                </li>
+                                              );
+                                            })}
+                                          </ul>
+                                        ) : (
+                                          dapAnChuan && (
+                                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
+                                              Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
+                                            </div>
+                                          )
+                                        )}
+                                      </>
                                     )}
                                   </div>
 
                                 </div>
                               </div>
-                              
+
                               {/* Cấu hình giao diện riêng cho câu này */}
                               <div className="w-64 bg-slate-50 p-3 rounded-lg border border-slate-200 animate-in fade-in">
                                 <label className="text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1.5">
@@ -349,8 +422,14 @@ export default function CreateAssignment() {
                                   className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm bg-white focus:outline-none"
                                 >
                                   <option value="MAC_DINH">Mặc định (Tiêu chuẩn)</option>
-                                  <option value="GAME_A">Game A: Giải cứu thú cưng</option>
-                                  <option value="GAME_B">Game B: Đua xe giải toán</option>
+                                  <option value="DAO_VANG">Đào Vàng</option>
+                                  <option value="DUOI_BAT">Đuổi Bắt</option>
+                                  <option value="THU_HOACH_NONG_SAN">Thu hoạch Nông sản</option>
+                                  <option value="ECH_QUA_SONG">Ếch qua sông</option>
+                                  <option value="BAN_BONG_BAY">Bắn bóng bay</option>
+                                  <option value="TRIEU_PHU">Ai là triệu phú</option>
+                                  <option value="ONG_TIM_MAT">Ong Tìm Mật</option>
+                                  <option value="PHAN_LOAI">Phân Loại (Thùng rác)</option>
                                 </select>
                               </div>
                             </div>
@@ -407,36 +486,52 @@ export default function CreateAssignment() {
                                   
                                   {/* Hiển thị chi tiết câu hỏi và đáp án */}
                                   <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
-                                    <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
-                                    {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
-                                      <ul className="mt-2 space-y-1">
-                                        {cauHinh.luaChon.map((choice: any, cIdx: number) => {
-                                          const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
-                                          const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
-                                          const isCorrect = dapAnChuan !== null && (
-                                            (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                                            (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
-                                            (String(dapAnChuan) === String(val))
-                                          );
-                                          return (
-                                            <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
-                                              <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
-                                              {hinhAnh ? (
-                                                <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
-                                              ) : (
-                                                <span>{val}</span>
-                                              )}
-                                              {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    ) : (
-                                      dapAnChuan && (
-                                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
-                                          Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
-                                        </div>
+                                    {q.loaiNoiDung === 'H5P' ? (
+                                      q.h5pNoiDungId ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => setPreviewH5P({ contentId: q.h5pNoiDungId, title: q.tenDangBai })}
+                                          className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium text-sm transition cursor-pointer"
+                                        >
+                                          🎮 Xem toàn bộ nội dung H5P (câu hỏi &amp; đáp án)
+                                        </button>
+                                      ) : (
+                                        <p className="text-red-600 font-medium">Nội dung H5P bị thiếu contentId, không xem trước được.</p>
                                       )
+                                    ) : (
+                                      <>
+                                        <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                                        {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
+                                          <ul className="mt-2 space-y-1">
+                                            {cauHinh.luaChon.map((choice: any, cIdx: number) => {
+                                              const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
+                                              const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
+                                              const isCorrect = dapAnChuan !== null && (
+                                                (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
+                                                (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) ||
+                                                (String(dapAnChuan) === String(val))
+                                              );
+                                              return (
+                                                <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
+                                                  <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
+                                                  {hinhAnh ? (
+                                                    <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
+                                                  ) : (
+                                                    <span>{val}</span>
+                                                  )}
+                                                  {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
+                                                </li>
+                                              );
+                                            })}
+                                          </ul>
+                                        ) : (
+                                          dapAnChuan && (
+                                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
+                                              Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
+                                            </div>
+                                          )
+                                        )}
+                                      </>
                                     )}
                                   </div>
 
@@ -467,6 +562,18 @@ export default function CreateAssignment() {
           </button>
         </div>
       </div>
+
+      {/* Popup xem toàn bộ nội dung H5P (câu hỏi + đáp án) trước khi giao bài */}
+      <Modal
+        isOpen={!!previewH5P}
+        onClose={() => setPreviewH5P(null)}
+        title={previewH5P?.title || 'Xem trước nội dung H5P'}
+        widthClass="w-[90vw] max-w-4xl"
+      >
+        <div className="h-[70vh] p-4">
+          {previewH5P && <H5PPlayer contentId={previewH5P.contentId} />}
+        </div>
+      </Modal>
     </div>
   );
 }

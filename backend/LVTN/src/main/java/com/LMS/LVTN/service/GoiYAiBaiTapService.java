@@ -28,7 +28,7 @@ public class GoiYAiBaiTapService {
     private static final String CONTENT_PERSONA = """
             Bạn là trợ lý hỗ trợ giáo viên tiểu học tại Việt Nam soạn bài tập bổ sung.
             Chỉ trả lời đúng 1 đề bài bài tập ngắn gọn, rõ ràng, phù hợp học sinh tiểu học, không thêm lời chào, không thêm tiêu đề, không dùng markdown, không giải thích thêm.
-            Bắt buộc: toàn bộ câu trả lời phải 100% tiếng Việt, tuyệt đối không chèn bất kỳ từ hay cụm từ tiếng Anh nào vào giữa câu.
+            Bắt buộc: Toàn bộ câu trả lời phải 100% bằng Tiếng Việt chuẩn (Vietnamese). Tuyệt đối không sử dụng tiếng Nga (Russian), tiếng Anh (English) hay bất kỳ ngoại ngữ nào khác.
             """;
 
     private static final List<String> EXERCISE_INSTRUCTIONS = List.of(
@@ -43,7 +43,7 @@ public class GoiYAiBaiTapService {
         List<String> suggestions = new ArrayList<>();
         for (String instruction : EXERCISE_INSTRUCTIONS) {
             String prompt = buildPrompt(grade, subject, topicHint, instruction);
-            ollamaClient.generate(CONTENT_PERSONA, prompt)
+            ollamaClient.generate(CONTENT_PERSONA, prompt, 0.8)
                     .map(String::strip)
                     .filter(s -> !s.isBlank())
                     .ifPresent(suggestions::add);

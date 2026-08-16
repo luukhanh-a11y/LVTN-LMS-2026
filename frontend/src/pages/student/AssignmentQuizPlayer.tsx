@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, Loader2, Star, Gem, Send } from 'lucide-react';
 import { studentService } from '../../services/student.service';
@@ -53,6 +53,18 @@ export default function AssignmentQuizPlayer() {
       .catch((err) => setLoadError(err.response?.data?.message || 'Không tải được bài tập.'))
       .finally(() => setIsLoading(false));
   }, [assignmentId, user]);
+
+  const goToNextTask = useCallback(() => {
+    if (!assignmentId) return;
+    studentService.getNextTaskRoute(Number(assignmentId)).then(navigate);
+  }, [assignmentId, navigate]);
+
+  // Làm xong bài tự động chuyển sang bài tiếp theo còn phải làm, hết bài thì về trang chủ.
+  useEffect(() => {
+    if (!result) return;
+    const timer = setTimeout(goToNextTask, 3000);
+    return () => clearTimeout(timer);
+  }, [result, goToNextTask]);
 
   const handleSubmit = async () => {
     if (!detail || !assignmentId) return;
@@ -343,7 +355,7 @@ export default function AssignmentQuizPlayer() {
               )}
 
               <button
-                onClick={() => navigate('/student/tasks')}
+                onClick={goToNextTask}
                 className="w-full bg-student-primary hover:bg-[#3A82DF] text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 Tiếp tục hành trình

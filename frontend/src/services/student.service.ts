@@ -214,12 +214,31 @@ export const studentService = {
         xpReward: t.xpReward || 0,
         completed: false,
         subjectName: t.monHoc?.tenMon,
-        type: t.dangBai?.loaiNoiDung || 'TRAC_NGHIEM',
+        type: t.loaiBaiTap || 'TRAC_NGHIEM',
         status: t.trangThai || t.status
       }));
-
     } catch (err) {
       return [];
+    }
+  },
+
+  // Sau khi nộp xong 1 bài, tìm route của bài tiếp theo còn phải làm (bỏ qua bài vừa nộp
+  // và các bài đã nộp/đã chấm). Không còn bài nào thì trả về trang chủ học sinh.
+  getNextTaskRoute: async (currentTaskId: number): Promise<string> => {
+    try {
+      const tasks: any[] = await studentService.getAssignments();
+      const pending = tasks
+        .filter((t) => t.id !== currentTaskId && t.status !== 'DA_NOP' && t.status !== 'DA_CHAM')
+        .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
+
+      const next = pending[0];
+      if (!next) return '/student';
+
+      if (next.type === 'H5P') return `/student/tasks/${next.id}/play`;
+      if (['TRAC_NGHIEM', 'NOI_CAP', 'DIEN_KHUYET', 'NHIEU_CAU'].includes(next.type)) return `/student/tasks/${next.id}/quiz`;
+      return `/student/essay?id=${next.id}`;
+    } catch (err) {
+      return '/student';
     }
   },
 
@@ -698,12 +717,25 @@ export const studentService = {
   },
 
   getH5PAssignmentDetail: async (assignmentId: number) => {
-    console.log('[H5P] Fetching assignment detail for id:', assignmentId);
-    const response = await api.get(`/bai-tap/${assignmentId}`);
-    console.log('[H5P] Raw response:', response.data);
-    const detail = response.data?.data || response.data;
-    console.log('[H5P] Detail:', detail);
-    // Provide default values for fields that might be missing from BaiTapResponse
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
+
+    // BaiTapResponse (GET /bai-tap/{id}) không có field h5pContentId — nội dung H5P thật
+    // sự nằm ở chi_tiet_bai_tap (CreateAssignment.tsx lưu qua danhSachChiTiet, không qua
+    // FK đơn bai_tap.dang_bai_id). Lấy đúng nguồn dữ liệu này, cùng endpoint mà luồng Quiz
+    // đang dùng — endpoint này cũng tự kiểm tra giới hạn số lần nộp ở server.
+    const [btRes, dbRes] = await Promise.all([
+      api.get(`/bai-tap/${assignmentId}`),
+      api.get(`/he-thong/dang-bai/bai-tap/${assignmentId}/hoc-sinh`, { params: hoSo.hocSinhId ? { hocSinhId: hoSo.hocSinhId } : undefined }),
+    ]);
+    const detail = btRes.data?.data || btRes.data;
+    const dangBais = dbRes.data?.data || dbRes.data || [];
+
+    detail.h5pContentId = dangBais[0]?.h5pNoiDungId || null;
+    // Nếu tới được đây (không bị chặn bởi giới hạn số lần nộp ở server) thì coi như còn được nộp.
     if (detail.canSubmit === undefined) detail.canSubmit = true;
     if (detail.attemptsUsed === undefined) detail.attemptsUsed = 0;
     if (!detail.h5pContentId) console.warn('[H5P] WARNING: h5pContentId is null/empty! BaiTap may not be linked to a DangBai with H5P content.');
@@ -714,8 +746,23 @@ export const studentService = {
     assignmentId: number,
     payload: { rawScore: number; maxScore: number; completed: boolean; interactionDetails?: string }
   ) => {
-    const response = await api.post(`/bai-nop`, payload);
-    return response.data;
+    // BaiNopRequest (backend) không có field rawScore/maxScore/completed — chỉ có
+    // baiTapId, hocSinhId, chiTietBaiLam (JSON). H5P không được backend tự chấm điểm
+    // (loaiBaiTap=H5P luôn lưu diemTuDong=null, trạng thái CHUA_CHAM chờ GV chấm tay),
+    // nên chỉ cần lưu lại thông tin tương tác vào chiTietBaiLam để GV tham khảo.
+    let hoSo: any = {};
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      hoSo = hsRes.data.data || hsRes.data;
+    } catch (err) {}
+
+    const body = {
+      baiTapId: assignmentId,
+      hocSinhId: hoSo.hocSinhId,
+      chiTietBaiLam: JSON.stringify(payload),
+    };
+    const response = await api.post(`/bai-nop`, body);
+    return response.data?.data || response.data;
   },
 
   getQuizAssignmentDetail: async (assignmentId: number) => {

@@ -62,11 +62,13 @@ export default function StudentEssayWorkspace() {
         });
       }
 
-      toast.success('Nộp bài thành công! Em làm tốt lắm!', { 
+      toast.success('Nộp bài thành công! Em làm tốt lắm!', {
         icon: '🎉',
         style: { background: '#22c55e', color: '#fff', fontWeight: 'bold' }
       });
-      navigate('/student'); // Quay về trang chủ
+      // Làm xong bài tự động chuyển sang bài tiếp theo còn phải làm, hết bài thì về trang chủ.
+      const nextRoute = assignmentId ? await studentService.getNextTaskRoute(assignmentId) : '/student';
+      navigate(nextRoute);
     } catch (e) {
       toast.error('Có lỗi xảy ra khi nộp bài');
       setIsSubmitting(false);

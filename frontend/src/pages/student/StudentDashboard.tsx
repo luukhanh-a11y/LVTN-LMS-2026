@@ -31,6 +31,8 @@ export default function StudentDashboard() {
       if (currentTask?.id) {
         if (currentTask.loaiBaiTap === 'TRAC_NGHIEM' || currentTask.loaiBaiTap === 'NOI_CAP' || currentTask.loaiBaiTap === 'DIEN_KHUYET' || currentTask.loaiBaiTap === 'NHIEU_CAU') {
           navigate(`/student/tasks/${currentTask.id}/quiz`);
+        } else if (currentTask.loaiBaiTap === 'H5P') {
+          navigate(`/student/tasks/${currentTask.id}/play`);
         } else if (currentTask.loaiBaiTap === 'GAME') {
           navigate(`/student/game?id=${currentTask.id}`);
         } else {

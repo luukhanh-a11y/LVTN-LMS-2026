@@ -71,16 +71,19 @@ export default function TeacherEditor() {
     if (!needsBaiHocPicker || !grade || !subjectId) return;
 
     setIsLoadingSach(true);
+    // SachResponse (GET /sach) không có monHocId, chỉ có maMon (mã môn dạng chuỗi) —
+    // phải tra maMon từ subjectId đã chọn rồi lọc theo đó, không so sánh trực tiếp monHocId.
+    const selectedSubject = subjects.find((s) => String(s.monHocId) === String(subjectId));
     adminService
       .getBoSachList()
       .then((list) => {
-        const filtered = list.filter((s: any) => s.khoiLop === Number(grade) && s.monHocId === Number(subjectId));
+        const filtered = list.filter((s: any) => s.khoiLop === Number(grade) && s.maMon === selectedSubject?.maMon);
         setSachList(filtered);
         if (filtered.length === 1) setSelectedSachId(filtered[0].sachId);
       })
       .catch(() => setSachList([]))
       .finally(() => setIsLoadingSach(false));
-  }, [needsBaiHocPicker, grade, subjectId]);
+  }, [needsBaiHocPicker, grade, subjectId, subjects]);
 
   useEffect(() => {
     setChuDeList([]); setSelectedChuDeId('');

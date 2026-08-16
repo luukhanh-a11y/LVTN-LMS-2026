@@ -6,6 +6,8 @@ import { teacherService } from '../../services/teacher.service';
 import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function Materials() {
+  const currentHocKyId = useAcademicStore(state => state.currentHocKyId);
+
   const [classes, setClasses] = useState<any[]>([]);
   const [grades, setGrades] = useState<number[]>([]);
   const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
@@ -21,6 +23,8 @@ export default function Materials() {
 
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     teacherService.getClasses({ onlyTeaching: true }).then(data => {
@@ -62,13 +66,12 @@ export default function Materials() {
     }
 
     teacherService.getMyTeacherProfile().then(profile => {
-      const currentHocKyId = useAcademicStore.getState().currentHocKyId;
       const promises = subjects.map((subj: any) => 
         teacherService.getSachBaiTapTheoPhanCong({
           giaoVienId: profile.giaoVienId,
           lopHocId: subj.lopHocId,
           maMon: subj.maMon || '',
-          hocKyId: subj.hocKyId || currentHocKyId || 1 // Fallback to currentHocKyId
+          hocKyId: subj.hocKyId || currentHocKyId || 1 // Fallback to 1
         }).catch(err => {
           // Bỏ qua lỗi 404 (DATA_NOT_FOUND) nếu giáo viên không có phân công hoặc môn đó không có sách
           console.warn(`Không tìm thấy sách cho môn ${subj.tenMon} (Mã: ${subj.monHocId})`);
@@ -86,7 +89,7 @@ export default function Materials() {
       if (uniqueBooks.length > 0) setSelectedBook(uniqueBooks[0].sachId || uniqueBooks[0].id);
       else setSelectedBook(null);
     }).catch(console.error);
-  }, [selectedGrade, classes]);
+  }, [selectedGrade, classes, currentHocKyId]);
 
   useEffect(() => {
     if (!selectedBook) {
@@ -120,10 +123,32 @@ export default function Materials() {
       return;
     }
     setLoading(true);
-    teacherService.getDangBaiByBaiHoc(selectedLesson).then(data => {
-      setMaterials(data);
-    }).catch(console.error).finally(() => setLoading(false));
+    let cancelled = false;
+    
+    Promise.all([
+      teacherService.getDangBaiByBaiHoc(selectedLesson),
+      teacherService.getMyTeacherProfile().then(profile => teacherService.getMyMaterials(profile.giaoVienId))
+    ])
+    .then(([heThongData, cuaToiData]) => {
+      if (cancelled) return;
+      const filteredCuaToi = cuaToiData.filter((m: any) => Number(m.baiHocId) === Number(selectedLesson) && m.nguonGoc === 'GIAO_VIEN_BO_SUNG');
+      
+      // Combine and prevent duplicates just in case
+      const existingIds = new Set(heThongData.map((m: any) => m.dangBaiId || m.id));
+      const additionalMaterials = filteredCuaToi.filter((m: any) => !existingIds.has(m.dangBaiId || m.id));
+      
+      setMaterials([...heThongData, ...additionalMaterials]);
+    })
+    .catch(console.error)
+    .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [selectedLesson]);
+
+  const filteredMaterials = materials.filter(m => {
+    const title = (m.tenDangBai || m.content || '').toLowerCase();
+    return title.includes(searchTerm.toLowerCase());
+  });
 
   const getQuestionIcon = (type: string) => {
     switch(type) {
@@ -132,6 +157,78 @@ export default function Materials() {
       case 'TU_LUAN': return <BookOpen className="w-5 h-5 text-orange-500" />;
       default: return <HelpCircle className="w-5 h-5 text-slate-500" />;
     }
+  };
+
+  // Card học liệu dùng chung cho cả tab "Kho học liệu" (theo cây sách) và tab
+  // "Học liệu của tôi" (liệt kê trực tiếp, không cần duyệt sách).
+  const renderMaterialCard = (m: any, idx: number) => {
+    let cauHinh: any = {};
+    let dapAnChuan: any = null;
+    try {
+      if (m.duLieuGame) cauHinh = JSON.parse(m.duLieuGame);
+      if (m.dapAnChuan) dapAnChuan = JSON.parse(m.dapAnChuan);
+    } catch { }
+
+    return (
+      <Link to={`/teacher/materials/library/${m.dangBaiId || m.id}`} key={m.dangBaiId || m.id} className="block border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white shadow-sm cursor-pointer group">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-start gap-3">
+            <div className="mt-1">{getQuestionIcon(m.loaiNoiDung || 'TRAC_NGHIEM')}</div>
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="font-bold text-slate-700 text-sm">Học liệu {idx + 1}</span>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded">{m.loaiNoiDung || 'N/A'}</span>
+                <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded">XP: {m.xpThuong || 0}</span>
+                {m.tenBaiHoc && (
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded">Bài: {m.tenBaiHoc}</span>
+                )}
+              </div>
+              <p className="text-slate-900 font-bold group-hover:text-blue-600 transition-colors mb-2">{m.tenDangBai || m.content}</p>
+
+              {/* Hiển thị chi tiết câu hỏi và đáp án */}
+              <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
+                {m.loaiNoiDung === 'H5P' ? (
+                  <p className="text-purple-700 font-medium">🎮 Nội dung tương tác H5P — bấm để xem chi tiết.</p>
+                ) : (
+                <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                )}
+                {m.loaiNoiDung !== 'H5P' && cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
+                  <ul className="mt-2 space-y-1">
+                    {cauHinh.luaChon.map((choice: any, cIdx: number) => {
+                      const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
+                      const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
+                      const isCorrect = dapAnChuan !== null && (
+                        (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
+                        (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
+                        (String(dapAnChuan) === String(val))
+                      );
+                      return (
+                        <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
+                          <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
+                          {hinhAnh ? (
+                            <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
+                          ) : (
+                            <span>{val}</span>
+                          )}
+                          {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  dapAnChuan && (
+                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
+                      Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
+                    </div>
+                  )
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
   };
 
   return (
@@ -221,82 +318,29 @@ export default function Materials() {
         {/* Khung nội dung */}
         <div className="flex-1 flex flex-col bg-white">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900">Danh sách Học liệu</h3>
+            <h3 className="text-lg font-bold text-slate-900">
+              Danh sách Học liệu
+            </h3>
             <div className="relative w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input type="text" placeholder="Tìm kiếm..." className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <input 
+                type="text" 
+                placeholder="Tìm kiếm..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" 
+              />
             </div>
           </div>
           
           <div className="p-6 flex-1 overflow-y-auto space-y-4">
             {loading ? (
                <div className="text-center py-12 text-slate-500">Đang tải dữ liệu...</div>
-            ) : materials.map((m, idx) => {
-              let cauHinh: any = {};
-              let dapAnChuan: any = null;
-              try {
-                if (m.duLieuGame) cauHinh = JSON.parse(m.duLieuGame);
-                if (m.dapAnChuan) dapAnChuan = JSON.parse(m.dapAnChuan);
-              } catch { }
+            ) : filteredMaterials.map(renderMaterialCard)}
 
-              return (
-                <Link to={`/teacher/materials/${m.dangBaiId || m.id}`} key={m.dangBaiId || m.id} className="block border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all bg-white shadow-sm cursor-pointer group">
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">{getQuestionIcon(m.loaiNoiDung || 'TRAC_NGHIEM')}</div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="font-bold text-slate-700 text-sm">Học liệu {idx + 1}</span>
-                          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded">{m.loaiNoiDung || 'N/A'}</span>
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded">XP: {m.xpThuong || 0}</span>
-                        </div>
-                        <p className="text-slate-900 font-bold group-hover:text-blue-600 transition-colors mb-2">{m.tenDangBai || m.content}</p>
-
-                        {/* Hiển thị chi tiết câu hỏi và đáp án */}
-                        <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
-                          <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
-                          {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
-                            <ul className="mt-2 space-y-1">
-                              {cauHinh.luaChon.map((choice: any, cIdx: number) => {
-                                const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
-                                const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
-                                const isCorrect = dapAnChuan !== null && (
-                                  (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                                  (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
-                                  (String(dapAnChuan) === String(val))
-                                );
-                                return (
-                                  <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
-                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
-                                    {hinhAnh ? (
-                                      <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
-                                    ) : (
-                                      <span>{val}</span>
-                                    )}
-                                    {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          ) : (
-                            dapAnChuan && (
-                              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
-                                Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
-                              </div>
-                            )
-                          )}
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-
-            {!loading && materials.length === 0 && (
+            {!loading && filteredMaterials.length === 0 && (
               <div className="text-center py-12 text-slate-500">
-                Không tìm thấy dữ liệu học liệu cho bài học này.
+                Không tìm thấy dữ liệu học liệu nào.
               </div>
             )}
           </div>

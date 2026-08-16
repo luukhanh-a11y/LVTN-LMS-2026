@@ -4,6 +4,8 @@ import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
 import { AiSuggestionsPanel } from './components/AiSuggestionsPanel';
+import H5PPlayer from '../../components/h5p/H5PPlayer';
+import H5PAnswerReview from '../../components/h5p/H5PAnswerReview';
 
 export default function GradingWorkspace() {
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
@@ -14,6 +16,7 @@ export default function GradingWorkspace() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
   const [pendingByClass, setPendingByClass] = useState<Record<number, number>>({});
+  const [h5pContentId, setH5pContentId] = useState<string | null>(null);
 
   useEffect(() => {
     teacherService.getClasses({ onlyTeaching: true }).then(setClasses).catch(() => {});
@@ -38,8 +41,12 @@ export default function GradingWorkspace() {
   useEffect(() => {
     if (selectedAssignmentId) {
       teacherService.getSubmissions(selectedAssignmentId).then(setSubmissions).catch(() => {});
+      teacherService.getDangBaiByBaiTap(selectedAssignmentId)
+        .then((list) => setH5pContentId(list[0]?.h5pNoiDungId || null))
+        .catch(() => setH5pContentId(null));
     } else {
       setSubmissions([]);
+      setH5pContentId(null);
     }
   }, [selectedAssignmentId]);
 
@@ -186,7 +193,24 @@ export default function GradingWorkspace() {
     chiTietBaiLam: parsedChiTiet
   } : undefined;
 
-  const isAutoGraded = activeAssignment?.loaiBaiTap === 'TRAC_NGHIEM' || currentSubmission?.type === 'TRAC_NGHIEM';
+  const isH5P = activeAssignment?.loaiBaiTap === 'H5P';
+  // Bài nộp có dữ liệu câu trả lời chi tiết (mảng statement "answered" gom từ phía học
+  // sinh) thì hiển thị danh sách câu hỏi đúng/sai thay vì phát lại nội dung H5P.
+  const hasH5PAnswerDetails = (() => {
+    const raw = (parsedChiTiet as any)?.interactionDetails;
+    if (!raw) return false;
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const list = Array.isArray(parsed) ? parsed : [parsed];
+      return list.some((s: any) => s?.object?.definition?.interactionType && s?.result?.response !== undefined);
+    } catch (e) {
+      return false;
+    }
+  })();
+  // H5P chỉ được coi là "đã chấm tự động" khi thật sự có điểm (trangThai DA_CHAM) — nội dung
+  // H5P không báo điểm (VD: ảnh/tương tác đơn giản) vẫn rơi về CHUA_CHAM, cần GV chấm tay.
+  const isAutoGraded = activeAssignment?.loaiBaiTap === 'TRAC_NGHIEM' || currentSubmission?.type === 'TRAC_NGHIEM'
+    || (isH5P && currentSubmission?.trangThai === 'DA_CHAM');
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -336,8 +360,37 @@ export default function GradingWorkspace() {
                 </button>
               </div>
 
+              {/* LUỒNG 0: BÀI H5P (Xem chi tiết từng câu trả lời đúng/sai của học sinh) */}
+              {isH5P && (
+                <div className="space-y-4 animate-in fade-in">
+                  {hasH5PAnswerDetails ? (
+                    <H5PAnswerReview chiTietBaiLam={currentSubmission?.chiTietBaiLam} />
+                  ) : h5pContentId ? (
+                    <div className="min-h-[500px] border border-purple-200 rounded-2xl bg-white shadow-sm">
+                      <H5PPlayer contentId={h5pContentId} />
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-500 text-sm">
+                      Không tìm thấy nội dung H5P cho bài tập này.
+                    </div>
+                  )}
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-sm text-slate-600">
+                    <p className="font-bold text-slate-800 mb-2">Kết quả học sinh báo cáo:</p>
+                    {currentSubmission?.chiTietBaiLam?.rawScore !== undefined ? (
+                      <p>
+                        Điểm tương tác: <span className="font-semibold text-slate-800">{currentSubmission.chiTietBaiLam.rawScore}/{currentSubmission.chiTietBaiLam.maxScore}</span>
+                        {' • '}
+                        Hoàn thành: <span className="font-semibold text-slate-800">{currentSubmission.chiTietBaiLam.completed ? 'Có' : 'Chưa'}</span>
+                      </p>
+                    ) : (
+                      <p className="italic text-slate-400">Nội dung H5P này không tự báo điểm — vui lòng xem lại nội dung ở trên và chấm điểm thủ công bên dưới.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* LUỒNG 1: BÀI TRẮC NGHIỆM (Chấm tự động) */}
-              {isAutoGraded && (
+              {!isH5P && isAutoGraded && (
                 <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm animate-in fade-in">
                   <div className="flex gap-4 mb-6">
                     <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 shrink-0 text-sm">1</span>
@@ -368,7 +421,7 @@ export default function GradingWorkspace() {
               )}
 
               {/* LUỒNG 2: BÀI TỰ LUẬN (Tạo bối cảnh tờ giấy - Quy tắc 4) */}
-              {!isAutoGraded && (
+              {!isH5P && !isAutoGraded && (
                 <div className="space-y-6 animate-in fade-in">
                   {currentSubmission.noiDungText && (
                     <div className="bg-amber-50/30 p-8 rounded-2xl border border-amber-100/50 shadow-sm relative">

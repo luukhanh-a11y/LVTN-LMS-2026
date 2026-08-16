@@ -73,10 +73,25 @@ public class BaiNopService {
         baiNop.setThoiDiemNop(LocalDateTime.now());
         baiNop.setLaNopTre(baiTap.getDeadline() != null && baiNop.getThoiDiemNop().isAfter(baiTap.getDeadline()));
 
-        if (baiTap.getLoaiBaiTap() == LoaiBaiTap.TU_LUAN || baiTap.getLoaiBaiTap() == LoaiBaiTap.H5P) {
+        if (baiTap.getLoaiBaiTap() == LoaiBaiTap.TU_LUAN) {
             baiNop.setDiemTuDong(null);
             baiNop.setTrangThai(TrangThaiBaiNop.CHUA_CHAM);
             baiNop.setXpNhanDuoc((short) 0);
+        } else if (baiTap.getLoaiBaiTap() == LoaiBaiTap.H5P) {
+            // H5P tự chấm điểm dựa trên rawScore/maxScore mà nội dung H5P báo qua xAPI
+            // (FE lưu vào chiTietBaiLam). Nếu nội dung H5P không báo điểm (VD: ảnh/tương
+            // tác đơn giản không có phần chấm) thì rơi về chờ GV chấm tay như tự luận.
+            BigDecimal diemH5P = chamDiemH5PTuChiTietBaiLam(baiNop.getChiTietBaiLam());
+            if (diemH5P != null) {
+                baiNop.setDiemTuDong(diemH5P);
+                baiNop.setTrangThai(TrangThaiBaiNop.DA_CHAM);
+                short xp = (short) (diemH5P.doubleValue() * 10);
+                baiNop.setXpNhanDuoc(xp > 0 ? xp : (short) 0);
+            } else {
+                baiNop.setDiemTuDong(null);
+                baiNop.setTrangThai(TrangThaiBaiNop.CHUA_CHAM);
+                baiNop.setXpNhanDuoc((short) 0);
+            }
         } else {
             baiNop.setTrangThai(TrangThaiBaiNop.DA_CHAM);
             if (baiNop.getChiTietBaiLam() != null && !baiNop.getChiTietBaiLam().isEmpty()) {
@@ -123,6 +138,30 @@ public class BaiNopService {
         }
 
         return baiNopMapper.toResponse(savedBaiNop);
+    }
+
+    // chiTietBaiLam của bài nộp H5P là JSON {rawScore, maxScore, completed, interactionDetails}
+    // (xem submitH5PAssignment ở FE). Quy đổi rawScore/maxScore sang thang điểm 10 nếu có,
+    // trả null nếu nội dung H5P không báo điểm (cần GV chấm tay).
+    private BigDecimal chamDiemH5PTuChiTietBaiLam(String chiTietBaiLamJson) {
+        if (chiTietBaiLamJson == null || chiTietBaiLamJson.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(chiTietBaiLamJson);
+            if (!node.has("rawScore") || !node.has("maxScore")) {
+                return null;
+            }
+            double rawScore = node.get("rawScore").asDouble();
+            double maxScore = node.get("maxScore").asDouble();
+            if (maxScore <= 0) {
+                return null;
+            }
+            double diem = (rawScore / maxScore) * 10.0;
+            return new BigDecimal(diem).setScale(2, RoundingMode.HALF_UP);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public List<BaiNopResponse> getAll() {

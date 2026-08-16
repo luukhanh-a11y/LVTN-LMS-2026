@@ -53,14 +53,18 @@ public class OllamaClient {
             .build();
 
     public Optional<String> generate(String systemPrompt, String userPrompt) {
-        return generate(DEFAULT_MODEL, systemPrompt, userPrompt);
+        return generate(DEFAULT_MODEL, systemPrompt, userPrompt, 0.4, true);
     }
 
     public Optional<String> generate(String model, String systemPrompt, String userPrompt) {
-        return generate(model, systemPrompt, userPrompt, true);
+        return generate(model, systemPrompt, userPrompt, 0.4, true);
     }
 
-    private Optional<String> generate(String model, String systemPrompt, String userPrompt, boolean allowRetryOnGlitch) {
+    public Optional<String> generate(String systemPrompt, String userPrompt, double temperature) {
+        return generate(DEFAULT_MODEL, systemPrompt, userPrompt, temperature, true);
+    }
+
+    private Optional<String> generate(String model, String systemPrompt, String userPrompt, double temperature, boolean allowRetryOnGlitch) {
         try {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("model", model);
@@ -68,10 +72,7 @@ public class OllamaClient {
             body.put("prompt", userPrompt);
             body.put("stream", false);
             body.put("keep_alive", "30m");
-            // Nhiệt độ thấp hơn (0.4) giúp model bám sát yêu cầu hơn, giảm tần suất
-            // lú/chèn tiếng Anh so với 0.7 — đánh đổi là câu trả lời ít đa dạng hơn
-            // 1 chút, chấp nhận được vì đây là nhận xét/báo cáo cần chính xác hơn sáng tạo.
-            body.put("options", Map.of("temperature", 0.4));
+            body.put("options", Map.of("temperature", temperature));
 
             String json = objectMapper.writeValueAsString(body);
             HttpRequest request = HttpRequest.newBuilder()
@@ -96,7 +97,7 @@ public class OllamaClient {
 
             if (allowRetryOnGlitch && GLUED_WORD_PATTERN.matcher(result).find()) {
                 log.info("Phát hiện khả năng dính chữ Việt-Anh trong câu trả lời, thử gọi lại 1 lần...");
-                Optional<String> retried = generate(model, systemPrompt, userPrompt, false);
+                Optional<String> retried = generate(model, systemPrompt, userPrompt, temperature, false);
                 if (retried.isPresent() && !GLUED_WORD_PATTERN.matcher(retried.get()).find()) {
                     return retried;
                 }

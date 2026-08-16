@@ -225,6 +225,58 @@ export const teacherService = {
     return response.data?.data || response.data || [];
   },
 
+  // Lấy dạng bài (kèm h5pNoiDungId) gắn với 1 bài tập — dùng để GV xem lại nội dung H5P khi chấm bài.
+  getDangBaiByBaiTap: async (baiTapId: number): Promise<any[]> => {
+    const response = await api.get(`/he-thong/dang-bai/bai-tap/${baiTapId}/hoc-sinh`);
+    return response.data?.data || response.data || [];
+  },
+
+  // === Học liệu GV tự soạn (Editor.tsx, MaterialDetail.tsx) — /api/giao-vien/dang-bai ===
+
+  getMaterialById: async (dangBaiId: number): Promise<Material> => {
+    const response = await api.get(`/he-thong/dang-bai/${dangBaiId}`);
+    return response.data?.data || response.data;
+  },
+
+  // Toàn bộ học liệu của giáo viên (dang_bai nguồn GIAO_VIEN_BO_SUNG, kèm cả học liệu
+  // hệ thống) — dùng cho tab "Học liệu của tôi" ở Kho học liệu, không phụ thuộc cây
+  // sách theo phân công giảng dạy nên luôn tìm thấy cả học liệu H5P đã tự soạn.
+  getMyMaterials: async (giaoVienId: number): Promise<Material[]> => {
+    const response = await api.get('/giao-vien/dang-bai', { params: { giaoVienId } });
+    return response.data?.data || response.data || [];
+  },
+
+  getMaterialByH5pContentId: async (h5pNoiDungId: string): Promise<Material> => {
+    const response = await api.get(`/giao-vien/dang-bai/by-h5p/${h5pNoiDungId}`);
+    return response.data?.data || response.data;
+  },
+
+  createMaterial: async (dto: {
+    baiHocId: number;
+    tenDangBai: string;
+    loaiNoiDung: string;
+    giaoVienId: number;
+    h5pNoiDungId?: string;
+  }): Promise<Material> => {
+    const response = await api.post('/giao-vien/dang-bai', dto);
+    return response.data?.data || response.data;
+  },
+
+  updateMaterial: async (dangBaiId: number, dto: {
+    baiHocId: number;
+    tenDangBai: string;
+    loaiNoiDung: string;
+    giaoVienId: number;
+    h5pNoiDungId?: string;
+  }): Promise<Material> => {
+    const response = await api.put(`/giao-vien/dang-bai/${dangBaiId}`, dto);
+    return response.data?.data || response.data;
+  },
+
+  deleteMaterial: async (dangBaiId: number, giaoVienId: number): Promise<void> => {
+    await api.delete(`/giao-vien/dang-bai/${dangBaiId}`, { params: { giaoVienId } });
+  },
+
   // === Xét kết quả cuối năm (đề xuất — Admin duyệt lần cuối mới thật sự chuyển lớp) ===
   // /nguoi-dung không trả hocSinhId (chỉ nguoiDungId) nên phải lấy qua /hoso-hocsinh.
   getHocSinhByLop: async (lopHocId: number): Promise<{ hocSinhId: number; hoTen: string; maHocSinh: string }[]> => {

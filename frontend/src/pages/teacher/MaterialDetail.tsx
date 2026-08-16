@@ -110,7 +110,7 @@ export default function TeacherMaterialDetail() {
     setLoading(true);
     setError(null);
     teacherService
-      .getMaterialById(materialId)
+      .getMaterialById(Number(materialId))
       .then((data) => {
         if (!cancelled) setMaterial(data);
       })

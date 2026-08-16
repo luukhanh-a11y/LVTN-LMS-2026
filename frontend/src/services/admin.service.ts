@@ -1,4 +1,5 @@
 import { api } from '../lib/axios';
+import { useAcademicStore } from '../stores/useAcademicStore';
 
 export interface ImportError {
   row: number;
@@ -112,8 +113,13 @@ export const adminService = {
     return response.data?.data || response.data;
   },
 
-  updateUser: async (userId: number, data: any): Promise<any> => {
+  updateUser: async (userId: number | string, data: any): Promise<any> => {
     const response = await api.put(`/nguoi-dung/${userId}`, data);
+    return response.data?.data || response.data;
+  },
+
+  getUserById: async (userId: number | string): Promise<any> => {
+    const response = await api.get(`/nguoi-dung/${userId}`);
     return response.data?.data || response.data;
   },
 
@@ -254,8 +260,15 @@ export const adminService = {
     await api.delete(`/bai-hoc/${id}`);
   },
 
-  getBoSachList: async (): Promise<any[]> => {
-    const response = await api.get('/sach');
+  getBoSachList: async (hocKyId?: number | null): Promise<any[]> => {
+    const params: any = {};
+    const currentHocKy = hocKyId !== undefined ? hocKyId : useAcademicStore.getState().currentHocKyId;
+    if (currentHocKy !== null) {
+      params.hocKyId = currentHocKy;
+    } else {
+      params.namHocId = useAcademicStore.getState().selectedNamHocId;
+    }
+    const response = await api.get('/sach', { params });
     return response.data?.data || response.data || [];
   },
 
@@ -266,6 +279,11 @@ export const adminService = {
 
   createMonHoc: async (data: { tenMon: string; maMon?: string; moTa?: string }): Promise<any> => {
     const response = await api.post('/monhoc', data);
+    return response.data?.data || response.data;
+  },
+
+  updateMonHoc: async (id: number, data: { tenMon: string; maMon?: string; moTa?: string }): Promise<any> => {
+    const response = await api.put(`/monhoc/${id}`, data);
     return response.data?.data || response.data;
   },
 
@@ -351,12 +369,15 @@ export const adminService = {
   },
 
   // === Phân công giảng dạy ===
-  getPhanCongByLop: async (lopHocId: number): Promise<any[]> => {
-    const response = await api.get(`/phan-cong-giang-day/lop-hoc/${lopHocId}`);
+  getPhanCongByLop: async (lopHocId: number, hocKyId?: number): Promise<any[]> => {
+    const params: any = {};
+    const currentHocKy = hocKyId || useAcademicStore.getState().currentHocKyId;
+    if (currentHocKy) params.hocKyId = currentHocKy;
+    const response = await api.get(`/phan-cong-giang-day/lop-hoc/${lopHocId}`, { params });
     return response.data?.data || response.data || [];
   },
 
-  createPhanCong: async (data: { giaoVienId: number; lopHocId: number; maMon: string; hocKyId: number | null }): Promise<any> => {
+  createPhanCong: async (data: { giaoVienId: number; lopHocId: number; monHocId: number; hocKyId: number | null }): Promise<any> => {
     const response = await api.post('/phan-cong-giang-day', data);
     return response.data?.data || response.data;
   },
@@ -369,5 +390,22 @@ export const adminService = {
     const response = await api.get('/hoso-giaovien');
     return response.data?.data || response.data || [];
   },
+
+  getThongBaos: async (namHocId?: number): Promise<any[]> => {
+    const params: any = {};
+    const currentNamHoc = namHocId || useAcademicStore.getState().selectedNamHocId;
+    if (currentNamHoc) params.namHocId = currentNamHoc;
+    const response = await api.get('/thongbao', { params });
+    return response.data?.data || response.data || [];
+  },
+
+  createThongBao: async (data: any): Promise<any> => {
+    const response = await api.post('/thongbao', data);
+    return response.data?.data || response.data;
+  },
+
+  deleteThongBao: async (id: number): Promise<void> => {
+    await api.delete(`/thongbao/${id}`);
+  }
 };
 

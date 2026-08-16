@@ -14,11 +14,12 @@ import SelectChild from './pages/auth/SelectChild';
 // Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
-import AdminTickets from './pages/admin/AdminSupport';
-import AdminClasses from './pages/admin/AdminClasses';
 import ClassDetails from './pages/admin/AdminClassDetail';
 import AdminSettings from './pages/admin/AdminSettings';
-import AdminCurriculum from './pages/admin/Curriculum';
+import AdminUserDetail from './pages/admin/AdminUserDetail';
+import AdminAcademics from './pages/admin/AdminAcademics';
+import AdminOperations from './pages/admin/AdminOperations';
+import AdminThongBao from './pages/admin/AdminThongBao';
 
 // Pages - Teacher
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -28,7 +29,6 @@ import TeacherCreateAssignment from './pages/teacher/CreateAssignment';
 import MaterialWorkspaceLayout from './layouts/MaterialWorkspaceLayout';
 import TeacherMaterials from './pages/teacher/Materials';
 import TeacherMaterialDetail from './pages/teacher/MaterialDetail';
-import AdminKetQuaCuoiNam from './pages/admin/KetQuaCuoiNam';
 import TeacherGrading from './pages/teacher/GradingWorkspace';
 import TeacherGradingDetail from './pages/teacher/GradingDetail';
 import TeacherReports from './pages/teacher/Gradebook';
@@ -45,7 +45,8 @@ import ParentAssignments from './pages/parent/ParentAssignments';
 import ParentNotifications from './pages/parent/ParentNotifications';
 import ParentRewards from './pages/parent/ParentAchievements';
 import ParentSubjectTree from './pages/parent/SubjectTree';
-import ParentProfile from './pages/parent/ParentSupport';
+import ParentSupport from './pages/parent/ParentSupport';
+import ParentProfile from './pages/parent/ParentProfile';
 
 // Pages - Student (Bright Theme)
 import StudentLayout from './layouts/StudentLayout';
@@ -116,12 +117,12 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
-          <Route path="tickets" element={<AdminTickets />} />
-          <Route path="classes" element={<AdminClasses />} />
+          <Route path="users/:userId" element={<AdminUserDetail />} />
           <Route path="classes/:id" element={<ClassDetails />} />
-          <Route path="curriculum" element={<AdminCurriculum />} />
-          <Route path="ket-qua-cuoi-nam" element={<AdminKetQuaCuoiNam />} />
+          <Route path="academics" element={<AdminAcademics />} />
+          <Route path="operations" element={<AdminOperations />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="announcements" element={<AdminThongBao />} />
         </Route>
 
           {/* Teacher Routes */}
@@ -157,7 +158,7 @@ function App() {
           <Route path="notifications" element={<ParentNotifications />} />
           <Route path="rewards" element={<ParentRewards />} />
           <Route path="subject-tree" element={<ParentSubjectTree />} />
-          <Route path="support" element={<ParentProfile />} />
+          <Route path="support" element={<ParentSupport />} />
           <Route path="profile" element={<ParentProfile />} />
         </Route>
 

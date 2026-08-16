@@ -27,9 +27,9 @@ public class ThongBaoController {
     }
 
     @GetMapping
-    public ApiResponse<List<ThongBaoResponse>> getAll() {
+    public ApiResponse<List<ThongBaoResponse>> getAll(@RequestParam(required = false) Integer namHocId) {
         return ApiResponse.<List<ThongBaoResponse>>builder()
-                .data(thongBaoService.getAll())
+                .data(thongBaoService.getAll(namHocId))
                 .build();
     }
 

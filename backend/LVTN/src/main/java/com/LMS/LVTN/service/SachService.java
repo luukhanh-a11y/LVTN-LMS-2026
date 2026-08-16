@@ -16,6 +16,10 @@ import com.LMS.LVTN.repository.HocKyRepository;
 import com.LMS.LVTN.repository.MonHocRepository;
 import com.LMS.LVTN.repository.PhanCongGiangDayRepository;
 import com.LMS.LVTN.repository.SachRepository;
+import com.LMS.LVTN.repository.CauHinhHeThongRepository;
+import com.LMS.LVTN.repository.NamHocRepository;
+import com.LMS.LVTN.entity.CauHinhHeThong;
+import com.LMS.LVTN.entity.NamHoc;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -38,6 +42,14 @@ public class SachService {
     HocKyRepository hocKyRepository;
     PhanCongGiangDayRepository phanCongGiangDayRepository;
     ChuDeService chuDeService;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
+    NamHocRepository namHocRepository;
+
+    private Integer getHocKyHienTaiTuCauHinh() {
+        return cauHinhHeThongRepository.findById((short) 1)
+                .map(config -> config.getHocKyHienTai() != null ? config.getHocKyHienTai().getHocKyId() : null)
+                .orElse(null);
+    }
 
     public SachResponse create(SachRequest request) {
         Sach sach = sachMapper.toEntity(request);
@@ -52,15 +64,20 @@ public class SachService {
             sach.setHocKy(hocKy);
         }
         
+        
         return sachMapper.toResponse(sachRepository.save(sach));
     }
 
-    public List<SachResponse> getAll(Integer hocKyId, String maMon) {
+    public List<SachResponse> getAll(Integer hocKyId, String maMon, Integer namHocId) {
         List<Sach> sachList;
         if (hocKyId != null && maMon != null) {
-            sachList = sachRepository.findByMaMonAndHocKyIdOrNull(maMon, hocKyId);
+            sachList = sachRepository.findByMaMonAndHocKy_HocKyId(maMon, hocKyId);
         } else if (hocKyId != null) {
             sachList = sachRepository.findByHocKy_HocKyId(hocKyId);
+        } else if (namHocId != null && maMon != null) {
+            sachList = sachRepository.findByMaMonAndNamHocId(maMon, namHocId);
+        } else if (namHocId != null) {
+            sachList = sachRepository.findByNamHocId(namHocId);
         } else if (maMon != null) {
             sachList = sachRepository.findByMaMon(maMon);
         } else {
@@ -91,7 +108,10 @@ public class SachService {
             HocKy hocKy = hocKyRepository.findById(request.getHocKyId())
                     .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
             sach.setHocKy(hocKy);
+        } else {
+            sach.setHocKy(null);
         }
+        
 
         return sachMapper.toResponse(sachRepository.save(sach));
     }
@@ -116,7 +136,7 @@ public class SachService {
 
         Short khoiLop = hocSinh.getLopHoc().getKhoiLop();
 
-        List<Sach> ketQua = sachRepository.findByLoaiSachAndKhoiLopAndHocKyIdOrNull(LoaiSach.SACH_GIAO_KHOA, khoiLop, hocKyId);
+        List<Sach> ketQua = sachRepository.findByLoaiSachAndKhoiLopAndHocKy_HocKyId(LoaiSach.SACH_GIAO_KHOA, khoiLop, hocKyId);
 
         return ketQua.stream()
                 .map(sachMapper::toResponse)
@@ -130,10 +150,10 @@ public class SachService {
 
         Short khoiLop = phanCong.getLopHoc().getKhoiLop();
 
-        List<Sach> sbt = sachRepository.findByLoaiSachAndKhoiLopAndMaMonAndHocKyIdOrNull(
+        List<Sach> sbt = sachRepository.findByLoaiSachAndKhoiLopAndMaMonAndHocKy_HocKyId(
                 LoaiSach.SACH_BAI_TAP, khoiLop, maMon, hocKyId);
 
-        List<Sach> sgk = sachRepository.findByLoaiSachAndKhoiLopAndMaMonAndHocKyIdOrNull(
+        List<Sach> sgk = sachRepository.findByLoaiSachAndKhoiLopAndMaMonAndHocKy_HocKyId(
                 LoaiSach.SACH_GIAO_KHOA, khoiLop, maMon, hocKyId);
 
         List<Sach> ketQua = new ArrayList<>();

@@ -11,7 +11,10 @@ import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.PhieuHoTroMapper;
 import com.LMS.LVTN.repository.NguoiDungRepository;
+import com.LMS.LVTN.repository.NguoiDungRepository;
 import com.LMS.LVTN.repository.PhieuHoTroRepository;
+import com.LMS.LVTN.repository.NamHocRepository;
+import com.LMS.LVTN.entity.NamHoc;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -41,6 +44,7 @@ public class PhieuHoTroService {
     NguoiDungRepository nguoiDungRepository;
     ThongBaoService thongBaoService;
     EmailService emailService;
+    NamHocRepository namHocRepository;
 
     @NonFinal
     @Value("${app.default.reset-password:123456}")
@@ -92,7 +96,7 @@ public class PhieuHoTroService {
                 .collect(Collectors.toList());
     }
 
-    public Page<PhieuHoTroResponse> searchPhieuHoTro(String keyword, String loaiYeuCau, String trangThai, Pageable pageable) {
+    public Page<PhieuHoTroResponse> searchPhieuHoTro(String keyword, String loaiYeuCau, String trangThai, Integer namHocId, Pageable pageable) {
         Specification<PhieuHoTro> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (keyword != null && !keyword.isEmpty()) {
@@ -104,6 +108,28 @@ public class PhieuHoTroService {
             }
             if (trangThai != null && !trangThai.isEmpty() && !trangThai.equals("all")) {
                 predicates.add(cb.equal(root.get("trangThai"), com.LMS.LVTN.enums.TrangThaiPhieu.valueOf(trangThai)));
+            }
+            if (namHocId != null) {
+                NamHoc namHoc = namHocRepository.findById(namHocId).orElse(null);
+                if (namHoc != null && namHoc.getNgayBatDau() != null) {
+                    java.time.LocalDateTime startDate = namHoc.getNgayBatDau().atStartOfDay();
+                    java.time.LocalDateTime endDate = null;
+                    
+                    List<NamHoc> allNamHocs = namHocRepository.findAll(org.springframework.data.domain.Sort.by("ngayBatDau").ascending());
+                    for (int i = 0; i < allNamHocs.size(); i++) {
+                        if (allNamHocs.get(i).getNamHocId().equals(namHoc.getNamHocId())) {
+                            if (i + 1 < allNamHocs.size()) {
+                                endDate = allNamHocs.get(i + 1).getNgayBatDau().atStartOfDay();
+                            }
+                            break;
+                        }
+                    }
+                    
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("ngayTao"), startDate));
+                    if (endDate != null) {
+                        predicates.add(cb.lessThan(root.get("ngayTao"), endDate));
+                    }
+                }
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

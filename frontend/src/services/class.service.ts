@@ -1,4 +1,5 @@
 import { api } from '../lib/axios';
+import { useAcademicStore } from '../stores/useAcademicStore';
 
 export interface ClassRoom {
   lopHocId: number;
@@ -27,8 +28,11 @@ export interface ClassRoomDto {
 }
 
 export const classService = {
-  getAllClasses: async (): Promise<ClassRoom[]> => {
-    const response = await api.get('/lophoc', { params: { size: 1000 } });
+  getAllClasses: async (namHocId?: number): Promise<ClassRoom[]> => {
+    const params: any = { size: 1000 };
+    const currentNamHoc = namHocId || useAcademicStore.getState().selectedNamHocId;
+    if (currentNamHoc) params.namHocId = currentNamHoc;
+    const response = await api.get('/lophoc', { params });
     const data = response.data?.data?.content || response.data?.data || response.data || [];
     return data.map((c: any) => ({
       lopHocId: c.lopHocId,
@@ -43,7 +47,11 @@ export const classService = {
   },
 
   searchClasses: async (params: { keyword?: string; namHocId?: number; khoiLop?: number; page?: number; size?: number }): Promise<any> => {
-    const response = await api.get('/lophoc', { params });
+    const p = { ...params };
+    if (!p.namHocId && useAcademicStore.getState().selectedNamHocId) {
+      p.namHocId = useAcademicStore.getState().selectedNamHocId;
+    }
+    const response = await api.get('/lophoc', { params: p });
     const content = response.data?.data?.content || [];
     return {
       content: content.map((c: any) => ({

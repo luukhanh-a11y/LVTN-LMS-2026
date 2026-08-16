@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import toast from 'react-hot-toast';
 import { adminService } from '../../../services/admin.service';
+import { useAcademicStore } from '../../../stores/useAcademicStore';
 
 export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initialData }: any) {
   const isEdit = !!initialData;
@@ -14,6 +15,19 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
   const [hocKy, setHocKy] = useState(1);
   const [loaiSach, setLoaiSach] = useState<'SACH_GIAO_KHOA' | 'SACH_BAI_TAP'>('SACH_GIAO_KHOA');
   const [loading, setLoading] = useState(false);
+  const { selectedNamHocId } = useAcademicStore();
+
+  const [hocKyList, setHocKyList] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (selectedNamHocId) {
+      import('../../../services/academic.service').then(({ academicService }) => {
+        academicService.getHocKysByNamHoc(selectedNamHocId)
+          .then(setHocKyList)
+          .catch(() => setHocKyList([]));
+      });
+    }
+  }, [selectedNamHocId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -21,7 +35,7 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
     setBoSach(initialData?.boSach ?? '');
     setKhoiLop(initialData?.khoiLop ?? 1);
     setMonHocId(initialData?.monHocId ?? '');
-    setHocKy(initialData?.hocKyId ?? 1);
+    setHocKy(initialData?.hocKyId ?? '');
     setLoaiSach(initialData?.loaiSach ?? 'SACH_GIAO_KHOA');
   }, [isOpen, initialData]);
 
@@ -35,9 +49,10 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
         boSach,
         khoiLop: Number(khoiLop), 
         maMon: selectedMonHoc?.maMon, 
-        hocKyId: hocKy === 3 ? null : Number(hocKy), // 3 means whole year (null)
+        hocKyId: hocKy === '' ? null : Number(hocKy), 
         loaiSach, 
         trangThai: 'ACTIVE',
+        namHocId: selectedNamHocId,
       };
       if (isEdit) {
         await adminService.updateSach(initialData.sachId, payload);
@@ -96,10 +111,11 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Học Kỳ</label>
-            <select className="w-full border p-2 rounded" value={hocKy} onChange={e => setHocKy(Number(e.target.value))}>
-              <option value={1}>Học kỳ 1</option>
-              <option value={2}>Học kỳ 2</option>
-              <option value={3}>Cả năm</option>
+            <select className="w-full border p-2 rounded" value={hocKy} onChange={e => setHocKy(e.target.value === '' ? '' : Number(e.target.value))}>
+              {hocKyList.map(hk => (
+                <option key={hk.hocKyId} value={hk.hocKyId}>Học kỳ {hk.soHocKy}</option>
+              ))}
+              <option value="">Cả năm (Dùng chung)</option>
             </select>
           </div>
         </div>

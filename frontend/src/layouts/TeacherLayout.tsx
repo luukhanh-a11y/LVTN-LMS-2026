@@ -37,47 +37,28 @@ function NavItem({ to, icon: Icon, label, badge }: { to: string, icon: React.Ele
   );
 }
 
-function AcademicYearSelector() {
-  const { selectedNamHocId, setNamHoc, isReadOnly } = useAcademicStore();
-  const [namHocs, setNamHocs] = useState<NamHoc[]>([]);
+function CurrentAcademicInfo() {
+  const { currentNamHoc, currentHocKyId } = useAcademicStore();
 
   useEffect(() => {
-    academicService.getNamHocs().then((list) => {
-      setNamHocs(list);
-      academicService.getCauHinhHeThong().then(cauHinh => {
+    academicService.getCauHinhHeThong().then(cauHinh => {
+      academicService.getNamHocs().then(list => {
         const current = list.find((nh) => nh.tenNamHoc === cauHinh.tenNamHocHienTai);
         if (current) {
           useAcademicStore.getState().setCurrentNamHoc(current.tenNamHoc, current.namHocId, current.ngayBatDau);
         }
-        useAcademicStore.getState().setCurrentHocKy(cauHinh.hocKyHienTaiId);
-      }).catch(console.error);
+      });
+      useAcademicStore.getState().setCurrentHocKy(cauHinh.hocKyHienTaiId);
     }).catch(console.error);
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = Number(e.target.value);
-    const nh = namHocs.find((n) => n.namHocId === id);
-    if (nh) setNamHoc(nh.tenNamHoc, nh.namHocId, nh.ngayBatDau);
-  };
-
   return (
     <div className="flex items-center space-x-3 mr-4">
-      {isReadOnly && (
-        <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-md animate-pulse">
-          CHẾ ĐỘ CHỈ XEM
+      <div className="flex items-center bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 shadow-sm">
+        <Calendar className="w-4 h-4 text-blue-600 mr-2" />
+        <span className="text-sm font-bold text-blue-800">
+          Học kỳ {currentHocKyId || '-'} • Năm học {currentNamHoc || '...'}
         </span>
-      )}
-      <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-        <Calendar className="w-4 h-4 text-slate-500 mr-2" />
-        <select
-          className="bg-transparent border-none outline-none text-sm font-semibold text-slate-700 cursor-pointer"
-          value={selectedNamHocId ?? ''}
-          onChange={handleChange}
-        >
-          {namHocs.map(nh => (
-            <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}</option>
-          ))}
-        </select>
       </div>
     </div>
   );
@@ -197,7 +178,7 @@ export default function TeacherLayout() {
           <div className="text-sm text-slate-500 font-medium">Hệ thống Quản lý Giảng dạy</div>
           
           <div className="flex items-center gap-4 relative">
-            <AcademicYearSelector />
+            <CurrentAcademicInfo />
             
             <div className="relative group">
               <button 

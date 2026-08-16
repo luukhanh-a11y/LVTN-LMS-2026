@@ -8,6 +8,7 @@ interface AcademicState {
   selectedNamHocId: number | null;
   currentHocKyId: number | null;
   isReadOnly: boolean;
+  yearStatus: 'PAST' | 'CURRENT' | 'FUTURE';
   setNamHoc: (namHoc: string, namHocId: number, ngayBatDau: string) => void;
   setCurrentNamHoc: (namHoc: string, namHocId: number, ngayBatDau: string) => void;
   setCurrentHocKy: (hocKyId: number) => void;
@@ -24,12 +25,22 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
   selectedNamHocId: null,
   currentHocKyId: null,
   isReadOnly: false,
+  yearStatus: 'CURRENT',
   setNamHoc: (namHoc, namHocId, ngayBatDau) => {
     const { currentNgayBatDau } = get();
     // Năm học có ngày bắt đầu TRƯỚC năm hiện tại của hệ thống mới bị khoá (chỉ xem).
     // Năm hiện tại hoặc năm tương lai (đang chuẩn bị) vẫn được sửa bình thường.
     const isReadOnly = !!currentNgayBatDau && new Date(ngayBatDau) < new Date(currentNgayBatDau);
-    set({ selectedNamHoc: namHoc, selectedNamHocId: namHocId, isReadOnly });
+    
+    let status: 'PAST' | 'CURRENT' | 'FUTURE' = 'CURRENT';
+    if (currentNgayBatDau) {
+      const selectedDate = new Date(ngayBatDau);
+      const currentDate = new Date(currentNgayBatDau);
+      if (selectedDate < currentDate) status = 'PAST';
+      else if (selectedDate > currentDate) status = 'FUTURE';
+    }
+
+    set({ selectedNamHoc: namHoc, selectedNamHocId: namHocId, isReadOnly, yearStatus: status });
   },
   setCurrentNamHoc: (namHoc, namHocId, ngayBatDau) => {
     set({
@@ -38,7 +49,8 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
       currentNgayBatDau: ngayBatDau,
       selectedNamHoc: namHoc,
       selectedNamHocId: namHocId,
-      isReadOnly: false
+      isReadOnly: false,
+      yearStatus: 'CURRENT'
     });
   },
   setCurrentHocKy: (hocKyId) => set({ currentHocKyId: hocKyId })

@@ -27,9 +27,9 @@ public class KetQuaCuoiNamController {
     }
 
     @GetMapping
-    public ApiResponse<List<KetQuaCuoiNamResponse>> getAll() {
+    public ApiResponse<List<KetQuaCuoiNamResponse>> getAll(@RequestParam(required = false) String namHoc) {
         return ApiResponse.<List<KetQuaCuoiNamResponse>>builder()
-                .data(ketQuaCuoiNamService.getAll())
+                .data(ketQuaCuoiNamService.getAll(namHoc))
                 .build();
     }
 
@@ -41,7 +41,14 @@ public class KetQuaCuoiNamController {
     }
 
     @GetMapping("/hoc-sinh/{hocSinhId}/nam-hoc")
-    public ApiResponse<KetQuaCuoiNamResponse> getByHocSinhIdAndNamHoc(@PathVariable Long hocSinhId, @RequestParam("namHoc") String namHoc) {
+    public ApiResponse<KetQuaCuoiNamResponse> getByHocSinhIdAndNamHoc(@PathVariable Long hocSinhId, @RequestParam(value = "namHoc", required = false) String namHoc) {
+        return ApiResponse.<KetQuaCuoiNamResponse>builder()
+                .data(ketQuaCuoiNamService.getByHocSinhIdAndNamHoc(hocSinhId, namHoc))
+                .build();
+    }
+
+    @GetMapping("/hoc-sinh/{hocSinhId}")
+    public ApiResponse<KetQuaCuoiNamResponse> getByHocSinhId(@PathVariable Long hocSinhId, @RequestParam(value = "namHoc", required = false) String namHoc) {
         return ApiResponse.<KetQuaCuoiNamResponse>builder()
                 .data(ketQuaCuoiNamService.getByHocSinhIdAndNamHoc(hocSinhId, namHoc))
                 .build();

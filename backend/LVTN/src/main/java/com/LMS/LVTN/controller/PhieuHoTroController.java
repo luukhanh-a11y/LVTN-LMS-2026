@@ -13,6 +13,8 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/phieuhotro")
@@ -29,14 +31,17 @@ public class PhieuHoTroController {
                 .build();
     }
 
-    @GetMapping
-    public ApiResponse<Page<PhieuHoTroResponse>> getAll(
+    @GetMapping("/search")
+    public ApiResponse<Page<PhieuHoTroResponse>> searchPhieuHoTro(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String loaiYeuCau,
-            @RequestParam(required = false) String trangThai,
-            @PageableDefault(size = 15) Pageable pageable) {
+            @RequestParam(required = false, defaultValue = "all") String loaiYeuCau,
+            @RequestParam(required = false, defaultValue = "all") String trangThai,
+            @RequestParam(required = false) Integer namHocId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "ngayTao"));
         return ApiResponse.<Page<PhieuHoTroResponse>>builder()
-                .data(phieuHoTroService.searchPhieuHoTro(keyword, loaiYeuCau, trangThai, pageable))
+                .data(phieuHoTroService.searchPhieuHoTro(keyword, loaiYeuCau, trangThai, namHocId, pageable))
                 .build();
     }
 

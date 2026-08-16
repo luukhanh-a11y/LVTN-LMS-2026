@@ -1,55 +1,104 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { BookOpen, Layers, FileText, ChevronRight, ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react';
+import { BookOpen, Layers, FileText, ChevronRight, ChevronDown, Plus, Pencil, Trash2, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { cn } from '../../lib/utils';
 import { adminService } from '../../services/admin.service';
+import { classService } from '../../services/class.service';
 import GameAuthoringForm from './components/GameAuthoringForm';
 import { CreateSachModal, CreateChuDeModal, CreateBaiHocModal } from './components/CurriculumForms';
+import { academicService } from '../../services/academic.service';
+import { Modal } from '../../components/ui/Modal';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 const LOAI_SACH_LABEL: Record<string, string> = {
   SACH_GIAO_KHOA: 'Giáo khoa',
   SACH_BAI_TAP: 'Bài tập',
 };
 
-export default function AdminCurriculum() {
+export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?: boolean }) {
   const [monHocList, setMonHocList] = useState<any[]>([]);
   const [boSachList, setBoSachList] = useState<any[]>([]);
   const [chuongList, setChuongList] = useState<any[]>([]);
   const [baiHocList, setBaiHocList] = useState<any[]>([]);
   const [dangBaiList, setDangBaiList] = useState<any[]>([]);
+  const { currentHocKyId, selectedNamHocId } = useAcademicStore();
 
+  const [filterHocKy, setFilterHocKy] = useState<number | ''>('');
+  const [hocKyList, setHocKyList] = useState<any[]>([]);
   const [filterKhoi, setFilterKhoi] = useState<number | ''>('');
-  const [filterMon, setFilterMon] = useState<number | ''>('');
+  const [filterMon, setFilterMon] = useState<string>('');
   const [filterLoaiSach, setFilterLoaiSach] = useState<'' | 'SACH_GIAO_KHOA' | 'SACH_BAI_TAP'>('');
 
   const [showSachModal, setShowSachModal] = useState(false);
   const [showChuDeModal, setShowChuDeModal] = useState(false);
   const [showBaiHocModal, setShowBaiHocModal] = useState(false);
   const [editingSach, setEditingSach] = useState<any>(null);
+  const [availableKhoi, setAvailableKhoi] = useState<number[]>([]);
   const [editingChuDe, setEditingChuDe] = useState<any>(null);
   const [editingBaiHoc, setEditingBaiHoc] = useState<any>(null);
+  const [isCloningMode, setIsCloningMode] = useState(false);
+  const [namHocList, setNamHocList] = useState<any[]>([]);
 
   const fetchData = async () => {
     try {
-      const [sach, chuong, baiHoc, dangBai, monHoc] = await Promise.all([
-        adminService.getBoSachList(),
+      const fetchHocKyId = filterHocKy === '' ? currentHocKyId : (filterHocKy === -1 ? null : filterHocKy);
+      const [sach, chuong, baiHoc, dangBai, monHoc, classes] = await Promise.all([
+        adminService.getBoSachList(fetchHocKyId as number | null),
         adminService.getChuongList(),
         adminService.getBaiHocList(),
         adminService.getDangBaiList(),
-        adminService.getMonHocList()
+        adminService.getMonHocList(),
+        classService.getAllClasses(),
       ]);
-      setBoSachList(sach);
+      
+      let filteredSach = sach;
+      if (fetchHocKyId === null) {
+        const validHocKyIds = new Set(hocKyList.map(hk => hk.hocKyId));
+        filteredSach = sach.filter((s: any) => validHocKyIds.has(s.hocKyId));
+      } else {
+        filteredSach = sach.filter((s: any) => s.hocKyId === fetchHocKyId);
+      }
+      
+      setBoSachList(filteredSach);
       setChuongList(chuong);
       setBaiHocList(baiHoc);
       setDangBaiList(dangBai);
       setMonHocList(monHoc);
+      
+      const uniqueKhoi = Array.from(new Set(classes.map((c: any) => c.khoiLop))).sort((a: any, b: any) => a - b);
+      setAvailableKhoi(uniqueKhoi as number[]);
     } catch (err) {
       console.error(err);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { 
+    if (selectedNamHocId) {
+      academicService.getHocKysByNamHoc(selectedNamHocId)
+        .then((hks) => {
+          setHocKyList(hks);
+          if (hks.length > 0) {
+            if (filterHocKy === '' || !hks.find((hk: any) => hk.hocKyId === filterHocKy)) {
+              const currentHk = hks.find((hk: any) => hk.hocKyId === currentHocKyId);
+              setFilterHocKy(currentHk ? currentHk.hocKyId : hks[0].hocKyId);
+            }
+          } else {
+            setFilterHocKy(-1);
+          }
+        })
+        .catch(() => setHocKyList([]));
+    } else {
+      setHocKyList([]);
+      setFilterHocKy(-1);
+    }
+  }, [selectedNamHocId, currentHocKyId]);
+
+  useEffect(() => { 
+    fetchData(); 
+    academicService.getNamHocs().then(setNamHocList).catch(() => setNamHocList([]));
+  }, [currentHocKyId, selectedNamHocId, filterHocKy]);
 
   const [selectedBoSach, setSelectedBoSach] = useState<number | null>(null);
   const [selectedChuong, setSelectedChuong] = useState<number | null>(null);
@@ -69,7 +118,26 @@ export default function AdminCurriculum() {
 
   const filteredBoSachList = boSachList.filter(sach => {
     const matchKhoi = filterKhoi === '' || sach.khoiLop === Number(filterKhoi);
-    const matchMon = filterMon === '' || sach.monHocId === Number(filterMon);
+    let matchMon = filterMon === '' || sach.maMon === filterMon;
+    
+    // Fallback cho trường hợp dữ liệu mock bị lệch mã môn (VD: sách "Mĩ Thuật 3" mã MI_THUAT nhưng môn "Mỹ thuật" mã MT)
+    if (!matchMon && filterMon !== '') {
+      const selectedMon = monHocList.find(m => m.maMon === filterMon);
+      if (selectedMon) {
+        const tenMonStr = selectedMon.tenMon.toLowerCase();
+        const tenMonStrAlt = tenMonStr.replace('ỹ', 'ĩ'); // Xử lý Mỹ thuật / Mĩ thuật
+        const sachTen = sach.tenSach ? sach.tenSach.toLowerCase() : '';
+        const sachMa = sach.maMon ? sach.maMon.toLowerCase() : '';
+        
+        if (sachTen.includes(tenMonStr) || sachTen.includes(tenMonStrAlt) || 
+            sachMa.includes(tenMonStr.replace(/\s+/g, '_')) || 
+            sachMa.includes(tenMonStrAlt.replace(/\s+/g, '_')) ||
+            (tenMonStr === 'mỹ thuật' && sachMa === 'mi_thuat')) {
+          matchMon = true;
+        }
+      }
+    }
+
     const matchLoai = filterLoaiSach === '' || sach.loaiSach === filterLoaiSach;
     return matchKhoi && matchMon && matchLoai;
   });
@@ -108,39 +176,84 @@ export default function AdminCurriculum() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Quản lý Chương trình học & Kho Bài tập</h1>
+  if (isCloningMode) {
+    return (
+      <div className={cn("space-y-6", !isInsideTab && "animate-in fade-in")}>
+        {!isInsideTab && (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Chương trình học</h2>
+              <p className="text-slate-500 mt-1">Quản lý và cập nhật kho tài liệu giảng dạy</p>
+            </div>
+          </div>
+        )}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <Button variant="outline" size="sm" className="mb-4 text-slate-500 hover:text-slate-800" onClick={() => setIsCloningMode(false)}>
+            Quay lại
+          </Button>
+          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
+            <Copy className="w-5 h-5 mr-3 text-blue-600" /> Nhân bản sách
+          </h3>
+          <NhanBanSachForm monHocList={monHocList} namHocList={namHocList} onComplete={() => { setIsCloningMode(false); fetchData(); }} />
+        </div>
       </div>
+    );
+  }
 
+  return (
+    <div className={cn("space-y-6", !isInsideTab && "animate-in fade-in")}>
+      {!isInsideTab && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Chương trình học</h2>
+            <p className="text-slate-500 mt-1">Quản lý và cập nhật kho tài liệu giảng dạy</p>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cột 1: Cấu trúc Cây Chương trình học */}
         <Card className="lg:col-span-1 shadow-sm border-slate-200 flex flex-col">
           <CardHeader className="py-4 border-b border-slate-100 bg-slate-50/50">
             <CardTitle className="text-base font-semibold text-slate-700 flex justify-between items-center mb-3">
               <span>Sách</span>
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingSach(null); setShowSachModal(true); }}><Plus className="w-3 h-3 mr-1" /> Bộ sách</Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setIsCloningMode(true)}><Copy className="w-3 h-3 mr-1" /> Nhân bản</Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingSach(null); setShowSachModal(true); }}><Plus className="w-3 h-3 mr-1" /> Bộ sách</Button>
+              </div>
             </CardTitle>
             <div className="flex gap-2 mb-2">
+              <select
+                className="flex-1 h-8 text-xs border-slate-200 rounded-md bg-white text-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
+                value={filterHocKy}
+                onChange={(e) => setFilterHocKy(e.target.value ? Number(e.target.value) : -1)}
+              >
+                {hocKyList.length > 0 ? (
+                  hocKyList.map(hk => (
+                    <option key={hk.hocKyId} value={hk.hocKyId}>Học kỳ {hk.soHocKy}</option>
+                  ))
+                ) : (
+                  <option value="">Không có học kỳ</option>
+                )}
+                <option value="-1">Toàn năm học (Dùng chung)</option>
+              </select>
               <select
                 className="flex-1 h-8 text-xs border-slate-200 rounded-md bg-white text-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
                 value={filterKhoi}
                 onChange={(e) => setFilterKhoi(e.target.value ? Number(e.target.value) : '')}
               >
                 <option value="">Tất cả Khối</option>
-                {[...Array(12)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>Khối {i + 1}</option>
+                {availableKhoi.map(k => (
+                  <option key={k} value={k}>Khối {k}</option>
                 ))}
               </select>
               <select
                 className="flex-1 h-8 text-xs border-slate-200 rounded-md bg-white text-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
                 value={filterMon}
-                onChange={(e) => setFilterMon(e.target.value ? Number(e.target.value) : '')}
+                onChange={(e) => setFilterMon(e.target.value)}
               >
                 <option value="">Tất cả Môn</option>
                 {monHocList.map(m => (
-                  <option key={m.monHocId} value={m.monHocId}>{m.tenMon}</option>
+                  <option key={m.monHocId} value={m.maMon}>{m.tenMon}</option>
                 ))}
               </select>
             </div>
@@ -317,6 +430,125 @@ export default function AdminCurriculum() {
       <CreateSachModal isOpen={showSachModal} onClose={() => setShowSachModal(false)} onSuccess={() => { setShowSachModal(false); fetchData(); }} monHocList={monHocList} initialData={editingSach} />
       {selectedBoSach && <CreateChuDeModal isOpen={showChuDeModal} onClose={() => setShowChuDeModal(false)} onSuccess={() => { setShowChuDeModal(false); fetchData(); if (!expandedBoSach.includes(selectedBoSach)) toggleBoSach(selectedBoSach); }} sachId={selectedBoSach} initialData={editingChuDe} />}
       {selectedChuong && <CreateBaiHocModal isOpen={showBaiHocModal} onClose={() => setShowBaiHocModal(false)} onSuccess={() => { setShowBaiHocModal(false); fetchData(); if (!expandedChuong.includes(selectedChuong)) toggleChuong(selectedChuong); }} chuDeId={selectedChuong} initialData={editingBaiHoc} />}
+
+
+    </div>
+  );
+}
+
+function NhanBanSachForm({ monHocList, namHocList, onComplete }: { monHocList: any[], namHocList: any[], onComplete: () => void }) {
+  const [monHocId, setMonHocId] = useState('');
+  const [khoiLop, setKhoiLop] = useState('');
+
+  const [namHocCuId, setNamHocCuId] = useState('');
+  const [hocKyCuOptions, setHocKyCuOptions] = useState<any[]>([]);
+  const [hocKyCuId, setHocKyCuId] = useState('');
+
+  const [namHocMoiId, setNamHocMoiId] = useState('');
+  const [hocKyMoiOptions, setHocKyMoiOptions] = useState<any[]>([]);
+  const [hocKyMoiId, setHocKyMoiId] = useState('');
+
+  const [kemCon, setKemCon] = useState(true);
+  const [isCloning, setIsCloning] = useState(false);
+
+  useEffect(() => {
+    if (!namHocCuId) { setHocKyCuOptions([]); setHocKyCuId(''); return; }
+    academicService.getHocKysByNamHoc(Number(namHocCuId)).then(setHocKyCuOptions).catch(() => setHocKyCuOptions([]));
+    setHocKyCuId('');
+  }, [namHocCuId]);
+
+  useEffect(() => {
+    if (!namHocMoiId) { setHocKyMoiOptions([]); setHocKyMoiId(''); return; }
+    academicService.getHocKysByNamHoc(Number(namHocMoiId)).then(setHocKyMoiOptions).catch(() => setHocKyMoiOptions([]));
+    setHocKyMoiId('');
+  }, [namHocMoiId]);
+
+  const handleClone = async () => {
+    if (!monHocId || !khoiLop || !hocKyCuId || !hocKyMoiId) {
+      toast.error('Vui lòng chọn đủ Môn học, Khối, Học kỳ nguồn và đích');
+      return;
+    }
+    if (hocKyCuId === hocKyMoiId) {
+      toast.error('Học kỳ nguồn và đích phải khác nhau');
+      return;
+    }
+    setIsCloning(true);
+    try {
+      const params = {
+        monHocId: Number(monHocId), khoiLop: Number(khoiLop),
+        hocKyCuId: Number(hocKyCuId), hocKyMoiId: Number(hocKyMoiId),
+      };
+      if (kemCon) {
+        await adminService.cloneSachKemChuDe(params);
+      } else {
+        await adminService.cloneSachKhongChuDe(params);
+      }
+      toast.success('Nhân bản sách thành công!');
+      onComplete();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi khi nhân bản sách');
+    } finally {
+      setIsCloning(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col">
+      <div className="p-6 space-y-6">
+        <p className="text-sm text-slate-500">Sao chép sách của 1 môn/khối từ một năm học - học kỳ NGUỒN sang một năm học - học kỳ ĐÍCH khác. Bản sao độc lập hoàn toàn với bản gốc.</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <select className="px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={monHocId} onChange={e => setMonHocId(e.target.value)}>
+            <option value="">-- Môn học --</option>
+            {monHocList.map(m => <option key={m.monHocId} value={m.monHocId}>{m.tenMon || m.tenMonHoc}</option>)}
+          </select>
+          <select className="px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={khoiLop} onChange={e => setKhoiLop(e.target.value)}>
+            <option value="">-- Khối --</option>
+            {[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>Khối {i + 1}</option>)}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+          <div className="space-y-3">
+            <h4 className="font-bold text-slate-700">Nguồn (sao chép từ)</h4>
+            <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={namHocCuId} onChange={e => setNamHocCuId(e.target.value)}>
+              <option value="">-- Năm học nguồn --</option>
+              {namHocList.map(nh => <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}</option>)}
+            </select>
+            <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={hocKyCuId} onChange={e => setHocKyCuId(e.target.value)} disabled={!namHocCuId}>
+              <option value="">-- Học kỳ nguồn --</option>
+              {hocKyCuOptions.map((hk: any) => <option key={hk.hocKyId} value={hk.hocKyId}>Học kỳ {hk.soHocKy}</option>)}
+            </select>
+          </div>
+          <div className="space-y-3">
+            <h4 className="font-bold text-slate-700">Đích (sao chép tới)</h4>
+            <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={namHocMoiId} onChange={e => setNamHocMoiId(e.target.value)}>
+              <option value="">-- Năm học đích --</option>
+              {namHocList.map(nh => <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}</option>)}
+            </select>
+            <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={hocKyMoiId} onChange={e => setHocKyMoiId(e.target.value)} disabled={!namHocMoiId}>
+              <option value="">-- Học kỳ đích --</option>
+              {hocKyMoiOptions.map((hk: any) => <option key={hk.hocKyId} value={hk.hocKyId}>Học kỳ {hk.soHocKy}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 text-sm font-medium pt-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" className="w-4 h-4 text-blue-600 focus:ring-blue-500" checked={kemCon} onChange={() => setKemCon(true)} />
+            Kèm cả Chủ đề - Bài học - Dạng bài
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" className="w-4 h-4 text-blue-600 focus:ring-blue-500" checked={!kemCon} onChange={() => setKemCon(false)} />
+            Chỉ nhân bản Sách
+          </label>
+        </div>
+      </div>
+      <div className="pt-4 flex justify-end">
+        <Button onClick={handleClone} disabled={isCloning} leftIcon={<Copy className="w-4 h-4" />}>
+          {isCloning ? 'Đang xử lý...' : 'Thực hiện Nhân bản'}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -6,10 +6,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   leftIcon?: React.ReactNode;
+  isLoading?: boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', leftIcon, children, ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'md', leftIcon, isLoading, children, ...props }, ref) => {
 
     // Base classes that all buttons share
     const baseClasses = "inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed";

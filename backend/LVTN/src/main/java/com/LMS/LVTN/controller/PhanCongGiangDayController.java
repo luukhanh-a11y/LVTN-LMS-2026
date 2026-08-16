@@ -27,9 +27,9 @@ public class PhanCongGiangDayController {
     }
 
     @GetMapping
-    public ApiResponse<List<PhanCongGiangDayResponse>> getAll() {
+    public ApiResponse<List<PhanCongGiangDayResponse>> getAll(@RequestParam(required = false) Integer hocKyId) {
         return ApiResponse.<List<PhanCongGiangDayResponse>>builder()
-                .data(phanCongGiangDayService.getAll())
+                .data(phanCongGiangDayService.getAll(hocKyId))
                 .build();
     }
 
@@ -41,16 +41,16 @@ public class PhanCongGiangDayController {
     }
 
     @GetMapping("/giao-vien/{giaoVienId}")
-    public ApiResponse<List<PhanCongGiangDayResponse>> getByGiaoVienId(@PathVariable Long giaoVienId) {
+    public ApiResponse<List<PhanCongGiangDayResponse>> getByGiaoVienId(@PathVariable Long giaoVienId, @RequestParam(required = false) Integer hocKyId) {
         return ApiResponse.<List<PhanCongGiangDayResponse>>builder()
-                .data(phanCongGiangDayService.getByGiaoVienId(giaoVienId))
+                .data(phanCongGiangDayService.getByGiaoVienId(giaoVienId, hocKyId))
                 .build();
     }
 
     @GetMapping("/lop-hoc/{lopHocId}")
-    public ApiResponse<List<PhanCongGiangDayResponse>> getByLopHocId(@PathVariable Long lopHocId) {
+    public ApiResponse<List<PhanCongGiangDayResponse>> getByLopHocId(@PathVariable Long lopHocId, @RequestParam(required = false) Integer hocKyId) {
         return ApiResponse.<List<PhanCongGiangDayResponse>>builder()
-                .data(phanCongGiangDayService.getByLopHocId(lopHocId))
+                .data(phanCongGiangDayService.getByLopHocId(lopHocId, hocKyId))
                 .build();
     }
 

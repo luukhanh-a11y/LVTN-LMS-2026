@@ -13,6 +13,9 @@ import com.LMS.LVTN.repository.HopThuThongBaoRepository;
 import com.LMS.LVTN.repository.HoSoHocSinhRepository;
 import com.LMS.LVTN.repository.NguoiDungRepository;
 import com.LMS.LVTN.repository.ThongBaoRepository;
+import com.LMS.LVTN.repository.NamHocRepository;
+import com.LMS.LVTN.entity.NamHoc;
+import com.LMS.LVTN.repository.CauHinhHeThongRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -33,6 +36,8 @@ public class ThongBaoService {
     NguoiDungRepository nguoiDungRepository;
     HoSoHocSinhRepository hoSoHocSinhRepository;
     HopThuThongBaoRepository hopThuThongBaoRepository;
+    NamHocRepository namHocRepository;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
 
     @Transactional
     public ThongBaoResponse create(ThongBaoRequest request) {
@@ -78,8 +83,39 @@ public class ThongBaoService {
         return thongBaoMapper.toResponse(savedThongBao);
     }
 
-    public List<ThongBaoResponse> getAll() {
-        return thongBaoRepository.findAll().stream()
+    public List<ThongBaoResponse> getAll(Integer namHocId) {
+        List<ThongBao> list;
+        if (namHocId != null) {
+            NamHoc namHoc = namHocRepository.findById(namHocId).orElse(null);
+            if (namHoc != null && namHoc.getNgayBatDau() != null) {
+                java.time.LocalDateTime startDate = namHoc.getNgayBatDau().atStartOfDay();
+                java.time.LocalDateTime endDate = null;
+                
+                List<NamHoc> allNamHocs = namHocRepository.findAll(org.springframework.data.domain.Sort.by("ngayBatDau").ascending());
+                for (int i = 0; i < allNamHocs.size(); i++) {
+                    if (allNamHocs.get(i).getNamHocId().equals(namHoc.getNamHocId())) {
+                        if (i + 1 < allNamHocs.size()) {
+                            endDate = allNamHocs.get(i + 1).getNgayBatDau().atStartOfDay();
+                        }
+                        break;
+                    }
+                }
+                
+                if (endDate != null) {
+                    list = thongBaoRepository.findAllByDateRange(startDate, endDate);
+                } else {
+                    list = thongBaoRepository.findAll().stream()
+                            .filter(t -> !t.getNgayDang().isBefore(startDate))
+                            .collect(Collectors.toList());
+                }
+            } else {
+                list = thongBaoRepository.findAll();
+            }
+        } else {
+            list = thongBaoRepository.findAll();
+        }
+        
+        return list.stream()
                 .map(thongBaoMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -104,7 +140,9 @@ public class ThongBaoService {
         if (!nguoiDungRepository.existsById(id))
             throw new AppExceptions(Errorcode.USER_NOT_FOUND);
 
-        return hopThuThongBaoRepository.findByNguoiDung_NguoiDungId(id).stream()
+        List<HopThuThongBao> list = hopThuThongBaoRepository.findByNguoiDung_NguoiDungId(id);
+
+        return list.stream()
                 .map(hopThu -> thongBaoMapper.toResponse(hopThu.getThongBao()))
                 .collect(Collectors.toList());
     }

@@ -43,7 +43,7 @@ public class NamHocService {
         if (namHocCauHinhHienTai != null && namHocCanKiemTra.getNamHocId().equals(namHocCauHinhHienTai.getNamHocId())) {
             return "HIEN_TAI";
         }
-        
+
         java.time.LocalDate today = java.time.LocalDate.now();
         if (namHocCanKiemTra.getNgayBatDau() != null && namHocCanKiemTra.getNgayBatDau().isAfter(today)) {
             return "MOI";

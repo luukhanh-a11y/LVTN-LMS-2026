@@ -146,7 +146,7 @@ export default function TeacherAssignments() {
       .getSachBaiTapTheoPhanCong({
         giaoVienId: teacherProfile.giaoVienId,
         lopHocId: selectedClassId as number,
-        maMon: selectedMonHoc.maMon,
+        maMon: selectedMonHoc.maMon || '',
         hocKyId: selectedMonHoc.hocKyId,
       })
       .then((list) => {

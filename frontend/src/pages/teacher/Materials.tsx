@@ -67,11 +67,11 @@ export default function Materials() {
         teacherService.getSachBaiTapTheoPhanCong({
           giaoVienId: profile.giaoVienId,
           lopHocId: subj.lopHocId,
-          maMon: subj.maMon,
+          maMon: subj.maMon || '',
           hocKyId: subj.hocKyId || currentHocKyId || 1 // Fallback to currentHocKyId
         }).catch(err => {
           // Bỏ qua lỗi 404 (DATA_NOT_FOUND) nếu giáo viên không có phân công hoặc môn đó không có sách
-          console.warn(`Không tìm thấy sách cho môn ${subj.tenMon} (Mã: ${subj.maMon})`);
+          console.warn(`Không tìm thấy sách cho môn ${subj.tenMon} (Mã: ${subj.monHocId})`);
           return [];
         })
       );

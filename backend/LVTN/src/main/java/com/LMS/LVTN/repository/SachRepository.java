@@ -25,11 +25,24 @@ public interface SachRepository extends JpaRepository<Sach, Integer> {
     @Query("SELECT s FROM Sach s WHERE s.maMon = :maMon AND s.khoiLop = :khoiLop AND (s.hocKy.hocKyId = :hocKyId OR s.hocKy IS NULL)")
     List<Sach> findByMaMonAndKhoiLopAndHocKyIdOrNull(@Param("maMon") String maMon, @Param("khoiLop") Short khoiLop, @Param("hocKyId") Integer hocKyId);
 
-    List<Sach> findByHocKy_HocKyId(Integer hocKyId);
+    @Query("SELECT s FROM Sach s WHERE (s.hocKy.hocKyId = :hocKyId OR s.hocKy IS NULL)")
+    List<Sach> findByHocKyIdOrNull(@Param("hocKyId") Integer hocKyId);
 
     List<Sach> findByMaMon(String maMon);
 
     @Query("SELECT s FROM Sach s WHERE s.maMon = :maMon AND (s.hocKy.hocKyId = :hocKyId OR s.hocKy IS NULL)")
     List<Sach> findByMaMonAndHocKyIdOrNull(@Param("maMon") String maMon, @Param("hocKyId") Integer hocKyId);
+
+    // Strict queries without NULL fallback
+    List<Sach> findByHocKy_HocKyId(Integer hocKyId);
+    List<Sach> findByMaMonAndHocKy_HocKyId(String maMon, Integer hocKyId);
+    List<Sach> findByLoaiSachAndKhoiLopAndMaMonAndHocKy_HocKyId(com.LMS.LVTN.enums.LoaiSach loaiSach, Short khoiLop, String maMon, Integer hocKyId);
+    List<Sach> findByLoaiSachAndKhoiLopAndHocKy_HocKyId(com.LMS.LVTN.enums.LoaiSach loaiSach, Short khoiLop, Integer hocKyId);
+    
+    @Query("SELECT s FROM Sach s WHERE s.hocKy.namHoc.namHocId = :namHocId")
+    List<Sach> findByNamHocId(@Param("namHocId") Integer namHocId);
+    
+    @Query("SELECT s FROM Sach s WHERE s.maMon = :maMon AND s.hocKy.namHoc.namHocId = :namHocId")
+    List<Sach> findByMaMonAndNamHocId(@Param("maMon") String maMon, @Param("namHocId") Integer namHocId);
 }
 

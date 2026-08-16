@@ -1,14 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, Plus, Filter, Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Eye, Lock, Unlock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import Button from '../../components/Button';
 import { adminService } from '../../services/admin.service';
+import { classService } from '../../services/class.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterRole, setFilterRole] = useState('Tất cả');
+  const [filterGrade, setFilterGrade] = useState('Tất cả');
+  const [filterClass, setFilterClass] = useState('Tất cả');
+  const [filterStatus, setFilterStatus] = useState('Tất cả');
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [isBulkLocking, setIsBulkLocking] = useState(false);
+  const [bulkLockProgress, setBulkLockProgress] = useState({ current: 0, total: 0 });
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -16,6 +26,25 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [newUserRole, setNewUserRole] = useState('Giáo viên');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const { selectedNamHocId } = useAcademicStore();
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter(c => {
+      const isNamHocMatch = !selectedNamHocId || c.namHoc?.namHocId === selectedNamHocId;
+      const isGradeMatch = filterGrade === 'Tất cả' || String(c.khoiLop) === filterGrade;
+      return isNamHocMatch && isGradeMatch;
+    });
+  }, [classes, selectedNamHocId, filterGrade]);
+
+  const availableKhoi = useMemo(() => {
+    return Array.from(new Set(classes.map(c => c.khoiLop))).sort((a, b) => a - b);
+  }, [classes]);
+
+  useEffect(() => {
+    classService.getAllClasses().then(setClasses).catch(console.error);
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -24,7 +53,15 @@ export default function AdminUsers() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setUsers([]);
+    setPage(0);
+    setHasMore(true);
+  }, [debouncedSearch, filterRole, filterClass, filterGrade, filterStatus]);
+
   const fetchUsers = async () => {
+    if (!hasMore && page > 0) return;
     setLoading(true);
     try {
       const roleMap: Record<string, string> = {
@@ -34,11 +71,20 @@ export default function AdminUsers() {
         'Phụ huynh': 'PHU_HUYNH'
       };
       
+      const statusMap: Record<string, string> = {
+        'Tất cả': '',
+        'Hoạt động': 'ACTIVE',
+        'Đã khóa': 'LOCKED'
+      };
+      
       const res = await adminService.searchUsers({
         keyword: debouncedSearch,
         role: roleMap[filterRole],
-        page: 0,
-        size: 50
+        status: statusMap[filterStatus] || undefined,
+        classId: filterClass !== 'Tất cả' ? filterClass : undefined,
+        grade: filterGrade !== 'Tất cả' ? filterGrade : undefined,
+        page: page,
+        size: 15
       });
       
       const mappedUsers = res.content.map((u: any) => ({
@@ -49,7 +95,19 @@ export default function AdminUsers() {
         status: u.status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa',
         lastLogin: 'Gần đây'
       }));
-      setUsers(mappedUsers);
+      
+      if (page === 0) {
+        setUsers(mappedUsers);
+      } else {
+        setUsers(prev => {
+          const newUsers = [...prev];
+          mappedUsers.forEach((mu: any) => {
+            if (!newUsers.find(u => u.id === mu.id)) newUsers.push(mu);
+          });
+          return newUsers;
+        });
+      }
+      setHasMore(res.content.length === 15);
     } catch (err) {
       console.error(err);
       toast.error('Lỗi khi tải danh sách người dùng');
@@ -60,7 +118,19 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, [debouncedSearch, filterRole]);
+  }, [page, debouncedSearch, filterRole, filterClass, filterGrade, filterStatus]);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastUserElementRef = useCallback((node: HTMLTableRowElement) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
 
   // Use the fetched users directly
   const filteredUsers = users;
@@ -130,6 +200,52 @@ export default function AdminUsers() {
     }
   };
 
+  const handleBulkLock = async () => {
+    if (selectedUserIds.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn đảo ngược trạng thái (Khóa/Mở khóa) ${selectedUserIds.length} tài khoản này không?`)) return;
+    
+    setIsBulkLocking(true);
+    setBulkLockProgress({ current: 0, total: selectedUserIds.length });
+    
+    let successCount = 0;
+    for (let i = 0; i < selectedUserIds.length; i++) {
+      const id = selectedUserIds[i];
+      try {
+        const user = users.find(u => u.id === id);
+        if (user) {
+          const newStatus = user.status === 'Hoạt động' ? 'LOCKED' : 'ACTIVE';
+          await adminService.toggleUserStatus(id, newStatus);
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Lỗi khi xử lý user ${id}`);
+      }
+      setBulkLockProgress({ current: i + 1, total: selectedUserIds.length });
+    }
+    
+    toast.success(`Đã xử lý xong ${successCount}/${selectedUserIds.length} tài khoản`);
+    setIsBulkLocking(false);
+    setSelectedUserIds([]);
+    fetchUsers();
+  };
+
+  const toggleSelectAll = () => {
+    if (filteredUsers.length === 0) return;
+    if (selectedUserIds.length === filteredUsers.length) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(filteredUsers.map(u => u.id));
+    }
+  };
+
+  const toggleSelectUser = (id: number) => {
+    if (selectedUserIds.includes(id)) {
+      setSelectedUserIds(selectedUserIds.filter(userId => userId !== id));
+    } else {
+      setSelectedUserIds([...selectedUserIds, id]);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
       <div className="flex items-center justify-between">
@@ -171,48 +287,84 @@ export default function AdminUsers() {
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
             
-            {(filterRole === 'Học sinh' || filterRole === 'Phụ huynh') && (
-              <>
-                <select className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer hidden md:block">
-                  <option>Tất cả Khối</option>
-                  <option>Khối 1</option>
-                  <option>Khối 2</option>
-                  <option>Khối 3</option>
-                  <option>Khối 4</option>
-                  <option>Khối 5</option>
-                </select>
-                <select className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer hidden md:block">
-                  <option>Tất cả Lớp</option>
-                  <option>1A1</option>
-                  <option>1A2</option>
-                  <option>1A3</option>
-                  <option>1A4</option>
-                </select>
-              </>
-            )}
-
             <select 
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer"
+              onChange={(e) => { setFilterRole(e.target.value); setFilterClass('Tất cả'); setFilterGrade('Tất cả'); }}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer shrink-0"
             >
               <option value="Tất cả">Tất cả vai trò</option>
               <option value="Giáo viên">Giáo viên</option>
               <option value="Học sinh">Học sinh</option>
               <option value="Phụ huynh">Phụ huynh</option>
             </select>
+
+            <select 
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer shrink-0"
+            >
+              <option value="Tất cả">Tất cả trạng thái</option>
+              <option value="Hoạt động">Hoạt động</option>
+              <option value="Đã khóa">Đã khóa</option>
+            </select>
+
+            <select 
+              value={filterGrade}
+              onChange={(e) => { setFilterGrade(e.target.value); setFilterClass('Tất cả'); }}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer shrink-0"
+            >
+              <option value="Tất cả">Tất cả Khối</option>
+              {availableKhoi.map(g => (
+                <option key={g} value={g}>Khối {g}</option>
+              ))}
+            </select>
+
+            <select 
+              value={filterClass}
+              onChange={(e) => setFilterClass(e.target.value)}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-slate-700 cursor-pointer shrink-0 max-w-[150px] truncate"
+            >
+              <option value="Tất cả">Tất cả Lớp</option>
+              {filteredClasses.map(c => (
+                <option key={c.lopHocId || c.id} value={c.lopHocId || c.id}>{c.tenLop || c.name}</option>
+              ))}
+            </select>
           </div>
         </div>
+
+        {/* Bulk Actions */}
+        {selectedUserIds.length > 0 && (
+          <div className="bg-blue-50/50 border-b border-blue-100 p-3 px-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-800">
+              <CheckCircle2 className="w-5 h-5 text-blue-600" />
+              Đã chọn {selectedUserIds.length} tài khoản
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSelectedUserIds([])} className="text-sm font-medium text-slate-500 hover:text-slate-700 transition">Bỏ chọn</button>
+              <Button size="sm" onClick={handleBulkLock} isLoading={isBulkLocking} className="bg-orange-600 hover:bg-orange-700 text-white shadow-sm font-semibold border-none">
+                <Lock className="w-4 h-4 mr-2" /> Khóa / Mở khóa hàng loạt
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Bảng Dữ liệu */}
         <div className="flex-1 overflow-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">ID</th>
+                <th className="px-6 py-4 w-12 border-b border-slate-200">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedUserIds.length > 0 && selectedUserIds.length === filteredUsers.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
+                <th className="px-2 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">ID</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Họ & Tên</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Email / Tài khoản</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Vai trò</th>
@@ -221,9 +373,21 @@ export default function AdminUsers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {filteredUsers.map(user => (
-                <tr key={user.id} className="hover:bg-slate-50/50 transition">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-500">#{user.id}</td>
+              {filteredUsers.map((user, index) => (
+                <tr 
+                  key={user.id} 
+                  ref={index === filteredUsers.length - 1 ? lastUserElementRef : null}
+                  className={cn("hover:bg-slate-50/50 transition", selectedUserIds.includes(user.id) ? "bg-blue-50/20" : "")}
+                >
+                  <td className="px-6 py-4">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedUserIds.includes(user.id)}
+                      onChange={() => toggleSelectUser(user.id)}
+                      className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </td>
+                  <td className="px-2 py-4 text-sm font-medium text-slate-500">#{user.id}</td>
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-900">{user.name}</div>
                     <div className="text-xs text-slate-400 mt-0.5">Đăng nhập: {user.lastLogin}</div>
@@ -253,28 +417,29 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => handleToggleLock(user.id)}
-                        className={cn(
-                          "text-sm font-bold transition cursor-pointer px-3 py-1.5 rounded-lg",
-                          user.status === 'Hoạt động' 
-                            ? "text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100" 
-                            : "text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
-                        )}
+                      <Link 
+                        to={`/admin/users/${user.id}`}
+                        className="flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-800 transition cursor-pointer px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg"
                       >
-                        {user.status === 'Hoạt động' ? 'Khóa' : 'Mở khóa'}
-                      </button>
-                      <button type="button" className="text-sm font-bold text-blue-600 hover:text-blue-800 transition cursor-pointer px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-lg">
-                        Sửa
-                      </button>
+                        <Eye className="w-4 h-4" /> Xem chi tiết
+                      </Link>
                     </div>
                   </td>
                 </tr>
               ))}
+              {loading && hasMore && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                    <div className="flex justify-center items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                      Đang tải thêm...
+                    </div>
+                  </td>
+                </tr>
+              )}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-16 text-center text-slate-500">
                     Không tìm thấy tài khoản nào phù hợp.
                   </td>
                 </tr>

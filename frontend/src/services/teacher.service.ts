@@ -18,8 +18,7 @@ export interface ClassRoom {
   monHocList?: { monHocId: number; tenMon: string; hocKyId: number }[];
 }
 
-// Phản ánh DangBaiResponse (backend) — "học liệu" là dang_bai nguồn GIAO_VIEN_BO_SUNG,
-// hoc_lieu đã được sáp nhập vào dang_bai trong thiết kế schema hiện tại của LVTN.
+// Phản ánh DangBaiResponse (backend) - Học liệu hệ thống
 export interface Material {
   dangBaiId: number;
   tenDangBai: string;
@@ -36,14 +35,6 @@ export interface Material {
   duLieuGame: string | null;
   dapAnChuan: string | null;
   ngayTao: string;
-}
-
-export interface MaterialUpsertPayload {
-  baiHocId: number;
-  tenDangBai: string;
-  loaiNoiDung: 'H5P' | 'FILE' | 'NATIVE' | 'JSON_TEXT';
-  giaoVienId: number;
-  h5pNoiDungId?: string;
 }
 
 export interface Subject {
@@ -137,7 +128,10 @@ export const teacherService = {
     const profile = await teacherService.getMyTeacherProfile();
     const phanCongs = await classService.getPhanCongByGiaoVien(profile.giaoVienId);
     const currentHocKyId = useAcademicStore.getState().currentHocKyId;
-    const filtered = currentHocKyId ? phanCongs.filter((p: any) => p.hocKyId === currentHocKyId) : phanCongs;
+    let filtered = phanCongs.filter((p: any) => 
+      p.giaoVienId === profile.giaoVienId && 
+      p.hocKyId === currentHocKyId
+    );
 
     // Lấy tất cả lớp học để kiểm tra xem có lớp nào mình làm GVCN mà không có phân công giảng dạy không
     let tatCaLopHoc: any[] = [];
@@ -208,42 +202,6 @@ export const teacherService = {
   getSubjects: async (): Promise<Subject[]> => {
     const response = await api.get('/monhoc');
     return response.data?.data || response.data || [];
-  },
-
-  // Lấy danh sách học liệu (Kho học liệu cá nhân của giáo viên).
-  getMaterials: async (giaoVienId: number): Promise<Material[]> => {
-    const response = await api.get<Material[]>('/giao-vien/dang-bai', { params: { giaoVienId } });
-    return response.data;
-  },
-
-  getMaterialById: async (id: number | string): Promise<Material> => {
-    const response = await api.get<Material>(`/he-thong/dang-bai/${id}`);
-    return response.data;
-  },
-
-  // Tra cứu học liệu đã gắn với 1 content H5P (dùng khi mở lại Editor để sửa).
-  getMaterialByH5pContentId: async (h5pContentId: string): Promise<Material | null> => {
-    try {
-      const response = await api.get<Material>(`/giao-vien/dang-bai/by-h5p/${h5pContentId}`);
-      return response.data;
-    } catch (err: any) {
-      if (err?.response?.status === 404) return null;
-      throw err;
-    }
-  },
-
-  createMaterial: async (data: MaterialUpsertPayload): Promise<Material> => {
-    const response = await api.post<Material>('/giao-vien/dang-bai', data);
-    return response.data;
-  },
-
-  updateMaterial: async (id: number | string, data: MaterialUpsertPayload): Promise<Material> => {
-    const response = await api.put<Material>(`/giao-vien/dang-bai/${id}`, data);
-    return response.data;
-  },
-
-  deleteMaterial: async (id: number | string, giaoVienId: number): Promise<void> => {
-    await api.delete(`/giao-vien/dang-bai/${id}`, { params: { giaoVienId } });
   },
 
   // === Sách bài tập đúng bộ môn/lớp/học kỳ giáo viên được phân công (Giao bài tập) ===
@@ -378,6 +336,7 @@ export const teacherService = {
     content: string;
     audience: string | number; // 'TAT_CA' or lopHocId
     pinned: boolean;
+    fileDinhKem?: string | null;
   }): Promise<void> => {
     const user = useAuthStore.getState().user;
     if (!user) throw new Error('Not logged in');
@@ -388,6 +347,7 @@ export const teacherService = {
       noiDung: dto.content,
       loaiThongBao: 'NOI_BO',
       laGhim: dto.pinned || false,
+      fileDinhKem: dto.fileDinhKem || null,
       lopHocId: dto.audience === 'TAT_CA' ? null : Number(dto.audience)
     };
     await api.post('/thongbao', payload);

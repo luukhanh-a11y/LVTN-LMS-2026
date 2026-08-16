@@ -4,11 +4,14 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { Input } from '../../components/ui/Input';
 import toast from 'react-hot-toast';
 import { adminService } from '../../services/admin.service';
 import { classService } from '../../services/class.service';
 import { academicService, type CauHinhHeThong, type NamHoc } from '../../services/academic.service';
 import { useAcademicStore } from '../../stores/useAcademicStore';
+import { cn } from '../../lib/utils';
 
 const NHAN_QUYET_DINH: Record<string, { label: string; variant: 'success' | 'outline' | 'danger' }> = {
   LEN_LOP: { label: 'Lên lớp', variant: 'success' },
@@ -16,12 +19,13 @@ const NHAN_QUYET_DINH: Record<string, { label: string; variant: 'success' | 'out
   CHUYEN_CUP: { label: 'Chuyển cấp', variant: 'danger' },
 };
 
-export default function AdminKetQuaCuoiNam() {
+export default function AdminKetQuaCuoiNam({ isInsideTab = false }: { isInsideTab?: boolean }) {
   const [classes, setClasses] = useState<any[]>([]);
   const [namHocList, setNamHocList] = useState<NamHoc[]>([]);
   const [cauHinh, setCauHinh] = useState<CauHinhHeThong | null>(null);
   
-  const currentNamHoc = useAcademicStore((state) => state.currentNamHoc);
+  const currentNamHoc = useAcademicStore((state) => state.selectedNamHoc);
+  const isReadOnly = useAcademicStore((state) => state.isReadOnly);
   const [namHocCu, setNamHocCu] = useState('');
 
   const [targetClassId, setTargetClassId] = useState('');
@@ -30,6 +34,8 @@ export default function AdminKetQuaCuoiNam() {
   const [pendingRecords, setPendingRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showOpenModal, setShowOpenModal] = useState(false);
+  const [newDanhGiaNamHoc, setNewDanhGiaNamHoc] = useState('');
 
   const loadCauHinh = () => {
     academicService.getCauHinhHeThong().then((c) => {
@@ -58,10 +64,11 @@ export default function AdminKetQuaCuoiNam() {
     setIsLoading(true);
     try {
       const all = await adminService.getAllKetQuaCuoiNam();
-      const filtered = all.filter((r) => r.namHoc === namHocCu && !r.daDuyet);
+      // Nếu đang ở chế độ CHỈ XEM (năm cũ), ta hiển thị danh sách ĐÃ DUYỆT. Ngược lại, hiển thị CHƯA DUYỆT.
+      const filtered = all.filter((r) => r.namHoc === namHocCu && (isReadOnly ? r.daDuyet : !r.daDuyet));
       setPendingRecords(filtered);
       if (filtered.length === 0) {
-        toast.success('Không có đề xuất nào đang chờ duyệt cho năm học này.');
+        toast.success(isReadOnly ? 'Không có danh sách đã duyệt cho năm học này.' : 'Không có đề xuất nào đang chờ duyệt cho năm học này.');
       }
     } catch (err) {
       toast.error('Có lỗi xảy ra khi tải danh sách kết quả');
@@ -70,20 +77,7 @@ export default function AdminKetQuaCuoiNam() {
     }
   };
 
-  const handleOpenEvaluation = async () => {
-    if (!namHocCu) {
-      toast.error('Vui lòng nhập năm học để mở đợt đánh giá!');
-      return;
-    }
-    try {
-      await adminService.setDotDanhGia(1, true, namHocCu);
-      await adminService.thongBaoMoDanhGia(namHocCu);
-      toast.success(`Đã mở đợt đánh giá năm học ${namHocCu} và gửi thông báo đến tất cả GVCN.`);
-      loadCauHinh();
-    } catch (err) {
-      toast.error('Có lỗi xảy ra khi mở đợt đánh giá.');
-    }
-  };
+  const handleOpenEvaluation = async () => {};
 
   const handleCloseEvaluation = async () => {
     try {
@@ -121,34 +115,64 @@ export default function AdminKetQuaCuoiNam() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-slate-800">Xét kết quả cuối năm</h1>
-          {cauHinh && (
-            <Badge variant={isDangMo ? 'success' : 'outline'} className="px-3 py-1.5">
-              {isDangMo ? <Unlock className="w-3.5 h-3.5 mr-1.5 inline" /> : <Lock className="w-3.5 h-3.5 mr-1.5 inline" />}
-              {isDangMo ? `Đang mở đợt (${cauHinh.namHocDanhGia})` : 'Đang đóng'}
-            </Badge>
-          )}
+    <div className={cn("space-y-6 slide-in-from-bottom-4 duration-500", !isInsideTab && "animate-in fade-in")}>
+      {!isInsideTab && (
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-800">Xét kết quả cuối năm</h1>
+            {cauHinh && (
+              <Badge variant={isDangMo ? 'success' : 'outline'} className="px-3 py-1.5">
+                {isDangMo ? <Unlock className="w-3.5 h-3.5 mr-1.5 inline" /> : <Lock className="w-3.5 h-3.5 mr-1.5 inline" />}
+                {isDangMo ? `Đang mở đợt (${cauHinh.namHocDanhGia})` : 'Đang đóng'}
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {!isReadOnly && (
+              isDangMo ? (
+                <Button size="sm" onClick={handleCloseEvaluation} variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                  Đóng Đợt Đánh Giá
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setShowOpenModal(true)} variant="primary" className="bg-emerald-600 hover:bg-emerald-700">
+                  Mở Đợt Đánh Giá Mới
+                </Button>
+              )
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {isDangMo ? (
-            <Button onClick={handleCloseEvaluation} variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
-              Đóng Đợt Đánh Giá
-            </Button>
-          ) : (
-            <Button onClick={handleOpenEvaluation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
-              Mở Đợt Đánh Giá Cuối Năm
-            </Button>
-          )}
+      )}
+
+      {isInsideTab && (
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            {cauHinh && (
+              <Badge variant={isDangMo ? 'success' : 'outline'} className="px-3 py-1.5">
+                {isDangMo ? <Unlock className="w-3.5 h-3.5 mr-1.5 inline" /> : <Lock className="w-3.5 h-3.5 mr-1.5 inline" />}
+                {isDangMo ? `Đang mở đợt (${cauHinh.namHocDanhGia})` : 'Đang đóng'}
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {!isReadOnly && (
+              isDangMo ? (
+                <Button size="sm" onClick={handleCloseEvaluation} variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                  Đóng Đợt Đánh Giá
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setShowOpenModal(true)} variant="primary" className="bg-emerald-600 hover:bg-emerald-700">
+                  Mở Đợt Đánh Giá Mới
+                </Button>
+              )
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={pendingRecords.length > 0 ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''}>
         <Card>
           <div className="p-4 border-b border-slate-100 bg-slate-50">
-            <h2 className="font-semibold text-slate-700">Bước 1: Lấy danh sách đề xuất chờ duyệt</h2>
+            <h2 className="font-semibold text-slate-700">{isReadOnly ? 'Lấy danh sách đã duyệt' : 'Bước 1: Lấy danh sách đề xuất chờ duyệt'}</h2>
           </div>
           <CardContent className="p-4 space-y-4">
             <div>
@@ -164,13 +188,15 @@ export default function AdminKetQuaCuoiNam() {
                 ))}
               </select>
             </div>
-            <Button onClick={handleSearch} isLoading={isLoading} className="w-full">
-              Lấy Danh Sách Chờ Duyệt
-            </Button>
+            <div className="flex justify-end mt-2">
+              <Button size="sm" onClick={handleSearch} isLoading={isLoading}>
+                {isReadOnly ? 'Lấy Danh Sách Đã Duyệt' : 'Lấy Danh Sách Chờ Duyệt'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        {pendingRecords.length > 0 && (
+        {!isReadOnly && pendingRecords.length > 0 && (
           <Card>
             <div className="p-4 border-b border-slate-100 bg-slate-50">
               <h2 className="font-semibold text-slate-700">Bước 2: Chỉ định Lớp Mới (cho nhóm Lên lớp)</h2>
@@ -202,10 +228,12 @@ export default function AdminKetQuaCuoiNam() {
                   ))}
                 </select>
               </div>
-              <Button onClick={handleDuyet} isLoading={isProcessing} className="w-full" variant="primary">
-                Duyệt & Chuyển lớp {pendingRecords.length} Học Sinh
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              <div className="flex justify-end mt-2">
+                <Button size="sm" onClick={handleDuyet} isLoading={isProcessing} variant="primary">
+                  Duyệt & Chuyển lớp {pendingRecords.length} Học Sinh
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -213,7 +241,7 @@ export default function AdminKetQuaCuoiNam() {
 
       <Card>
         <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-          <h2 className="font-semibold text-slate-700">Danh sách chờ duyệt ({pendingRecords.length} học sinh)</h2>
+          <h2 className="font-semibold text-slate-700">{isReadOnly ? 'Danh sách đã duyệt' : 'Danh sách chờ duyệt'} ({pendingRecords.length} học sinh)</h2>
         </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto max-h-[400px]">
@@ -258,6 +286,30 @@ export default function AdminKetQuaCuoiNam() {
       <div className="text-xs text-slate-400 flex items-center gap-1.5">
         <GraduationCap className="w-3.5 h-3.5" /> Giáo viên chủ nhiệm đề xuất kết quả từng học sinh — Admin duyệt lần cuối ở đây mới thật sự chuyển lớp.
       </div>
+
+      <Modal isOpen={showOpenModal} onClose={() => setShowOpenModal(false)} title="Mở đợt đánh giá mới">
+        <div className="p-4 space-y-4">
+          <p className="text-sm text-slate-600">Bạn chuẩn bị mở đợt đánh giá cuối năm cho năm học hiện tại: <span className="font-bold text-slate-800">{currentNamHoc?.tenNamHoc || 'Hệ thống'}</span>.</p>
+          <p className="text-sm text-slate-600">Khi mở đợt, giáo viên có thể bắt đầu đánh giá học sinh.</p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowOpenModal(false)}>Hủy</Button>
+            <Button variant="primary" onClick={() => {
+              const year = currentNamHoc?.tenNamHoc;
+              if (!year) {
+                toast.error('Không xác định được năm học hiện tại');
+                return;
+              }
+              adminService.setDotDanhGia(1, true, year)
+                .then(() => adminService.thongBaoMoDanhGia(year))
+                .then(() => {
+                  toast.success('Đã mở đợt đánh giá!');
+                  setShowOpenModal(false);
+                  loadCauHinh();
+                }).catch(() => toast.error('Lỗi khi mở đợt'));
+            }}>Mở Đợt</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

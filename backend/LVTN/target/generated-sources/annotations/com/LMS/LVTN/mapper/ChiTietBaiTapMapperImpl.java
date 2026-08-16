@@ -1,0 +1,75 @@
+package com.LMS.LVTN.mapper;
+
+import com.LMS.LVTN.dto.request.ChiTietBaiTapRequest;
+import com.LMS.LVTN.dto.response.ChiTietBaiTapResponse;
+import com.LMS.LVTN.entity.BaiTap;
+import com.LMS.LVTN.entity.ChiTietBaiTap;
+import com.LMS.LVTN.entity.DangBai;
+import javax.annotation.processing.Generated;
+import org.springframework.stereotype.Component;
+
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2026-08-16T16:26:02+0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+)
+@Component
+public class ChiTietBaiTapMapperImpl implements ChiTietBaiTapMapper {
+
+    @Override
+    public ChiTietBaiTap toEntity(ChiTietBaiTapRequest request) {
+        if ( request == null ) {
+            return null;
+        }
+
+        ChiTietBaiTap chiTietBaiTap = new ChiTietBaiTap();
+
+        chiTietBaiTap.setCheDoGiaoDien( request.getCheDoGiaoDien() );
+        chiTietBaiTap.setThuTu( request.getThuTu() );
+
+        return chiTietBaiTap;
+    }
+
+    @Override
+    public ChiTietBaiTapResponse toResponse(ChiTietBaiTap entity) {
+        if ( entity == null ) {
+            return null;
+        }
+
+        ChiTietBaiTapResponse.ChiTietBaiTapResponseBuilder chiTietBaiTapResponse = ChiTietBaiTapResponse.builder();
+
+        chiTietBaiTapResponse.baiTapId( entityBaiTapBaiTapId( entity ) );
+        chiTietBaiTapResponse.dangBaiId( entityDangBaiDangBaiId( entity ) );
+        chiTietBaiTapResponse.cheDoGiaoDien( entity.getCheDoGiaoDien() );
+        chiTietBaiTapResponse.id( entity.getId() );
+        chiTietBaiTapResponse.thuTu( entity.getThuTu() );
+
+        return chiTietBaiTapResponse.build();
+    }
+
+    @Override
+    public void updateChiTietBaiTap(ChiTietBaiTapRequest request, ChiTietBaiTap entity) {
+        if ( request == null ) {
+            return;
+        }
+
+        entity.setCheDoGiaoDien( request.getCheDoGiaoDien() );
+        entity.setThuTu( request.getThuTu() );
+    }
+
+    private Long entityBaiTapBaiTapId(ChiTietBaiTap chiTietBaiTap) {
+        BaiTap baiTap = chiTietBaiTap.getBaiTap();
+        if ( baiTap == null ) {
+            return null;
+        }
+        return baiTap.getBaiTapId();
+    }
+
+    private Integer entityDangBaiDangBaiId(ChiTietBaiTap chiTietBaiTap) {
+        DangBai dangBai = chiTietBaiTap.getDangBai();
+        if ( dangBai == null ) {
+            return null;
+        }
+        return dangBai.getDangBaiId();
+    }
+}

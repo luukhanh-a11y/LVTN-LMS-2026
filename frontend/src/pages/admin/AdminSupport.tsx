@@ -4,8 +4,10 @@ import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import Button from '../../components/Button';
 import { ticketService } from '../../services/ticket.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
-export default function AdminSupport() {
+export default function AdminSupport({ isInsideTab = false }: { isInsideTab?: boolean }) {
+  const { selectedNamHocId } = useAcademicStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tất cả');
@@ -58,7 +60,7 @@ export default function AdminSupport() {
 
   useEffect(() => {
     fetchTickets();
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, selectedNamHocId]);
 
   const filteredTickets = tickets;
 
@@ -92,13 +94,15 @@ export default function AdminSupport() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Phiếu Hỗ Trợ</h2>
-          <p className="text-sm text-slate-500 mt-1">Quản lý và giải quyết các yêu cầu hỗ trợ từ Giáo viên.</p>
+    <div className={cn("max-w-6xl mx-auto space-y-6 h-full flex flex-col", !isInsideTab && "animate-in fade-in")}>
+      {!isInsideTab && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Quản lý Yêu cầu & Hỗ trợ</h2>
+            <p className="text-sm text-slate-500 mt-1">Xử lý các yêu cầu từ Giáo viên và Phụ huynh.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex-1 flex flex-col overflow-hidden">
         {/* Toolbar */}

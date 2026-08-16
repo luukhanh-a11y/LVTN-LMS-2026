@@ -92,7 +92,7 @@ export default function ParentGrades() {
                     </tr>
                   </thead>
                   <tbody>
-                    {gradeData.subjects.map((subject, idx) => (
+                    {gradeData.subjects.map((subject: any, idx: number) => (
                       <tr key={subject.id} className="hover:bg-blue-50/30 transition border-b border-slate-50 last:border-0">
                         <td className="p-4">
                           <span className="font-bold text-slate-800">{subject.name}</span>

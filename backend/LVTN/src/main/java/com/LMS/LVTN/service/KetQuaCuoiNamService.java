@@ -16,6 +16,8 @@ import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
 import com.LMS.LVTN.repository.HoSoHocSinhRepository;
 import com.LMS.LVTN.repository.KetQuaCuoiNamRepository;
 import com.LMS.LVTN.repository.LopHocRepository;
+import com.LMS.LVTN.repository.CauHinhHeThongRepository;
+import com.LMS.LVTN.entity.CauHinhHeThong;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -38,6 +40,13 @@ public class KetQuaCuoiNamService {
     LichSuChuyenLopService lichSuChuyenLopService;
     ThongBaoService thongBaoService;
     AuthenticationService authenticationService;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
+
+    private String getNamHocHienTaiTuCauHinh() {
+        return cauHinhHeThongRepository.findById((short) 1)
+                .map(config -> config.getHocKyHienTai() != null ? config.getHocKyHienTai().getNamHoc().getTenNamHoc() : null)
+                .orElse(null);
+    }
 
     @Transactional
     public KetQuaCuoiNamResponse create(KetQuaCuoiNamRequest request) {
@@ -66,7 +75,17 @@ public class KetQuaCuoiNamService {
         return ketQuaCuoiNamMapper.toResponse(savedKetQua);
     }
 
-    public List<KetQuaCuoiNamResponse> getAll() {
+    public List<KetQuaCuoiNamResponse> getAll(String namHoc) {
+        String finalNamHoc = namHoc;
+        if (finalNamHoc == null || finalNamHoc.trim().isEmpty()) {
+            finalNamHoc = getNamHocHienTaiTuCauHinh();
+        }
+        if (finalNamHoc != null) {
+            return ketQuaCuoiNamRepository.findAll().stream() // Ideally we should use a repository method findByNamHoc
+                    .filter(kq -> kq.getNamHoc().equals(namHoc != null ? namHoc : getNamHocHienTaiTuCauHinh()))
+                    .map(ketQuaCuoiNamMapper::toResponse)
+                    .collect(Collectors.toList());
+        }
         return ketQuaCuoiNamRepository.findAll().stream()
                 .map(ketQuaCuoiNamMapper::toResponse)
                 .collect(Collectors.toList());
@@ -115,7 +134,11 @@ public class KetQuaCuoiNamService {
     }
 
     public KetQuaCuoiNamResponse getByHocSinhIdAndNamHoc(Long hocSinhId, String namHoc) {
-        KetQuaCuoiNam ketQua = ketQuaCuoiNamRepository.findByHocSinh_HocSinhIdAndNamHoc(hocSinhId, namHoc)
+        String finalNamHoc = namHoc;
+        if (finalNamHoc == null || finalNamHoc.trim().isEmpty()) {
+            finalNamHoc = getNamHocHienTaiTuCauHinh();
+        }
+        KetQuaCuoiNam ketQua = ketQuaCuoiNamRepository.findByHocSinh_HocSinhIdAndNamHoc(hocSinhId, finalNamHoc)
                 .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
         return ketQuaCuoiNamMapper.toResponse(ketQua);
     }

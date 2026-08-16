@@ -40,6 +40,21 @@ export const h5pApi = axios.create({
 h5pApi.interceptors.request.use(attachToken);
 
 // --- LOGGING INTERCEPTOR (RESPONSE) ---
+
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => {
     console.log(`[API RESPONSE] ✅ ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
@@ -52,13 +67,25 @@ api.interceptors.response.use(
     console.error(`[AXIOS ❌] ${originalRequest?.method?.toUpperCase()} ${failedUrl} → ${failedStatus}`);
 
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = 'Bearer ' + token;
+          return api(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
       const refreshToken = useAuthStore.getState().refreshToken;
 
       if (refreshToken && window.location.pathname !== '/login' && !originalRequest.url?.includes('/refresh')) {
         try {
           const res = await axios.post('http://localhost:8080/api/auth/refresh', { token: refreshToken });
-          // Backend trả về { token, authenticated, thongTinUser } — không phải { accessToken }
           const raw = res.data.data || res.data;
           const newToken = raw.token || raw.accessToken;
           const newRefreshToken = raw.refreshToken || raw.token;
@@ -68,16 +95,20 @@ api.interceptors.response.use(
             if (currentUser) {
               useAuthStore.getState().setAuth(newToken, newRefreshToken, currentUser);
             }
+            processQueue(null, newToken);
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
           }
         } catch (refreshError) {
+          processQueue(refreshError, null);
           console.error('[AXIOS] Refresh token failed, logging out.', refreshError);
           useAuthStore.getState().logout();
-          // Tạm thời comment dòng này để không bị mất log
-          // window.location.href = '/login';
           return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
+      } else {
+        isRefreshing = false;
       }
 
       // Không có refreshToken hoặc refresh thất bại

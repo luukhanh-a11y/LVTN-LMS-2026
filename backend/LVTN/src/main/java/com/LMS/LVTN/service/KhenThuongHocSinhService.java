@@ -14,6 +14,10 @@ import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
 import com.LMS.LVTN.repository.HoSoHocSinhRepository;
 import com.LMS.LVTN.repository.HuyHieuRepository;
 import com.LMS.LVTN.repository.KhenThuongHocSinhRepository;
+import com.LMS.LVTN.repository.CauHinhHeThongRepository;
+import com.LMS.LVTN.repository.NamHocRepository;
+import com.LMS.LVTN.entity.CauHinhHeThong;
+import com.LMS.LVTN.entity.NamHoc;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -35,6 +39,14 @@ public class KhenThuongHocSinhService {
     AuthenticationService authenticationService;
     KhenThuongHocSinhMapper mapper;
     EmailService emailService;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
+    NamHocRepository namHocRepository;
+
+    private NamHoc getNamHocHienTaiTuCauHinh() {
+        return cauHinhHeThongRepository.findById((short) 1)
+                .map(config -> config.getHocKyHienTai() != null ? config.getHocKyHienTai().getNamHoc() : null)
+                .orElse(null);
+    }
 
     @Transactional
     public KhenThuongHocSinhResponse tangHuyHieuThuCong(String token, KhenThuongHocSinhRequest request) {
@@ -93,8 +105,27 @@ public class KhenThuongHocSinhService {
         }
     }
 
-    public List<KhenThuongHocSinhResponse> getAllKhenThuong() {
-        return khenThuongHocSinhRepository.findAll().stream()
+    public List<KhenThuongHocSinhResponse> getAllKhenThuong(Long namHocId) {
+        Long finalNamHocId = namHocId;
+        if (finalNamHocId == null) {
+            NamHoc currentNamHoc = getNamHocHienTaiTuCauHinh();
+            if (currentNamHoc != null) {
+                finalNamHocId = currentNamHoc.getNamHocId().longValue();
+            }
+        }
+        
+        List<KhenThuongHocSinh> list = khenThuongHocSinhRepository.findAll();
+        
+        if (finalNamHocId != null) {
+            NamHoc namHoc = namHocRepository.findById(finalNamHocId.intValue()).orElse(null);
+            if (namHoc != null) {
+                list = list.stream()
+                        .filter(kt -> !kt.getThoiDiemTrao().toLocalDate().isBefore(namHoc.getNgayBatDau()) &&
+                                      !kt.getThoiDiemTrao().toLocalDate().isAfter(namHoc.getNgayKetThuc()))
+                        .toList();
+            }
+        }
+        return list.stream()
                 .map(mapper::toResponse)
                 .toList();
     }
@@ -105,8 +136,27 @@ public class KhenThuongHocSinhService {
         return mapper.toResponse(khenThuong);
     }
 
-    public List<KhenThuongHocSinhResponse> getKhenThuongByHocSinh(Long hocSinhId) {
-        return khenThuongHocSinhRepository.findByHocSinh_HocSinhId(hocSinhId).stream()
+    public List<KhenThuongHocSinhResponse> getKhenThuongByHocSinh(Long hocSinhId, Long namHocId) {
+        Long finalNamHocId = namHocId;
+        if (finalNamHocId == null) {
+            NamHoc currentNamHoc = getNamHocHienTaiTuCauHinh();
+            if (currentNamHoc != null) {
+                finalNamHocId = currentNamHoc.getNamHocId().longValue();
+            }
+        }
+        
+        List<KhenThuongHocSinh> list = khenThuongHocSinhRepository.findByHocSinh_HocSinhIdOrderByThoiDiemTraoDesc(hocSinhId);
+        
+        if (finalNamHocId != null) {
+            NamHoc namHoc = namHocRepository.findById(finalNamHocId.intValue()).orElse(null);
+            if (namHoc != null) {
+                list = list.stream()
+                        .filter(kt -> !kt.getThoiDiemTrao().toLocalDate().isBefore(namHoc.getNgayBatDau()) &&
+                                      !kt.getThoiDiemTrao().toLocalDate().isAfter(namHoc.getNgayKetThuc()))
+                        .toList();
+            }
+        }
+        return list.stream()
                 .map(mapper::toResponse)
                 .toList();
     }

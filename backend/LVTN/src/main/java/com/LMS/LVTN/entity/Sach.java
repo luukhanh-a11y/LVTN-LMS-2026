@@ -39,8 +39,8 @@ public class Sach {
     @Column(name = "ma_mon", length = 20, nullable = false)
     private String maMon;
 
-    // NULL = sách dùng chung mọi năm học có cùng số học kỳ (mặc định).
-    // Có giá trị = bản đã tách riêng cho đúng 1 học kỳ của 1 năm học cụ thể (qua Nhân bản).
+
+    // NULL = sách dùng chung cả năm học. Có giá trị = chỉ dùng cho 1 học kỳ cụ thể.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hoc_ky_id")
     private HocKy hocKy;

@@ -60,7 +60,7 @@ export default function CreateAssignment() {
     teacherService.getSachBaiTapTheoPhanCong({
       giaoVienId: profile.giaoVienId,
       lopHocId: Number(selectedClassId),
-      maMon: currentSubject?.maMon,
+      maMon: currentSubject?.maMon || '',
       hocKyId: currentHocKyId
     }).then(list => setSachList(list.filter((s: any) => s.loaiSach !== 'SACH_GIAO_KHOA'))).catch(() => setSachList([]));
   }, [profile?.giaoVienId, selectedClassId, selectedMonHocId, currentHocKyId, classes]);

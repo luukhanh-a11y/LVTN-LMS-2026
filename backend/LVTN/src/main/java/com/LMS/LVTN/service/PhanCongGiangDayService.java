@@ -7,6 +7,7 @@ import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.PhanCongGiangDayMapper;
 import com.LMS.LVTN.repository.*;
+import com.LMS.LVTN.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -27,6 +28,13 @@ public class PhanCongGiangDayService {
     LopHocRepository lopHocRepository;
     MonHocRepository monHocRepository;
     HocKyRepository hocKyRepository;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
+
+    private HocKy getHocKyHienTaiTuCauHinh() {
+        return cauHinhHeThongRepository.findById((short) 1)
+                .map(CauHinhHeThong::getHocKyHienTai)
+                .orElse(null);
+    }
 
     @Transactional
     public PhanCongGiangDayResponse create(PhanCongGiangDayRequest request) {
@@ -59,7 +67,19 @@ public class PhanCongGiangDayService {
         return phanCongGiangDayMapper.toResponse(phanCongGiangDayRepository.save(phanCong));
     }
 
-    public List<PhanCongGiangDayResponse> getAll() {
+    public List<PhanCongGiangDayResponse> getAll(Integer hocKyId) {
+        Integer finalHocKyId = hocKyId;
+        if (finalHocKyId == null) {
+            HocKy currentHocKy = getHocKyHienTaiTuCauHinh();
+            if (currentHocKy != null) {
+                finalHocKyId = currentHocKy.getHocKyId();
+            }
+        }
+        if (finalHocKyId != null) {
+            return phanCongGiangDayRepository.findByHocKy_HocKyId(finalHocKyId).stream()
+                    .map(phanCongGiangDayMapper::toResponse)
+                    .collect(Collectors.toList());
+        }
         return phanCongGiangDayRepository.findAll().stream()
                 .map(phanCongGiangDayMapper::toResponse)
                 .collect(Collectors.toList());
@@ -113,13 +133,37 @@ public class PhanCongGiangDayService {
         phanCongGiangDayRepository.deleteById(id);
     }
 
-    public List<PhanCongGiangDayResponse> getByGiaoVienId(Long giaoVienId) {
+    public List<PhanCongGiangDayResponse> getByGiaoVienId(Long giaoVienId, Integer hocKyId) {
+        Integer finalHocKyId = hocKyId;
+        if (finalHocKyId == null) {
+            HocKy currentHocKy = getHocKyHienTaiTuCauHinh();
+            if (currentHocKy != null) {
+                finalHocKyId = currentHocKy.getHocKyId();
+            }
+        }
+        if (finalHocKyId != null) {
+            return phanCongGiangDayRepository.findByGiaoVien_GiaoVienIdAndHocKy_HocKyId(giaoVienId, finalHocKyId).stream()
+                    .map(phanCongGiangDayMapper::toResponse)
+                    .collect(Collectors.toList());
+        }
         return phanCongGiangDayRepository.findByGiaoVien_GiaoVienId(giaoVienId).stream()
                 .map(phanCongGiangDayMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<PhanCongGiangDayResponse> getByLopHocId(Long lopHocId) {
+    public List<PhanCongGiangDayResponse> getByLopHocId(Long lopHocId, Integer hocKyId) {
+        Integer finalHocKyId = hocKyId;
+        if (finalHocKyId == null) {
+            HocKy currentHocKy = getHocKyHienTaiTuCauHinh();
+            if (currentHocKy != null) {
+                finalHocKyId = currentHocKy.getHocKyId();
+            }
+        }
+        if (finalHocKyId != null) {
+            return phanCongGiangDayRepository.findByLopHoc_LopHocIdAndHocKy_HocKyId(lopHocId, finalHocKyId).stream()
+                    .map(phanCongGiangDayMapper::toResponse)
+                    .collect(Collectors.toList());
+        }
         return phanCongGiangDayRepository.findByLopHoc_LopHocId(lopHocId).stream()
                 .map(phanCongGiangDayMapper::toResponse)
                 .collect(Collectors.toList());

@@ -29,9 +29,10 @@ public class SachController {
     @GetMapping
     public ApiResponse<List<SachResponse>> getAll(
             @RequestParam(value = "hocKyId", required = false) Integer hocKyId,
-            @RequestParam(value = "maMon", required = false) String maMon) {
+            @RequestParam(value = "maMon", required = false) String maMon,
+            @RequestParam(value = "namHocId", required = false) Integer namHocId) {
         return ApiResponse.<List<SachResponse>>builder()
-                .data(sachService.getAll(hocKyId, maMon))
+                .data(sachService.getAll(hocKyId, maMon, namHocId))
                 .build();
     }
 

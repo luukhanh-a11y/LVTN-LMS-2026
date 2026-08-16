@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, GraduationCap, Ticket, Settings, LogOut, ShieldCheck, Bell, AlertCircle, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, Ticket, Settings, LogOut, ShieldCheck, Bell, AlertCircle, FileText, ChevronDown, BookOpen, Layers, Award } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { userService } from '../services/user.service';
 import { ticketService } from '../services/ticket.service';
@@ -9,20 +9,24 @@ import { useAcademicStore } from '../stores/useAcademicStore';
 import { academicService, type NamHoc } from '../services/academic.service';
 import { Calendar } from 'lucide-react';
 
-function NavItem({ to, icon: Icon, label, badge }: { to: string, icon: React.ElementType, label: string, badge?: number }) {
+function NavItem({ to, icon: Icon, label, badge, isSubItem = false }: { to: string, icon: React.ElementType, label: string, badge?: number, isSubItem?: boolean }) {
   const location = useLocation();
-  const isActive = location.pathname === to || (to !== '/admin' && location.pathname.startsWith(to));
+  // Ensure that hash routes match if they exist
+  const isActive = location.pathname === to.split('#')[0] && (to.includes('#') ? location.hash === '#' + to.split('#')[1] : true) || (to !== '/admin' && location.pathname.startsWith(to.split('#')[0]) && !to.includes('#'));
   
   return (
     <Link
       to={to}
       className={cn(
-        "flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors text-sm",
-        isActive ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-600 font-medium hover:bg-slate-100 hover:text-slate-900"
+        "flex items-center justify-between py-2 transition-colors text-sm",
+        isSubItem ? "px-3 rounded-lg" : "px-3 rounded-xl",
+        isActive 
+          ? "bg-blue-50 text-blue-600 font-semibold" 
+          : "text-slate-500 font-medium hover:bg-slate-50 hover:text-slate-800"
       )}
     >
       <div className="flex items-center gap-3">
-        <Icon className={cn("w-5 h-5", isActive ? "text-blue-700" : "text-slate-400")} />
+        <Icon className={cn("w-5 h-5", isActive ? "text-blue-600" : "text-slate-400")} />
         {label}
       </div>
       {badge !== undefined && badge > 0 && (
@@ -35,7 +39,7 @@ function NavItem({ to, icon: Icon, label, badge }: { to: string, icon: React.Ele
 }
 
 function AcademicYearSelector() {
-  const { selectedNamHocId, setNamHoc, isReadOnly } = useAcademicStore();
+  const { selectedNamHocId, setNamHoc, isReadOnly, yearStatus } = useAcademicStore();
   const [namHocs, setNamHocs] = useState<NamHoc[]>([]);
 
   useEffect(() => {
@@ -61,7 +65,7 @@ function AcademicYearSelector() {
     <div className="flex items-center space-x-3 mr-4">
       {isReadOnly && (
         <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-md animate-pulse">
-          CHẾ ĐỘ CHỈ XEM (NĂM HỌC CŨ)
+          CHẾ ĐỘ CHỈ XEM ({yearStatus === 'PAST' ? 'NĂM HỌC CŨ' : 'NĂM HỌC MỚI'})
         </span>
       )}
       <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
@@ -71,9 +75,16 @@ function AcademicYearSelector() {
           value={selectedNamHocId ?? ''}
           onChange={handleChange}
         >
-          {namHocs.map(nh => (
-            <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}</option>
-          ))}
+          {namHocs.map(nh => {
+            let suffix = '';
+            if (nh.namHocId === useAcademicStore.getState().selectedNamHocId) {
+                // Determine label if it's currently selected
+                if (yearStatus === 'PAST') suffix = ' (Cũ)';
+                else if (yearStatus === 'FUTURE') suffix = ' (Mới)';
+                else suffix = ' (Hiện tại)';
+            }
+            return <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}{suffix}</option>;
+          })}
         </select>
       </div>
     </div>
@@ -138,18 +149,13 @@ export default function AdminLayout() {
           />
         </div>
         
-        <nav className="flex-1 px-4 flex flex-col gap-1.5 mt-2 overflow-y-auto">
+        <nav className="flex-1 px-4 flex flex-col gap-1 mt-4 overflow-y-auto pb-8">
           <NavItem to="/admin" icon={LayoutDashboard} label="Tổng quan" />
-          <NavItem to="/admin/users" icon={Users} label="Quản lý Tài khoản" />
-          <NavItem to="/admin/classes" icon={GraduationCap} label="Quản lý Lớp học" />
-          <NavItem to="/admin/curriculum" icon={FileText} label="Chương trình học" />
-          
-          <div className="mt-4 mb-2 px-3 text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Hệ thống
-          </div>
-          <NavItem to="/admin/tickets" icon={Ticket} label="Phiếu Hỗ trợ" badge={pendingTicketsCount} />
-          <NavItem to="/admin/ket-qua-cuoi-nam" icon={GraduationCap} label="Đánh giá Cuối Năm" />
-          <NavItem to="/admin/settings" icon={Settings} label="Cấu hình trường" />
+          <NavItem to="/admin/users" icon={Users} label="Quản lý Người dùng" />
+          <NavItem to="/admin/academics" icon={GraduationCap} label="Quản lý Học vụ" />
+          <NavItem to="/admin/operations" icon={Ticket} label="Nghiệp vụ & Vận hành" badge={pendingTicketsCount} />
+          <NavItem to="/admin/announcements" icon={Bell} label="Thông báo toàn trường" />
+          <NavItem to="/admin/settings" icon={Settings} label="Cấu hình Hệ thống" />
         </nav>
         
         {/* Vùng dưới cùng Sidebar */}

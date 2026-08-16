@@ -1,5 +1,6 @@
 import { api } from '../lib/axios';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useAcademicStore } from '../stores/useAcademicStore';
 
 function mapTicket(item: any) {
   return {
@@ -17,13 +18,19 @@ function mapTicket(item: any) {
 export const ticketService = {
   // Admin APIs
   getPendingTickets: async () => {
-    const response = await api.get('/phieuhotro', { params: { size: 1000 } });
-    const raw = response.data?.data?.content || response.data?.data || response.data || [];
+    // Sử dụng /search vì không có endpoint GET /phieuhotro mặc định (tránh lỗi 405)
+    const response = await api.get('/phieuhotro/search', { params: { size: 1000, trangThai: 'CHO_DUYET' } });
+    const raw = response.data?.data?.content || [];
     return Array.isArray(raw) ? raw.map(mapTicket) : [];
   },
 
-  searchTickets: async (params: { keyword?: string; loaiPhieu?: string; trangThai?: string; page?: number; size?: number }) => {
-    const response = await api.get('/phieuhotro', { params });
+  searchTickets: async (params: { keyword?: string; loaiPhieu?: string; trangThai?: string; namHocId?: number; page?: number; size?: number }) => {
+    const finalParams = { ...params };
+    const currentNamHoc = finalParams.namHocId || useAcademicStore.getState().selectedNamHocId;
+    if (currentNamHoc) finalParams.namHocId = currentNamHoc;
+    
+    // Sử dụng endpoint /search thay vì endpoint mặc định nếu có phân trang và lọc
+    const response = await api.get('/phieuhotro/search', { params: finalParams });
     const content = response.data?.data?.content || [];
     return {
       content: content.map(mapTicket),

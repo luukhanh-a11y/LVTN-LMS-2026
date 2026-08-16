@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Settings, BookOpen,
-  FileText, Award, Bell, Upload, ShieldCheck, MessageSquare, Repeat, GraduationCap, ChevronLeft, ChevronRight,
+  FileText, Award, Bell, Upload, ShieldCheck, MessageSquare, Repeat, GraduationCap, ChevronLeft, ChevronRight, PenTool,
   type LucideIcon
 } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';

@@ -8,9 +8,11 @@ import com.LMS.LVTN.entity.NamHoc;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.LopHocMapper;
+import com.LMS.LVTN.repository.CauHinhHeThongRepository;
 import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
 import com.LMS.LVTN.repository.LopHocRepository;
 import com.LMS.LVTN.repository.NamHocRepository;
+import com.LMS.LVTN.entity.CauHinhHeThong;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -34,6 +36,13 @@ public class LopHocService {
     LopHocMapper lopHocMapper;
     NamHocRepository namHocRepository;
     HoSoGiaoVienRepository hoSoGiaoVienRepository;
+    CauHinhHeThongRepository cauHinhHeThongRepository;
+
+    private NamHoc getNamHocHienTaiTuCauHinh() {
+        return cauHinhHeThongRepository.findById((short) 1)
+                .map(config -> config.getHocKyHienTai() != null ? config.getHocKyHienTai().getNamHoc() : null)
+                .orElse(null);
+    }
 
     public LopHocResponse create(LopHocRequest request) {
         if (lopHocRepository.existsByTenLop(request.getTenLop())) {
@@ -57,6 +66,12 @@ public class LopHocService {
     }
     @Transactional(readOnly = true)
     public List<LopHocResponse> getAll() {
+        NamHoc currentNamHoc = getNamHocHienTaiTuCauHinh();
+        if (currentNamHoc != null) {
+            return lopHocRepository.findByNamHoc_TenNamHoc(currentNamHoc.getTenNamHoc()).stream()
+                    .map(this::mapToResponseWithSiSo)
+                    .collect(Collectors.toList());
+        }
         return lopHocRepository.findAll().stream()
                 .map(this::mapToResponseWithSiSo)
                 .collect(Collectors.toList());
@@ -64,13 +79,21 @@ public class LopHocService {
 
     @Transactional(readOnly = true)
     public Page<LopHocResponse> searchLopHoc(String keyword, Long namHocId, Integer khoiLop, Pageable pageable) {
+        Long finalNamHocId = namHocId;
+        if (finalNamHocId == null) {
+            NamHoc currentNamHoc = getNamHocHienTaiTuCauHinh();
+            if (currentNamHoc != null) {
+                finalNamHocId = currentNamHoc.getNamHocId().longValue(); // Actually, namHocId in Entity is Integer
+            }
+        }
+        final Long searchNamHocId = finalNamHocId;
         Specification<LopHoc> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (keyword != null && !keyword.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("tenLop")), "%" + keyword.toLowerCase() + "%"));
             }
-            if (namHocId != null) {
-                predicates.add(cb.equal(root.get("namHoc").get("namHocId"), namHocId));
+            if (searchNamHocId != null) {
+                predicates.add(cb.equal(root.get("namHoc").get("namHocId"), searchNamHocId.intValue()));
             }
             if (khoiLop != null) {
                 predicates.add(cb.equal(root.get("khoiLop"), khoiLop));

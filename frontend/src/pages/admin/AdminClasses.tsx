@@ -6,9 +6,11 @@ import Button from '../../components/Button';
 import { classService } from '../../services/class.service';
 import { adminService } from '../../services/admin.service';
 import { academicService, type CauHinhHeThong } from '../../services/academic.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 import toast from 'react-hot-toast';
 
-export default function AdminClasses() {
+export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: boolean }) {
+  const { selectedNamHocId } = useAcademicStore();
   const [activeGrade, setActiveGrade] = useState<number>(1);
   const [showAddModal, setShowAddModal] = useState(false);
   const grades = [1, 2, 3, 4, 5];
@@ -44,7 +46,7 @@ export default function AdminClasses() {
     const fetchDependencies = async () => {
       try {
         const [teachersData, cauHinhData] = await Promise.all([
-          adminService.getUsers('GIAO_VIEN'),
+          adminService.searchUsers({ role: 'GIAO_VIEN', size: 1000 }),
           academicService.getCauHinhHeThong()
         ]);
         setTeachers(teachersData.content || teachersData || []);
@@ -55,7 +57,7 @@ export default function AdminClasses() {
     };
     fetchClasses();
     fetchDependencies();
-  }, []);
+  }, [selectedNamHocId]);
 
   const handleCreateClass = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -112,20 +114,34 @@ export default function AdminClasses() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Quản lý Lớp học</h2>
-          <p className="text-sm text-slate-500 mt-1">Quản lý danh sách lớp học theo từng khối và phân công GVCN.</p>
+    <div className={cn("max-w-6xl mx-auto space-y-6 h-full flex flex-col", !isInsideTab && "animate-in fade-in")}>
+      {!isInsideTab && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Quản lý Lớp học</h2>
+            <p className="text-sm text-slate-500 mt-1">Quản lý danh sách lớp học theo từng khối và phân công GVCN.</p>
+          </div>
+          <Button 
+            type="button" 
+            onClick={() => setShowAddModal(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Thêm lớp mới
+          </Button>
         </div>
-        <Button 
-          type="button" 
-          onClick={() => setShowAddModal(true)}
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          Thêm lớp mới
-        </Button>
-      </div>
+      )}
+
+      {isInsideTab && (
+        <div className="flex justify-end mb-2">
+          <Button 
+            type="button" 
+            onClick={() => setShowAddModal(true)}
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            Thêm lớp mới
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-6 flex-1 overflow-hidden">
         

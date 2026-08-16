@@ -27,9 +27,9 @@ public class KhenThuongHocSinhController {
     }
 
     @GetMapping
-    public ApiResponse<List<KhenThuongHocSinhResponse>> getAll() {
+    public ApiResponse<List<KhenThuongHocSinhResponse>> getAll(@RequestParam(required = false) Long namHocId) {
         return ApiResponse.<List<KhenThuongHocSinhResponse>>builder()
-                .data(khenThuongHocSinhService.getAllKhenThuong())
+                .data(khenThuongHocSinhService.getAllKhenThuong(namHocId))
                 .build();
     }
 
@@ -41,9 +41,9 @@ public class KhenThuongHocSinhController {
     }
 
     @GetMapping("/hoc-sinh/{hocSinhId}")
-    public ApiResponse<List<KhenThuongHocSinhResponse>> getByHocSinhId(@PathVariable Long hocSinhId) {
+    public ApiResponse<List<KhenThuongHocSinhResponse>> getByHocSinhId(@PathVariable Long hocSinhId, @RequestParam(required = false) Long namHocId) {
         return ApiResponse.<List<KhenThuongHocSinhResponse>>builder()
-                .data(khenThuongHocSinhService.getKhenThuongByHocSinh(hocSinhId))
+                .data(khenThuongHocSinhService.getKhenThuongByHocSinh(hocSinhId, namHocId))
                 .build();
     }
 

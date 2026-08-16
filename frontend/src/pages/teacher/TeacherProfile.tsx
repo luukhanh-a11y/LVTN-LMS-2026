@@ -1,22 +1,102 @@
 import { useState, useEffect } from 'react';
-import { KeyRound, ShieldCheck, Save, X, Phone, Mail, Calendar, Camera } from 'lucide-react';
+import { KeyRound, Shield, Save, X, Phone, Mail, User, ShieldCheck, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { teacherService } from '../../services/teacher.service';
+import { api } from '../../lib/axios';
 
 export default function TeacherProfile() {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Form State
+  const [hoTen, setHoTen] = useState('');
+  const [anhDaiDienUrl, setAnhDaiDienUrl] = useState('');
+  const [ngaySinh, setNgaySinh] = useState('');
+  const [gioiTinh, setGioiTinh] = useState('NAM');
+  
+  // Read-only specific data
+  const [maGiaoVien, setMaGiaoVien] = useState('');
+  const [boMon, setBoMon] = useState('');
+  const [lopGiangDay, setLopGiangDay] = useState<any[]>([]);
+
+  // Account Data
+  const [tenDangNhap, setTenDangNhap] = useState('');
+  const [email, setEmail] = useState('');
+  const [soDienThoai, setSoDienThoai] = useState('');
+  const [trangThai, setTrangThai] = useState('ACTIVE');
 
   useEffect(() => {
-    teacherService.getMyTeacherProfile().then(data => {
-      setProfile(data);
-    }).catch(console.error).finally(() => setLoading(false));
+    fetchProfileData();
   }, []);
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      
+      // Lấy thông tin tài khoản chung
+      const userInfoRes = await api.get('/nguoi-dung/my-info');
+      const baseUser = userInfoRes.data;
+      
+      setTenDangNhap(baseUser.tenDangNhap || baseUser.username || '');
+      setEmail(baseUser.email || '');
+      setSoDienThoai(baseUser.soDienThoai || baseUser.phone || '');
+      setTrangThai(baseUser.trangThai || baseUser.status || 'ACTIVE');
+
+      // Lấy hồ sơ chuyên sâu của giáo viên
+      try {
+        const profileRes = await api.get('/hoso-giaovien/my-profile');
+        const hoso = profileRes.data;
+        
+        if (hoso) {
+          setHoTen(hoso.hoTen || baseUser.hoTen || baseUser.fullName || '');
+          setAnhDaiDienUrl(hoso.anhDaiDienUrl || '');
+          setNgaySinh(hoso.ngaySinh ? hoso.ngaySinh.split('T')[0] : '');
+          setGioiTinh(hoso.gioiTinh === 'NU' ? 'NU' : 'NAM');
+          setMaGiaoVien(hoso.maGiaoVien || '');
+          setBoMon(hoso.boMon || '');
+          setLopGiangDay(hoso.lopGiangDay || []);
+        }
+      } catch (err) {
+        console.warn("Could not fetch detailed profile", err);
+        setHoTen(baseUser.hoTen || baseUser.fullName || '');
+      }
+
+    } catch (error) {
+      console.error(error);
+      toast.error('Lỗi khi tải thông tin hồ sơ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Đã cập nhật thông tin hồ sơ thành công!');
+    setIsSaving(true);
+    try {
+      // 1. Cập nhật base user (phone, email)
+      await api.put('/nguoi-dung/my-info', {
+        email: email || null,
+        soDienThoai: soDienThoai || null
+      });
+
+      // 2. Cập nhật hồ sơ giáo viên
+      await api.put('/hoso-giaovien/my-profile', {
+        hoTen,
+        anhDaiDienUrl,
+        ngaySinh: ngaySinh || null,
+        gioiTinh,
+        boMon, // gửi lại boMon hiện tại (vì api yêu cầu) nhưng thực tế readonly
+        maGiaoVien // gửi lại mã giáo viên
+      });
+
+      toast.success('Đã cập nhật thông tin hồ sơ thành công!');
+      fetchProfileData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi lưu hồ sơ');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -26,154 +106,203 @@ export default function TeacherProfile() {
   };
 
   if (loading) {
-    return <div className="text-center py-10 text-slate-500">Đang tải hồ sơ...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
-  const fullName = profile?.hoTen || 'Giáo viên';
-  const roleText = profile?.maGiaoVien ? 'Giáo viên' : 'Giáo viên';
-  const department = profile?.boMon || 'Chưa cập nhật';
-  const dob = profile?.ngaySinh ? profile.ngaySinh.split('T')[0] : '';
+  const isLocked = trangThai === 'LOCKED' || trangThai === 'Đã khóa';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">Hồ sơ cá nhân</h2>
-        <p className="text-sm text-slate-500 mt-1">Quản lý tài khoản và bảo mật</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Hồ sơ cá nhân</h2>
+          <p className="text-sm text-slate-500 mt-1">Cập nhật thông tin chi tiết và cài đặt tài khoản của bạn.</p>
+        </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <form onSubmit={handleUpdateProfile} className="space-y-6">
         
-        {/* Profile Header */}
-        <div className="p-6 md:p-8 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 bg-slate-50/50">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-            <div className="relative group">
-              <div className="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl font-bold shadow-sm border-4 border-white uppercase">
-                {fullName.charAt(0)}
-              </div>
-              <button type="button" className="absolute bottom-0 right-0 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 shadow-sm hover:text-blue-600 transition cursor-pointer">
-                <Camera className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="mt-2">
-              <h3 className="text-xl font-bold text-slate-900">{fullName}</h3>
-              <p className="text-sm text-slate-500 mt-1">{roleText} • {department}</p>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-full mt-3 border border-green-200">
-                <ShieldCheck className="w-4 h-4" /> Tài khoản đã xác thực
-              </span>
-            </div>
-          </div>
-          
-          {!showPasswordForm && (
-            <button 
-              type="button"
-              onClick={() => setShowPasswordForm(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition cursor-pointer shadow-sm border border-slate-200 shrink-0"
-            >
-              <KeyRound className="w-4 h-4 text-blue-600" /> Đổi mật khẩu
-            </button>
-          )}
-        </div>
-
-        {/* Change Password Inline Form */}
-        {showPasswordForm && (
-          <div className="p-6 md:p-8 bg-blue-50/30 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-blue-600" /> Cập nhật mật khẩu
-              </h3>
-              <button 
-                type="button" 
-                onClick={() => setShowPasswordForm(false)}
-                className="p-2 text-slate-400 hover:bg-slate-200 bg-slate-100 rounded-full transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleChangePassword} className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700">Mật khẩu hiện tại</label>
-                  <input type="password" required placeholder="Nhập mật khẩu cũ..." className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
+        {/* Phần 1: Form đặc thù Giáo viên */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
+              <div className="relative group">
+                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl font-bold shadow-sm border-4 border-white uppercase overflow-hidden">
+                  {anhDaiDienUrl ? (
+                    <img src={anhDaiDienUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    hoTen.charAt(0) || tenDangNhap.charAt(0) || 'G'
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700">Mật khẩu mới</label>
-                  <input type="password" required placeholder="Nhập mật khẩu mới..." className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700">Xác nhận mật khẩu</label>
-                  <input type="password" required placeholder="Nhập lại mật khẩu..." className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
-                </div>
-              </div>
-              <div className="flex justify-end pt-2">
-                <button type="submit" className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm cursor-pointer">
-                  <Save className="w-4 h-4" /> Lưu mật khẩu
+                <button type="button" className="absolute bottom-0 right-0 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 shadow-sm hover:text-blue-600 transition cursor-pointer">
+                  <Camera className="w-4 h-4" />
                 </button>
               </div>
-            </form>
-          </div>
-        )}
-
-        {/* Personal Info Form */}
-        <form onSubmit={handleUpdateProfile} className="p-6 md:p-8 space-y-6 border-t border-slate-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Cột 1 */}
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Họ và tên</label>
-                <input type="text" defaultValue={fullName} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50" />
+              
+              <div className="mt-1">
+                <h3 className="text-xl font-bold text-slate-900">{hoTen || 'Chưa cập nhật tên'}</h3>
+                <p className="text-sm font-medium text-blue-600 mt-1">Giáo viên • {boMon || 'Chưa phân môn'}</p>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-full mt-3 border border-green-200">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Tài khoản đã xác thực
+                </span>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Mã giáo viên (ID)</label>
-                <input type="text" defaultValue={profile?.maGiaoVien || ''} disabled className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-100 text-slate-500 cursor-not-allowed font-medium" />
+            </div>
+
+            {!showPasswordForm && (
+              <button 
+                type="button"
+                onClick={() => setShowPasswordForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-50 transition cursor-pointer shadow-sm border border-slate-200 shrink-0"
+              >
+                <KeyRound className="w-4 h-4 text-blue-600" /> Đổi mật khẩu
+              </button>
+            )}
+          </div>
+
+          {/* Change Password Inline Form */}
+          {showPasswordForm && (
+            <div className="p-6 bg-blue-50/30 border-b border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-blue-600" /> Cập nhật mật khẩu
+                </h3>
+                <button 
+                  type="button" 
+                  onClick={() => setShowPasswordForm(false)}
+                  className="p-1.5 text-slate-400 hover:bg-slate-200 bg-slate-100 rounded-full transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
               
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Ngày sinh</label>
-                <div className="relative">
-                  <Calendar className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input type="date" defaultValue={dob} className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Mật khẩu hiện tại</label>
+                  <input type="password" required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Giới tính</label>
-                <select className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 cursor-pointer">
-                  <option>Nam</option>
-                  <option>Nữ</option>
-                  <option>Khác</option>
-                </select>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Mật khẩu mới</label>
+                  <input type="password" required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Nhập lại mật khẩu</label>
+                  <div className="flex gap-2">
+                    <input type="password" required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+                    <button type="button" onClick={handleChangePassword} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition">
+                      Lưu
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Cột 2 */}
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Số điện thoại</label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input type="tel" defaultValue="" placeholder="Chưa cập nhật" className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50" />
+          <div className="p-6">
+            <h4 className="font-semibold text-slate-800 mb-6 flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-500" /> 
+              Thông tin Hồ sơ (Giáo viên)
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Họ và tên</label>
+                <input type="text" required value={hoTen} onChange={e => setHoTen(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Mã giáo viên (Chỉ đọc)</label>
+                <input type="text" readOnly value={maGiaoVien} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 cursor-not-allowed" title="Vui lòng liên hệ Admin để thay đổi" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Ngày sinh</label>
+                <input type="date" value={ngaySinh} onChange={e => setNgaySinh(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Giới tính</label>
+                <div className="flex gap-4 pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="gioiTinh" value="NAM" checked={gioiTinh === 'NAM'} onChange={e => setGioiTinh(e.target.value)} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-sm text-slate-700">Nam</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="gioiTinh" value="NU" checked={gioiTinh === 'NU'} onChange={e => setGioiTinh(e.target.value)} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-sm text-slate-700">Nữ</span>
+                  </label>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Email công việc</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input type="email" defaultValue="" placeholder="Chưa cập nhật" className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50" />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Bộ môn (Chỉ đọc)</label>
+                <input type="text" readOnly value={boMon || 'Chưa phân môn'} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 cursor-not-allowed" title="Vui lòng liên hệ Admin để thay đổi" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Lớp giảng dạy (Chỉ đọc)</label>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {lopGiangDay.length > 0 ? lopGiangDay.map((lop, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-100">Lớp {lop.tenLop || lop}</span>
+                  )) : <span className="text-sm text-slate-400 italic">Chưa được phân công</span>}
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="pt-6 border-t border-slate-100 flex justify-end">
-            <button type="submit" className="flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition shadow-sm cursor-pointer">
-              <Save className="w-4 h-4" /> Lưu thông tin
-            </button>
+        {/* Phần 2: Thông tin tài khoản chung */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+          <h4 className="font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-slate-400" /> 
+            Cài đặt Tài khoản
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Tên đăng nhập (Chỉ đọc)</label>
+              <input type="text" readOnly value={tenDangNhap} className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 cursor-not-allowed" />
+            </div>
+
+            <div className="space-y-2 flex flex-col justify-center">
+              <label className="text-sm font-medium text-slate-700 mb-2">Trạng thái hệ thống</label>
+              <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium ${!isLocked ? 'text-emerald-600' : 'text-slate-500'}`}>
+                  {!isLocked ? 'Đang hoạt động' : 'Đã khóa'}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-slate-400" /> Email liên hệ
+              </label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <Phone className="w-4 h-4 text-slate-400" /> Số điện thoại
+              </label>
+              <input type="tel" value={soDienThoai} onChange={e => setSoDienThoai(e.target.value)} className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
           </div>
-        </form>
+        </div>
 
-      </div>
+        <div className="flex justify-end pt-2">
+          <button 
+            type="submit" 
+            disabled={isSaving}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            {isSaving ? (
+              <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Đang lưu...</>
+            ) : (
+              <><Save className="w-5 h-5" /> Lưu tất cả thay đổi</>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

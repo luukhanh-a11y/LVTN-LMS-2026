@@ -426,4 +426,16 @@ export const teacherService = {
     const response = await api.get(`/thong-ke-diem/hoc-sinh/${hocSinhId}/hoc-ky/${hocKyId}`);
     return response.data?.data || response.data || [];
   },
+
+  // Số bài nộp tự luận/H5P đang chờ giáo viên hiện tại chấm
+  getPendingGradingCount: async (): Promise<number> => {
+    const response = await api.get('/bai-nop/dem-cho-cham');
+    return response.data?.data ?? response.data ?? 0;
+  },
+
+  // Số bài chờ chấm, gộp theo từng lớp (lopHocId -> số lượng), dùng cho badge trên trang Chấm bài
+  getPendingGradingCountByClass: async (): Promise<Record<number, number>> => {
+    const response = await api.get('/bai-nop/dem-cho-cham-theo-lop');
+    return response.data?.data ?? response.data ?? {};
+  },
 };

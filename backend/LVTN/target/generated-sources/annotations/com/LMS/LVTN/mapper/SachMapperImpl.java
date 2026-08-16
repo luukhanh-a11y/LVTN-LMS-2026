@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:03+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class SachMapperImpl implements SachMapper {
@@ -23,19 +23,19 @@ public class SachMapperImpl implements SachMapper {
 
         Sach sach = new Sach();
 
-        sach.setAnhBiaUrl( request.getAnhBiaUrl() );
-        sach.setBanBienSoan( request.getBanBienSoan() );
-        sach.setBanQuyen( request.getBanQuyen() );
-        sach.setBoSach( request.getBoSach() );
         sach.setBookIdNgoai( request.getBookIdNgoai() );
-        sach.setKhoiLop( request.getKhoiLop() );
         sach.setLoaiSach( request.getLoaiSach() );
+        sach.setBoSach( request.getBoSach() );
+        sach.setKhoiLop( request.getKhoiLop() );
         sach.setMaMon( request.getMaMon() );
-        sach.setMoTa( request.getMoTa() );
-        sach.setNamXuatBan( request.getNamXuatBan() );
-        sach.setSlug( request.getSlug() );
         sach.setTenSach( request.getTenSach() );
+        sach.setSlug( request.getSlug() );
+        sach.setMoTa( request.getMoTa() );
+        sach.setAnhBiaUrl( request.getAnhBiaUrl() );
         sach.setTongSoTrang( request.getTongSoTrang() );
+        sach.setNamXuatBan( request.getNamXuatBan() );
+        sach.setBanQuyen( request.getBanQuyen() );
+        sach.setBanBienSoan( request.getBanBienSoan() );
         sach.setTrangThai( request.getTrangThai() );
 
         return sach;
@@ -50,23 +50,23 @@ public class SachMapperImpl implements SachMapper {
         SachResponse sachResponse = new SachResponse();
 
         sachResponse.setHocKyId( entityHocKyHocKyId( entity ) );
-        sachResponse.setAnhBiaUrl( entity.getAnhBiaUrl() );
-        sachResponse.setBanBienSoan( entity.getBanBienSoan() );
-        sachResponse.setBanQuyen( entity.getBanQuyen() );
-        sachResponse.setBoSach( entity.getBoSach() );
-        sachResponse.setBookIdNgoai( entity.getBookIdNgoai() );
-        sachResponse.setKhoiLop( entity.getKhoiLop() );
-        sachResponse.setLoaiSach( entity.getLoaiSach() );
-        sachResponse.setMaMon( entity.getMaMon() );
-        sachResponse.setMoTa( entity.getMoTa() );
-        sachResponse.setNamXuatBan( entity.getNamXuatBan() );
-        sachResponse.setNgayCapNhat( entity.getNgayCapNhat() );
-        sachResponse.setNgayTao( entity.getNgayTao() );
         sachResponse.setSachId( entity.getSachId() );
-        sachResponse.setSlug( entity.getSlug() );
+        sachResponse.setBookIdNgoai( entity.getBookIdNgoai() );
+        sachResponse.setLoaiSach( entity.getLoaiSach() );
+        sachResponse.setBoSach( entity.getBoSach() );
+        sachResponse.setKhoiLop( entity.getKhoiLop() );
+        sachResponse.setMaMon( entity.getMaMon() );
         sachResponse.setTenSach( entity.getTenSach() );
+        sachResponse.setSlug( entity.getSlug() );
+        sachResponse.setMoTa( entity.getMoTa() );
+        sachResponse.setAnhBiaUrl( entity.getAnhBiaUrl() );
         sachResponse.setTongSoTrang( entity.getTongSoTrang() );
+        sachResponse.setNamXuatBan( entity.getNamXuatBan() );
+        sachResponse.setBanQuyen( entity.getBanQuyen() );
+        sachResponse.setBanBienSoan( entity.getBanBienSoan() );
         sachResponse.setTrangThai( entity.getTrangThai() );
+        sachResponse.setNgayTao( entity.getNgayTao() );
+        sachResponse.setNgayCapNhat( entity.getNgayCapNhat() );
 
         return sachResponse;
     }
@@ -77,19 +77,19 @@ public class SachMapperImpl implements SachMapper {
             return;
         }
 
-        entity.setAnhBiaUrl( request.getAnhBiaUrl() );
-        entity.setBanBienSoan( request.getBanBienSoan() );
-        entity.setBanQuyen( request.getBanQuyen() );
-        entity.setBoSach( request.getBoSach() );
         entity.setBookIdNgoai( request.getBookIdNgoai() );
-        entity.setKhoiLop( request.getKhoiLop() );
         entity.setLoaiSach( request.getLoaiSach() );
+        entity.setBoSach( request.getBoSach() );
+        entity.setKhoiLop( request.getKhoiLop() );
         entity.setMaMon( request.getMaMon() );
-        entity.setMoTa( request.getMoTa() );
-        entity.setNamXuatBan( request.getNamXuatBan() );
-        entity.setSlug( request.getSlug() );
         entity.setTenSach( request.getTenSach() );
+        entity.setSlug( request.getSlug() );
+        entity.setMoTa( request.getMoTa() );
+        entity.setAnhBiaUrl( request.getAnhBiaUrl() );
         entity.setTongSoTrang( request.getTongSoTrang() );
+        entity.setNamXuatBan( request.getNamXuatBan() );
+        entity.setBanQuyen( request.getBanQuyen() );
+        entity.setBanBienSoan( request.getBanBienSoan() );
         entity.setTrangThai( request.getTrangThai() );
     }
 

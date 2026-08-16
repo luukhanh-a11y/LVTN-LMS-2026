@@ -1,6 +1,7 @@
 package com.LMS.LVTN.controller;
 
 import com.LMS.LVTN.dto.request.AuthenticationRequest;
+import com.LMS.LVTN.dto.request.ChangePasswordRequest;
 import com.LMS.LVTN.dto.request.ForgotPasswordRequest;
 import com.LMS.LVTN.dto.request.IntrospectRequest;
 import com.LMS.LVTN.dto.request.LogoutRequest;
@@ -15,6 +16,7 @@ import com.nimbusds.jose.JOSEException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,6 +73,15 @@ public class AuthenticationController {
         otpService.verifyOtpAndResetPassword(request.getEmail(), request.getOtp());
         return ApiResponse.<String>builder()
                 .data("Xác nhận OTP thành công. Mật khẩu mới đã được gửi về email của bạn.")
+                .build();
+    }
+
+    @PostMapping("/change-password")
+    public ApiResponse<String> changePassword(@RequestBody ChangePasswordRequest request) {
+        String nguoiDungId = SecurityContextHolder.getContext().getAuthentication().getName();
+        authenticationService.changePassword(nguoiDungId, request);
+        return ApiResponse.<String>builder()
+                .data("Đổi mật khẩu thành công")
                 .build();
     }
 }

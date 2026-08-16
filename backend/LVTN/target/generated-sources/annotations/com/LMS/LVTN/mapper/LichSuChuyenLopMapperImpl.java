@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:04+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class LichSuChuyenLopMapperImpl implements LichSuChuyenLopMapper {
@@ -25,10 +25,10 @@ public class LichSuChuyenLopMapperImpl implements LichSuChuyenLopMapper {
 
         LichSuChuyenLop lichSuChuyenLop = new LichSuChuyenLop();
 
-        lichSuChuyenLop.setGhiChu( request.getGhiChu() );
-        lichSuChuyenLop.setLyDo( request.getLyDo() );
         lichSuChuyenLop.setNamHocCu( request.getNamHocCu() );
         lichSuChuyenLop.setNamHocMoi( request.getNamHocMoi() );
+        lichSuChuyenLop.setLyDo( request.getLyDo() );
+        lichSuChuyenLop.setGhiChu( request.getGhiChu() );
 
         return lichSuChuyenLop;
     }
@@ -50,10 +50,10 @@ public class LichSuChuyenLopMapperImpl implements LichSuChuyenLopMapper {
         lichSuChuyenLopResponse.setNguoiThucHienId( entityNguoiThucHienNguoiDungId( entity ) );
         lichSuChuyenLopResponse.setTenNguoiThucHien( entityNguoiThucHienTenDangNhap( entity ) );
         lichSuChuyenLopResponse.setChuyenLopId( entity.getChuyenLopId() );
-        lichSuChuyenLopResponse.setGhiChu( entity.getGhiChu() );
-        lichSuChuyenLopResponse.setLyDo( entity.getLyDo() );
         lichSuChuyenLopResponse.setNamHocCu( entity.getNamHocCu() );
         lichSuChuyenLopResponse.setNamHocMoi( entity.getNamHocMoi() );
+        lichSuChuyenLopResponse.setLyDo( entity.getLyDo() );
+        lichSuChuyenLopResponse.setGhiChu( entity.getGhiChu() );
         lichSuChuyenLopResponse.setThoiDiemChuyen( entity.getThoiDiemChuyen() );
 
         return lichSuChuyenLopResponse;
@@ -65,10 +65,10 @@ public class LichSuChuyenLopMapperImpl implements LichSuChuyenLopMapper {
             return;
         }
 
-        entity.setGhiChu( request.getGhiChu() );
-        entity.setLyDo( request.getLyDo() );
         entity.setNamHocCu( request.getNamHocCu() );
         entity.setNamHocMoi( request.getNamHocMoi() );
+        entity.setLyDo( request.getLyDo() );
+        entity.setGhiChu( request.getGhiChu() );
     }
 
     private Long entityHocSinhHocSinhId(LichSuChuyenLop lichSuChuyenLop) {

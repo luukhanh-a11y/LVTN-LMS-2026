@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:02+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class PhanCongGiangDayMapperImpl implements PhanCongGiangDayMapper {
@@ -48,8 +48,8 @@ public class PhanCongGiangDayMapperImpl implements PhanCongGiangDayMapper {
         phanCongGiangDayResponse.setHocKyId( entityHocKyHocKyId( entity ) );
         phanCongGiangDayResponse.setSoHocKy( entityHocKySoHocKy( entity ) );
         phanCongGiangDayResponse.setTenNamHoc( entityHocKyNamHocTenNamHoc( entity ) );
-        phanCongGiangDayResponse.setNgayPhanCong( entity.getNgayPhanCong() );
         phanCongGiangDayResponse.setPhanCongId( entity.getPhanCongId() );
+        phanCongGiangDayResponse.setNgayPhanCong( entity.getNgayPhanCong() );
 
         return phanCongGiangDayResponse;
     }

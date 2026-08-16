@@ -12,6 +12,7 @@ import com.LMS.LVTN.enums.LoaiThongBao;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.BaiTapMapper;
+import com.LMS.LVTN.repository.BaiNopRepository;
 import com.LMS.LVTN.repository.BaiTapRepository;
 import com.LMS.LVTN.repository.DangBaiRepository;
 import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
@@ -37,6 +38,7 @@ public class BaiTapService {
     LopHocRepository lopHocRepository;
     HocKyRepository hocKyRepository;
     DangBaiRepository dangBaiRepository;
+    BaiNopRepository baiNopRepository;
     ChiTietBaiTapService chiTietBaiTapService;
     ThongBaoService thongBaoService;
 
@@ -116,6 +118,7 @@ public class BaiTapService {
     public List<BaiTapResponse> getByLopHocId(Long lopHocId) {
         return baiTapRepository.findByLopHoc_LopHocId(lopHocId).stream()
                 .map(baiTapMapper::toResponse)
+                .peek(res -> res.setSoLuongNop(baiNopRepository.countDistinctHocSinhByBaiTapId(res.getBaiTapId())))
                 .collect(Collectors.toList());
     }
 

@@ -19,7 +19,8 @@ export default function ParentDashboard() {
     }
   }, [selectedChild?.id]);
 
-  const activeChild: any = selectedChild || { name: 'Học sinh', className: '...', avatar: 'C', school: 'Trường THPT' };
+  const activeChild = selectedChild || { name: 'Học sinh' } as { name: string; className?: string };
+  const childInitial = activeChild.name?.trim()?.charAt(0)?.toUpperCase() || '?';
   const progressList = dashboardData?.recentProgress || [];
 
   return (
@@ -100,16 +101,13 @@ export default function ParentDashboard() {
             
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30 mb-4">
-                <span className="font-bold text-xl">{activeChild.avatar}</span>
+                <span className="font-bold text-xl">{childInitial}</span>
               </div>
-              
+
               <h3 className="font-bold text-xl mb-1">{activeChild.name}</h3>
-              <p className="text-blue-100 font-medium text-sm">Lớp {activeChild.className || activeChild.class}</p>
-              
-              <div className="mt-6 pt-4 border-t border-white/20">
-                <p className="text-sm font-medium opacity-90">Trường</p>
-                <p className="font-bold">{activeChild.school}</p>
-              </div>
+              {activeChild.className && (
+                <p className="text-blue-100 font-medium text-sm">Lớp {activeChild.className}</p>
+              )}
             </div>
           </div>
 

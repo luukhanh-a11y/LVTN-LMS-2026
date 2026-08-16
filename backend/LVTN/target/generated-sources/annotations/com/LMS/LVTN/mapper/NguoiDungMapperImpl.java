@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:07+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class NguoiDungMapperImpl implements NguoiDungMapper {
@@ -25,9 +25,9 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
 
         NguoiDung nguoiDung = new NguoiDung();
 
+        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
         nguoiDung.setEmail( request.getEmail() );
         nguoiDung.setSoDienThoai( request.getSoDienThoai() );
-        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
 
         return nguoiDung;
     }
@@ -40,11 +40,11 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
 
         NguoiDung nguoiDung = new NguoiDung();
 
+        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
+        nguoiDung.setVaiTro( request.getVaiTro() );
+        nguoiDung.setTrangThai( request.getTrangThai() );
         nguoiDung.setEmail( request.getEmail() );
         nguoiDung.setSoDienThoai( request.getSoDienThoai() );
-        nguoiDung.setTenDangNhap( request.getTenDangNhap() );
-        nguoiDung.setTrangThai( request.getTrangThai() );
-        nguoiDung.setVaiTro( request.getVaiTro() );
 
         return nguoiDung;
     }
@@ -57,12 +57,13 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
 
         NguoiDungResponse nguoiDungResponse = new NguoiDungResponse();
 
-        nguoiDungResponse.setEmail( entity.getEmail() );
         nguoiDungResponse.setNguoiDungId( entity.getNguoiDungId() );
-        nguoiDungResponse.setSoDienThoai( entity.getSoDienThoai() );
         nguoiDungResponse.setTenDangNhap( entity.getTenDangNhap() );
-        nguoiDungResponse.setTrangThai( entity.getTrangThai() );
         nguoiDungResponse.setVaiTro( entity.getVaiTro() );
+        nguoiDungResponse.setTrangThai( entity.getTrangThai() );
+        nguoiDungResponse.setEmail( entity.getEmail() );
+        nguoiDungResponse.setSoDienThoai( entity.getSoDienThoai() );
+        nguoiDungResponse.setBatBuocDoiMk( entity.getBatBuocDoiMk() );
 
         return nguoiDungResponse;
     }
@@ -73,14 +74,14 @@ public class NguoiDungMapperImpl implements NguoiDungMapper {
             return;
         }
 
+        if ( request.getTenDangNhap() != null ) {
+            entity.setTenDangNhap( request.getTenDangNhap() );
+        }
         if ( request.getEmail() != null ) {
             entity.setEmail( request.getEmail() );
         }
         if ( request.getSoDienThoai() != null ) {
             entity.setSoDienThoai( request.getSoDienThoai() );
-        }
-        if ( request.getTenDangNhap() != null ) {
-            entity.setTenDangNhap( request.getTenDangNhap() );
         }
     }
 

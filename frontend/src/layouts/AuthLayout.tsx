@@ -1,5 +1,7 @@
 import { Outlet } from 'react-router-dom';
-import { Rocket, Sparkles, Quote } from 'lucide-react';
+import { Sparkles, Quote } from 'lucide-react';
+
+const TITKUL_LOGO_URL = 'https://www.titkul.vn/upload/photo/cropped-titkul-logo-header-7055.png';
 
 export default function AuthLayout() {
   return (
@@ -18,13 +20,8 @@ export default function AuthLayout() {
         </div>
 
         {/* Branding Header */}
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="w-14 h-14 bg-white rounded-[18px] flex items-center justify-center shadow-2xl shadow-white/10">
-            <Rocket className="text-indigo-600 w-8 h-8" />
-          </div>
-          <span className="font-black text-3xl tracking-[0.1em] text-white drop-shadow-md">
-            TITKUL LMS
-          </span>
+        <div className="relative z-10 flex items-center bg-white rounded-2xl px-5 py-3 w-fit shadow-2xl shadow-white/10">
+          <img src={TITKUL_LOGO_URL} alt="Titkul LMS" className="h-10 w-auto object-contain" />
         </div>
 
         {/* Hero Copy */}
@@ -62,12 +59,7 @@ export default function AuthLayout() {
           
           {/* Mobile Branding (Visible only on small screens) */}
           <div className="flex lg:hidden flex-col items-center mb-10">
-             <div className="w-16 h-16 bg-indigo-600 rounded-[20px] flex items-center justify-center shadow-xl shadow-indigo-600/30 mb-4">
-               <Rocket className="text-white w-8 h-8" />
-             </div>
-             <h1 className="font-black text-3xl tracking-tight text-slate-800">
-               TITKUL LMS
-             </h1>
+             <img src={TITKUL_LOGO_URL} alt="Titkul LMS" className="h-12 w-auto object-contain" />
           </div>
 
           {/* Nơi Render các trang như Login, ForgotPassword... */}

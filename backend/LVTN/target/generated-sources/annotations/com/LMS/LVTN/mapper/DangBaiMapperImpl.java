@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:06+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class DangBaiMapperImpl extends DangBaiMapper {
@@ -28,16 +28,16 @@ public class DangBaiMapperImpl extends DangBaiMapper {
         DangBai dangBai = new DangBai();
 
         dangBai.setBookIndexIdNgoai( request.getBookIndexIdNgoai() );
-        dangBai.setDapAnChuan( request.getDapAnChuan() );
-        dangBai.setDuLieuGame( request.getDuLieuGame() );
-        dangBai.setH5pNoiDungId( request.getH5pNoiDungId() );
+        dangBai.setTenDangBai( request.getTenDangBai() );
+        dangBai.setSlug( request.getSlug() );
+        dangBai.setSoTrang( request.getSoTrang() );
+        dangBai.setSoThuTu( request.getSoThuTu() );
         dangBai.setLoaiNoiDung( request.getLoaiNoiDung() );
         dangBai.setNguonGoc( request.getNguonGoc() );
-        dangBai.setSlug( request.getSlug() );
-        dangBai.setSoThuTu( request.getSoThuTu() );
-        dangBai.setSoTrang( request.getSoTrang() );
-        dangBai.setTenDangBai( request.getTenDangBai() );
+        dangBai.setH5pNoiDungId( request.getH5pNoiDungId() );
         dangBai.setXpThuong( request.getXpThuong() );
+        dangBai.setDuLieuGame( request.getDuLieuGame() );
+        dangBai.setDapAnChuan( request.getDapAnChuan() );
 
         customMapping( request, dangBai );
 
@@ -58,19 +58,19 @@ public class DangBaiMapperImpl extends DangBaiMapper {
         dangBaiResponse.setMaMon( entityBaiHocChuDeSachMaMon( entity ) );
         dangBaiResponse.setGiaoVienId( entityGiaoVienGiaoVienId( entity ) );
         dangBaiResponse.setTenGiaoVien( entityGiaoVienHoTen( entity ) );
-        dangBaiResponse.setBookIndexIdNgoai( entity.getBookIndexIdNgoai() );
         dangBaiResponse.setDangBaiId( entity.getDangBaiId() );
-        dangBaiResponse.setDapAnChuan( entity.getDapAnChuan() );
-        dangBaiResponse.setDuLieuGame( entity.getDuLieuGame() );
-        dangBaiResponse.setH5pNoiDungId( entity.getH5pNoiDungId() );
-        dangBaiResponse.setLoaiNoiDung( entity.getLoaiNoiDung() );
-        dangBaiResponse.setNgayTao( entity.getNgayTao() );
-        dangBaiResponse.setNguonGoc( entity.getNguonGoc() );
-        dangBaiResponse.setSlug( entity.getSlug() );
-        dangBaiResponse.setSoThuTu( entity.getSoThuTu() );
-        dangBaiResponse.setSoTrang( entity.getSoTrang() );
+        dangBaiResponse.setBookIndexIdNgoai( entity.getBookIndexIdNgoai() );
         dangBaiResponse.setTenDangBai( entity.getTenDangBai() );
+        dangBaiResponse.setSlug( entity.getSlug() );
+        dangBaiResponse.setSoTrang( entity.getSoTrang() );
+        dangBaiResponse.setSoThuTu( entity.getSoThuTu() );
+        dangBaiResponse.setLoaiNoiDung( entity.getLoaiNoiDung() );
+        dangBaiResponse.setNguonGoc( entity.getNguonGoc() );
+        dangBaiResponse.setH5pNoiDungId( entity.getH5pNoiDungId() );
         dangBaiResponse.setXpThuong( entity.getXpThuong() );
+        dangBaiResponse.setDuLieuGame( entity.getDuLieuGame() );
+        dangBaiResponse.setDapAnChuan( entity.getDapAnChuan() );
+        dangBaiResponse.setNgayTao( entity.getNgayTao() );
 
         return dangBaiResponse;
     }
@@ -87,18 +87,18 @@ public class DangBaiMapperImpl extends DangBaiMapper {
         dangBaiStudentResponse.setTenBaiHoc( entityBaiHocTenBaiHoc( entity ) );
         dangBaiStudentResponse.setGiaoVienId( entityGiaoVienGiaoVienId( entity ) );
         dangBaiStudentResponse.setTenGiaoVien( entityGiaoVienHoTen( entity ) );
-        dangBaiStudentResponse.setBookIndexIdNgoai( entity.getBookIndexIdNgoai() );
         dangBaiStudentResponse.setDangBaiId( entity.getDangBaiId() );
-        dangBaiStudentResponse.setDuLieuGame( entity.getDuLieuGame() );
-        dangBaiStudentResponse.setH5pNoiDungId( entity.getH5pNoiDungId() );
-        dangBaiStudentResponse.setLoaiNoiDung( entity.getLoaiNoiDung() );
-        dangBaiStudentResponse.setNgayTao( entity.getNgayTao() );
-        dangBaiStudentResponse.setNguonGoc( entity.getNguonGoc() );
-        dangBaiStudentResponse.setSlug( entity.getSlug() );
-        dangBaiStudentResponse.setSoThuTu( entity.getSoThuTu() );
-        dangBaiStudentResponse.setSoTrang( entity.getSoTrang() );
+        dangBaiStudentResponse.setBookIndexIdNgoai( entity.getBookIndexIdNgoai() );
         dangBaiStudentResponse.setTenDangBai( entity.getTenDangBai() );
+        dangBaiStudentResponse.setSlug( entity.getSlug() );
+        dangBaiStudentResponse.setSoTrang( entity.getSoTrang() );
+        dangBaiStudentResponse.setSoThuTu( entity.getSoThuTu() );
+        dangBaiStudentResponse.setLoaiNoiDung( entity.getLoaiNoiDung() );
+        dangBaiStudentResponse.setNguonGoc( entity.getNguonGoc() );
+        dangBaiStudentResponse.setH5pNoiDungId( entity.getH5pNoiDungId() );
         dangBaiStudentResponse.setXpThuong( entity.getXpThuong() );
+        dangBaiStudentResponse.setDuLieuGame( entity.getDuLieuGame() );
+        dangBaiStudentResponse.setNgayTao( entity.getNgayTao() );
 
         return dangBaiStudentResponse;
     }
@@ -112,16 +112,16 @@ public class DangBaiMapperImpl extends DangBaiMapper {
         dangBai.setBaiHoc( mapBaiHoc( request.getBaiHocId() ) );
         dangBai.setGiaoVien( mapGiaoVien( request.getGiaoVienId() ) );
         dangBai.setBookIndexIdNgoai( request.getBookIndexIdNgoai() );
-        dangBai.setDapAnChuan( request.getDapAnChuan() );
-        dangBai.setDuLieuGame( request.getDuLieuGame() );
-        dangBai.setH5pNoiDungId( request.getH5pNoiDungId() );
+        dangBai.setTenDangBai( request.getTenDangBai() );
+        dangBai.setSlug( request.getSlug() );
+        dangBai.setSoTrang( request.getSoTrang() );
+        dangBai.setSoThuTu( request.getSoThuTu() );
         dangBai.setLoaiNoiDung( request.getLoaiNoiDung() );
         dangBai.setNguonGoc( request.getNguonGoc() );
-        dangBai.setSlug( request.getSlug() );
-        dangBai.setSoThuTu( request.getSoThuTu() );
-        dangBai.setSoTrang( request.getSoTrang() );
-        dangBai.setTenDangBai( request.getTenDangBai() );
+        dangBai.setH5pNoiDungId( request.getH5pNoiDungId() );
         dangBai.setXpThuong( request.getXpThuong() );
+        dangBai.setDuLieuGame( request.getDuLieuGame() );
+        dangBai.setDapAnChuan( request.getDapAnChuan() );
 
         customMapping( request, dangBai );
     }

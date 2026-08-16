@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:02+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class MonHocMapperImpl implements MonHocMapper {
@@ -23,8 +23,8 @@ public class MonHocMapperImpl implements MonHocMapper {
         MonHoc monHoc = new MonHoc();
 
         monHoc.setMaMon( request.getMaMon() );
-        monHoc.setMoTa( request.getMoTa() );
         monHoc.setTenMon( request.getTenMon() );
+        monHoc.setMoTa( request.getMoTa() );
         monHoc.setTrangThai( request.getTrangThai() );
 
         return monHoc;
@@ -38,10 +38,10 @@ public class MonHocMapperImpl implements MonHocMapper {
 
         MonHocResponse monHocResponse = new MonHocResponse();
 
-        monHocResponse.setMaMon( entity.getMaMon() );
-        monHocResponse.setMoTa( entity.getMoTa() );
         monHocResponse.setMonHocId( entity.getMonHocId() );
+        monHocResponse.setMaMon( entity.getMaMon() );
         monHocResponse.setTenMon( entity.getTenMon() );
+        monHocResponse.setMoTa( entity.getMoTa() );
         monHocResponse.setTrangThai( entity.getTrangThai() );
 
         return monHocResponse;
@@ -54,8 +54,8 @@ public class MonHocMapperImpl implements MonHocMapper {
         }
 
         entity.setMaMon( request.getMaMon() );
-        entity.setMoTa( request.getMoTa() );
         entity.setTenMon( request.getTenMon() );
+        entity.setMoTa( request.getMoTa() );
         entity.setTrangThai( request.getTrangThai() );
     }
 }

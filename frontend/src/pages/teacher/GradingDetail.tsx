@@ -29,7 +29,7 @@ export default function TeacherGradingDetail() {
   if (vm.loadError) {
     return (
       <div className="space-y-6">
-        <Button variant="outline" onClick={() => navigate('/teacher/grading')}>
+        <Button variant="outline" onClick={() => navigate('/teacher/materials/grading')}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
         </Button>
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-semibold">{vm.loadError}</div>
@@ -41,7 +41,7 @@ export default function TeacherGradingDetail() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => navigate('/teacher/grading')}>
+          <Button variant="outline" onClick={() => navigate('/teacher/materials/grading')}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
           </Button>
           <div>

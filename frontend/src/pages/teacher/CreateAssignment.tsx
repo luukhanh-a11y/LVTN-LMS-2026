@@ -62,7 +62,7 @@ export default function CreateAssignment() {
       lopHocId: Number(selectedClassId),
       maMon: currentSubject?.maMon || '',
       hocKyId: currentHocKyId
-    }).then(list => setSachList(list.filter((s: any) => s.loaiSach !== 'SACH_GIAO_KHOA'))).catch(() => setSachList([]));
+    }).then(list => setSachList(list)).catch(() => setSachList([]));
   }, [profile?.giaoVienId, selectedClassId, selectedMonHocId, currentHocKyId, classes]);
 
   // Load ChuDe when Sach changes
@@ -226,7 +226,7 @@ export default function CreateAssignment() {
               {/* Bộ lọc phân tầng (Drill-down API) */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex gap-4">
                 <div className="flex-1">
-                  <label className="text-xs font-semibold text-slate-500 mb-1 block">1. Sách bài tập</label>
+                  <label className="text-xs font-semibold text-slate-500 mb-1 block">1. Sách</label>
                   <select value={selectedSachId} onChange={e => { setSelectedSachId(e.target.value); setSelectedChuDeId(''); setSelectedBaiHocId(''); setDangBaiList([]); }} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none">
                     <option value="">-- Chọn sách --</option>
                     {sachList.map(s => <option key={s.sachId} value={s.sachId}>{s.tenSach}</option>)}

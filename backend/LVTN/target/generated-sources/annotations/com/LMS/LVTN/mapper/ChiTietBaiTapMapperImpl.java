@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:02+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class ChiTietBaiTapMapperImpl implements ChiTietBaiTapMapper {
@@ -24,8 +24,8 @@ public class ChiTietBaiTapMapperImpl implements ChiTietBaiTapMapper {
 
         ChiTietBaiTap chiTietBaiTap = new ChiTietBaiTap();
 
-        chiTietBaiTap.setCheDoGiaoDien( request.getCheDoGiaoDien() );
         chiTietBaiTap.setThuTu( request.getThuTu() );
+        chiTietBaiTap.setCheDoGiaoDien( request.getCheDoGiaoDien() );
 
         return chiTietBaiTap;
     }
@@ -40,9 +40,9 @@ public class ChiTietBaiTapMapperImpl implements ChiTietBaiTapMapper {
 
         chiTietBaiTapResponse.baiTapId( entityBaiTapBaiTapId( entity ) );
         chiTietBaiTapResponse.dangBaiId( entityDangBaiDangBaiId( entity ) );
-        chiTietBaiTapResponse.cheDoGiaoDien( entity.getCheDoGiaoDien() );
         chiTietBaiTapResponse.id( entity.getId() );
         chiTietBaiTapResponse.thuTu( entity.getThuTu() );
+        chiTietBaiTapResponse.cheDoGiaoDien( entity.getCheDoGiaoDien() );
 
         return chiTietBaiTapResponse.build();
     }
@@ -53,8 +53,8 @@ public class ChiTietBaiTapMapperImpl implements ChiTietBaiTapMapper {
             return;
         }
 
-        entity.setCheDoGiaoDien( request.getCheDoGiaoDien() );
         entity.setThuTu( request.getThuTu() );
+        entity.setCheDoGiaoDien( request.getCheDoGiaoDien() );
     }
 
     private Long entityBaiTapBaiTapId(ChiTietBaiTap chiTietBaiTap) {

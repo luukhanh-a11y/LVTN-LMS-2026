@@ -44,7 +44,6 @@ import ParentGrades from './pages/parent/ParentGrades';
 import ParentAssignments from './pages/parent/ParentAssignments';
 import ParentNotifications from './pages/parent/ParentNotifications';
 import ParentRewards from './pages/parent/ParentAchievements';
-import ParentSubjectTree from './pages/parent/SubjectTree';
 import ParentSupport from './pages/parent/ParentSupport';
 import ParentProfile from './pages/parent/ParentProfile';
 
@@ -157,7 +156,6 @@ function App() {
           <Route path="assignments" element={<ParentAssignments />} />
           <Route path="notifications" element={<ParentNotifications />} />
           <Route path="rewards" element={<ParentRewards />} />
-          <Route path="subject-tree" element={<ParentSubjectTree />} />
           <Route path="support" element={<ParentSupport />} />
           <Route path="profile" element={<ParentProfile />} />
         </Route>

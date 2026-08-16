@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:03+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class HoSoHocSinhMapperImpl implements HoSoHocSinhMapper {
@@ -24,10 +24,10 @@ public class HoSoHocSinhMapperImpl implements HoSoHocSinhMapper {
 
         HoSoHocSinh hoSoHocSinh = new HoSoHocSinh();
 
-        hoSoHocSinh.setGioiTinh( request.getGioiTinh() );
-        hoSoHocSinh.setHoTen( request.getHoTen() );
         hoSoHocSinh.setMaHocSinh( request.getMaHocSinh() );
+        hoSoHocSinh.setHoTen( request.getHoTen() );
         hoSoHocSinh.setNgaySinh( request.getNgaySinh() );
+        hoSoHocSinh.setGioiTinh( request.getGioiTinh() );
 
         return hoSoHocSinh;
     }
@@ -42,11 +42,11 @@ public class HoSoHocSinhMapperImpl implements HoSoHocSinhMapper {
 
         hoSoHocSinhResponse.setNguoiDungId( entityNguoiDungNguoiDungId( entity ) );
         hoSoHocSinhResponse.setLopHocId( entityLopHocLopHocId( entity ) );
-        hoSoHocSinhResponse.setGioiTinh( entity.getGioiTinh() );
-        hoSoHocSinhResponse.setHoTen( entity.getHoTen() );
         hoSoHocSinhResponse.setHocSinhId( entity.getHocSinhId() );
         hoSoHocSinhResponse.setMaHocSinh( entity.getMaHocSinh() );
+        hoSoHocSinhResponse.setHoTen( entity.getHoTen() );
         hoSoHocSinhResponse.setNgaySinh( entity.getNgaySinh() );
+        hoSoHocSinhResponse.setGioiTinh( entity.getGioiTinh() );
         hoSoHocSinhResponse.setTongXp( entity.getTongXp() );
 
         return hoSoHocSinhResponse;
@@ -58,10 +58,10 @@ public class HoSoHocSinhMapperImpl implements HoSoHocSinhMapper {
             return;
         }
 
-        entity.setGioiTinh( request.getGioiTinh() );
-        entity.setHoTen( request.getHoTen() );
         entity.setMaHocSinh( request.getMaHocSinh() );
+        entity.setHoTen( request.getHoTen() );
         entity.setNgaySinh( request.getNgaySinh() );
+        entity.setGioiTinh( request.getGioiTinh() );
     }
 
     private String entityNguoiDungNguoiDungId(HoSoHocSinh hoSoHocSinh) {

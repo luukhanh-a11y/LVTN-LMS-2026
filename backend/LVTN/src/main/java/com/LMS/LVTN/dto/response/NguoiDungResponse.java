@@ -17,6 +17,7 @@ public class NguoiDungResponse {
     private TrangThaiNguoiDung trangThai;
     private String email;
     private String soDienThoai;
+    private Boolean batBuocDoiMk;
 
     // Các trường dùng chung
     private String hoTen;

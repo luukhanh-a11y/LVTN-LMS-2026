@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:03+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
@@ -24,11 +24,11 @@ public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
 
         CauHinhHeThong cauHinhHeThong = new CauHinhHeThong();
 
-        cauHinhHeThong.setDiaChi( request.getDiaChi() );
-        cauHinhHeThong.setEmailLienHe( request.getEmailLienHe() );
-        cauHinhHeThong.setHotline( request.getHotline() );
-        cauHinhHeThong.setLogoUrl( request.getLogoUrl() );
         cauHinhHeThong.setTenTruong( request.getTenTruong() );
+        cauHinhHeThong.setLogoUrl( request.getLogoUrl() );
+        cauHinhHeThong.setDiaChi( request.getDiaChi() );
+        cauHinhHeThong.setHotline( request.getHotline() );
+        cauHinhHeThong.setEmailLienHe( request.getEmailLienHe() );
 
         return cauHinhHeThong;
     }
@@ -45,13 +45,13 @@ public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
         cauHinhHeThongResponse.setSoHocKyHienTai( entityHocKyHienTaiSoHocKy( entity ) );
         cauHinhHeThongResponse.setTenNamHocHienTai( entityHocKyHienTaiNamHocTenNamHoc( entity ) );
         cauHinhHeThongResponse.setCauHinhId( entity.getCauHinhId() );
-        cauHinhHeThongResponse.setDanhGiaCuoiNamDangMo( entity.getDanhGiaCuoiNamDangMo() );
-        cauHinhHeThongResponse.setDiaChi( entity.getDiaChi() );
-        cauHinhHeThongResponse.setEmailLienHe( entity.getEmailLienHe() );
-        cauHinhHeThongResponse.setHotline( entity.getHotline() );
-        cauHinhHeThongResponse.setLogoUrl( entity.getLogoUrl() );
-        cauHinhHeThongResponse.setNamHocDanhGia( entity.getNamHocDanhGia() );
         cauHinhHeThongResponse.setTenTruong( entity.getTenTruong() );
+        cauHinhHeThongResponse.setLogoUrl( entity.getLogoUrl() );
+        cauHinhHeThongResponse.setDiaChi( entity.getDiaChi() );
+        cauHinhHeThongResponse.setHotline( entity.getHotline() );
+        cauHinhHeThongResponse.setEmailLienHe( entity.getEmailLienHe() );
+        cauHinhHeThongResponse.setDanhGiaCuoiNamDangMo( entity.getDanhGiaCuoiNamDangMo() );
+        cauHinhHeThongResponse.setNamHocDanhGia( entity.getNamHocDanhGia() );
 
         return cauHinhHeThongResponse;
     }
@@ -62,20 +62,20 @@ public class CauHinhHeThongMapperImpl implements CauHinhHeThongMapper {
             return;
         }
 
-        if ( request.getDiaChi() != null ) {
-            entity.setDiaChi( request.getDiaChi() );
-        }
-        if ( request.getEmailLienHe() != null ) {
-            entity.setEmailLienHe( request.getEmailLienHe() );
-        }
-        if ( request.getHotline() != null ) {
-            entity.setHotline( request.getHotline() );
+        if ( request.getTenTruong() != null ) {
+            entity.setTenTruong( request.getTenTruong() );
         }
         if ( request.getLogoUrl() != null ) {
             entity.setLogoUrl( request.getLogoUrl() );
         }
-        if ( request.getTenTruong() != null ) {
-            entity.setTenTruong( request.getTenTruong() );
+        if ( request.getDiaChi() != null ) {
+            entity.setDiaChi( request.getDiaChi() );
+        }
+        if ( request.getHotline() != null ) {
+            entity.setHotline( request.getHotline() );
+        }
+        if ( request.getEmailLienHe() != null ) {
+            entity.setEmailLienHe( request.getEmailLienHe() );
         }
     }
 

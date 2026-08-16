@@ -1,6 +1,7 @@
 package com.LMS.LVTN.service;
 // Force recompile
 import com.LMS.LVTN.dto.request.AuthenticationRequest;
+import com.LMS.LVTN.dto.request.ChangePasswordRequest;
 import com.LMS.LVTN.dto.request.IntrospectRequest;
 import com.LMS.LVTN.dto.request.LogoutRequest;
 import com.LMS.LVTN.dto.request.RefreshRequest;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.text.ParseException;
@@ -77,12 +79,36 @@ public class AuthenticationService {
         thongTinUser.setTrangThai(user.getTrangThai());
         thongTinUser.setEmail(user.getEmail());
         thongTinUser.setSoDienThoai(user.getSoDienThoai());
+        thongTinUser.setBatBuocDoiMk(user.getBatBuocDoiMk());
 
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
                 .thongTinUser(thongTinUser)
                 .build();
+    }
+
+    @Transactional
+    public void changePassword(String nguoiDungId, ChangePasswordRequest request) {
+        NguoiDung user = nguoiDungRepository.findById(nguoiDungId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
+            throw new AppExceptions(Errorcode.NEW_PASSWORD_TOO_SHORT);
+        }
+
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+
+        // Nếu tài khoản đang không bị bắt buộc đổi mật khẩu (đổi tự nguyện), phải xác minh mật khẩu cũ.
+        // Khi batBuocDoiMk = true (vừa được reset về mặc định), bỏ qua bước này vì người dùng chưa biết mật khẩu cũ.
+        if (!Boolean.TRUE.equals(user.getBatBuocDoiMk())
+                && !passwordEncoder.matches(request.getOldPassword() == null ? "" : request.getOldPassword(), user.getMatKhauHash())) {
+            throw new AppExceptions(Errorcode.OLD_PASSWORD_INCORRECT);
+        }
+
+        user.setMatKhauHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setBatBuocDoiMk(false);
+        nguoiDungRepository.save(user);
     }
 
     public IntrospectResponse introspect(IntrospectRequest request) {

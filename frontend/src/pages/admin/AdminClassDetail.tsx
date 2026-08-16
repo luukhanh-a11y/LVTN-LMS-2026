@@ -406,6 +406,7 @@ export default function AdminClassDetail() {
         monHocs={monHocs}
         namHocs={namHocs}
         hocKys={hocKys}
+        fixedNamHocId={classInfo.rawClassData?.namHocId ?? classInfo.rawClassData?.namHoc?.namHocId}
       />
 
       <AddStudentModal

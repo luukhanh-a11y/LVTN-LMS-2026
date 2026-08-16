@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +37,7 @@ public class BaiNopService {
     DanhGiaBaiLamRepository danhGiaBaiLamRepository;
 
     ChiTietBaiTapRepository chiTietBaiTapRepository;
+    HoSoGiaoVienRepository hoSoGiaoVienRepository;
     GameService gameService;
     ObjectMapper objectMapper;
 
@@ -169,5 +171,18 @@ public class BaiNopService {
         return baiNopRepository.findByBaiTap_BaiTapIdAndHocSinh_LopHoc_LopHocId(baiTapId, lopId).stream()
                 .map(baiNopMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    public long demBaiChoCham(String nguoiDungId) {
+        HoSoGiaoVien giaoVien = hoSoGiaoVienRepository.findByNguoiDung_NguoiDungId(nguoiDungId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.HO_SO_GIAO_VIEN_NOT_FOUND));
+        return baiNopRepository.countByTrangThaiAndBaiTap_GiaoVien_GiaoVienId(TrangThaiBaiNop.CHUA_CHAM, giaoVien.getGiaoVienId());
+    }
+
+    public Map<Long, Long> demBaiChoChamTheoLop(String nguoiDungId) {
+        HoSoGiaoVien giaoVien = hoSoGiaoVienRepository.findByNguoiDung_NguoiDungId(nguoiDungId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.HO_SO_GIAO_VIEN_NOT_FOUND));
+        return baiNopRepository.demChoChamTheoLop(TrangThaiBaiNop.CHUA_CHAM, giaoVien.getGiaoVienId()).stream()
+                .collect(Collectors.toMap(BaiNopRepository.DemChoChamTheoLop::getLopHocId, BaiNopRepository.DemChoChamTheoLop::getSoLuong));
     }
 }

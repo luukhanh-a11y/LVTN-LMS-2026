@@ -48,7 +48,11 @@ public enum Errorcode {
     LICH_SU_CHUYEN_LOP_EXISTED(1032, "Học sinh này đã được chuyển lớp trong năm học mới", HttpStatus.CONFLICT),
     BAI_NOP_NOT_FOUND(1033, "Bài nộp không tồn tại", HttpStatus.NOT_FOUND),
     GOI_Y_AI_NHAN_XET_NOT_FOUND(1034, "Gợi ý nhận xét không tồn tại", HttpStatus.NOT_FOUND),
-    LOP_HOC_CHU_NHIEM_NOT_FOUND(1035, "Bạn chưa là giáo viên chủ nhiệm của lớp nào để xem báo cáo", HttpStatus.NOT_FOUND);
+    LOP_HOC_CHU_NHIEM_NOT_FOUND(1035, "Bạn chưa là giáo viên chủ nhiệm của lớp nào để xem báo cáo", HttpStatus.NOT_FOUND),
+    LOP_HOC_HOC_KY_NAM_HOC_MISMATCH(1036, "Lớp học và học kỳ không thuộc cùng một năm học", HttpStatus.BAD_REQUEST),
+    PHAN_CONG_GIANG_DAY_EXISTED(1037, "Giáo viên đã được phân công dạy môn này ở lớp và học kỳ này", HttpStatus.CONFLICT),
+    OLD_PASSWORD_INCORRECT(1038, "Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST),
+    NEW_PASSWORD_TOO_SHORT(1039, "Mật khẩu mới phải có ít nhất 6 ký tự", HttpStatus.BAD_REQUEST);
 
     private int code;
 

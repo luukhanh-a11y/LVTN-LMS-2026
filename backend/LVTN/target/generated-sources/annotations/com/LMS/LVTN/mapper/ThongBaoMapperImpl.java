@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:02+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class ThongBaoMapperImpl implements ThongBaoMapper {
@@ -23,11 +23,11 @@ public class ThongBaoMapperImpl implements ThongBaoMapper {
 
         ThongBao thongBao = new ThongBao();
 
-        thongBao.setFileDinhKem( request.getFileDinhKem() );
-        thongBao.setLaGhim( request.getLaGhim() );
-        thongBao.setLoaiThongBao( request.getLoaiThongBao() );
-        thongBao.setNoiDung( request.getNoiDung() );
         thongBao.setTieuDe( request.getTieuDe() );
+        thongBao.setNoiDung( request.getNoiDung() );
+        thongBao.setFileDinhKem( request.getFileDinhKem() );
+        thongBao.setLoaiThongBao( request.getLoaiThongBao() );
+        thongBao.setLaGhim( request.getLaGhim() );
 
         return thongBao;
     }
@@ -42,13 +42,13 @@ public class ThongBaoMapperImpl implements ThongBaoMapper {
 
         thongBaoResponse.setNguoiGuiId( entityNguoiGuiNguoiDungId( entity ) );
         thongBaoResponse.setTenNguoiGui( entityNguoiGuiTenDangNhap( entity ) );
-        thongBaoResponse.setFileDinhKem( entity.getFileDinhKem() );
-        thongBaoResponse.setLaGhim( entity.getLaGhim() );
-        thongBaoResponse.setLoaiThongBao( entity.getLoaiThongBao() );
-        thongBaoResponse.setNgayDang( entity.getNgayDang() );
-        thongBaoResponse.setNoiDung( entity.getNoiDung() );
         thongBaoResponse.setThongBaoId( entity.getThongBaoId() );
         thongBaoResponse.setTieuDe( entity.getTieuDe() );
+        thongBaoResponse.setNoiDung( entity.getNoiDung() );
+        thongBaoResponse.setFileDinhKem( entity.getFileDinhKem() );
+        thongBaoResponse.setLoaiThongBao( entity.getLoaiThongBao() );
+        thongBaoResponse.setLaGhim( entity.getLaGhim() );
+        thongBaoResponse.setNgayDang( entity.getNgayDang() );
 
         return thongBaoResponse;
     }
@@ -59,11 +59,11 @@ public class ThongBaoMapperImpl implements ThongBaoMapper {
             return;
         }
 
-        entity.setFileDinhKem( request.getFileDinhKem() );
-        entity.setLaGhim( request.getLaGhim() );
-        entity.setLoaiThongBao( request.getLoaiThongBao() );
-        entity.setNoiDung( request.getNoiDung() );
         entity.setTieuDe( request.getTieuDe() );
+        entity.setNoiDung( request.getNoiDung() );
+        entity.setFileDinhKem( request.getFileDinhKem() );
+        entity.setLoaiThongBao( request.getLoaiThongBao() );
+        entity.setLaGhim( request.getLaGhim() );
     }
 
     private String entityNguoiGuiNguoiDungId(ThongBao thongBao) {

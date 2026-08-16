@@ -46,7 +46,8 @@ export const authService = {
         role: data.thongTinUser?.vaiTro,
         status: data.thongTinUser?.trangThai,
         email: data.thongTinUser?.email,
-        phone: data.thongTinUser?.soDienThoai
+        phone: data.thongTinUser?.soDienThoai,
+        requirePasswordChange: data.thongTinUser?.batBuocDoiMk
       } as any
     };
   },

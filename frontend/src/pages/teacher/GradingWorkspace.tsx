@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, AlertCircle, FileText, Send, RotateCcw, Sparkles, 
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
+import { AiSuggestionsPanel } from './components/AiSuggestionsPanel';
 
 export default function GradingWorkspace() {
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
@@ -12,15 +13,22 @@ export default function GradingWorkspace() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
+  const [pendingByClass, setPendingByClass] = useState<Record<number, number>>({});
 
   useEffect(() => {
     teacherService.getClasses({ onlyTeaching: true }).then(setClasses).catch(() => {});
     teacherService.getBadges().then(setBadges).catch(() => {});
+    teacherService.getPendingGradingCountByClass().then(setPendingByClass).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (selectedClassId) {
-      teacherService.getAssignmentsByClass(selectedClassId).then(setAssignments).catch(() => {});
+      teacherService.getAssignmentsByClass(selectedClassId)
+        .then(list => {
+          const sorted = [...list].sort((a, b) => new Date(b.ngayTao).getTime() - new Date(a.ngayTao).getTime());
+          setAssignments(sorted);
+        })
+        .catch(() => {});
     } else {
       setAssignments([]);
     }
@@ -37,6 +45,7 @@ export default function GradingWorkspace() {
 
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [comment, setComment] = useState('');
+  const [showAiPanel, setShowAiPanel] = useState(false);
   const [classification, setClassification] = useState('HOAN_THANH_TOT');
   const [manualScore, setManualScore] = useState('');
   
@@ -78,7 +87,17 @@ export default function GradingWorkspace() {
                     <h4 className={cn("font-bold transition", selectedClassId === c.id ? "text-white" : "group-hover:text-blue-700")}>{c.name}</h4>
                     <p className={cn("text-sm mt-1", selectedClassId === c.id ? "text-blue-100" : "text-slate-500")}>{c.students || c.studentsCount || 0} học sinh</p>
                   </div>
-                  <ChevronLeft className={cn("w-5 h-5 rotate-180 transition", selectedClassId === c.id ? "text-white" : "text-slate-300 group-hover:text-blue-500")} />
+                  <div className="flex items-center gap-2 shrink-0">
+                    {!!pendingByClass[c.id] && (
+                      <span className={cn(
+                        "flex items-center justify-center font-bold text-xs rounded-full px-2 py-0.5 min-w-[22px]",
+                        selectedClassId === c.id ? "bg-white text-blue-700" : "bg-red-500 text-white"
+                      )}>
+                        {pendingByClass[c.id] > 99 ? '99+' : pendingByClass[c.id]}
+                      </span>
+                    )}
+                    <ChevronLeft className={cn("w-5 h-5 rotate-180 transition", selectedClassId === c.id ? "text-white" : "text-slate-300 group-hover:text-blue-500")} />
+                  </div>
                 </button>
               ))}
             </div>
@@ -177,30 +196,6 @@ export default function GradingWorkspace() {
     }
   };
 
-  const handleGenerateAIComment = async () => {
-    if (!currentSubmission || !currentSubmission.baiNopId) {
-      toast.error('Không tìm thấy ID bài nộp!');
-      return;
-    }
-    toast('AI đang phân tích bài làm...', { icon: '🤖' });
-    try {
-      // Gọi API thực tế
-      const result = await teacherService.generateCommentSuggestions(currentSubmission.baiNopId);
-      if (result && result.suggestions && result.suggestions.length > 0) {
-        setComment(result.suggestions[0]);
-        toast.success('AI đã tạo nhận xét thành công!');
-      } else {
-        // Fallback nếu API trả về rỗng
-        setComment('Bài làm tốt. Cần chú ý trình bày cẩn thận hơn.');
-        toast.success('AI đã tạo nhận xét thành công!');
-      }
-    } catch (e) {
-      // Fallback khi backend chưa implement / lỗi
-      setComment('Bài làm tốt, em đã hiểu rõ bản chất vấn đề. Tuy nhiên cần chú ý trình bày cẩn thận hơn.');
-      toast.success('AI đã tạo nhận xét thành công!');
-    }
-  };
-
   const handleAwardBadgeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBadge) {
@@ -283,7 +278,8 @@ export default function GradingWorkspace() {
                 key={sub.baiNopId || sub.id}
                 onClick={() => {
                   setSelectedStudent(sub.baiNopId || sub.id);
-                  setComment(''); 
+                  setComment('');
+                  setShowAiPanel(false);
                 }}
                 className={cn(
                   "w-full flex items-center justify-between p-3 rounded-xl text-left transition-all cursor-pointer",
@@ -451,15 +447,28 @@ export default function GradingWorkspace() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-bold text-slate-700">Nhận xét chi tiết</label>
-                  <button 
-                    type="button" 
-                    onClick={handleGenerateAIComment}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!currentSubmission?.baiNopId) {
+                        toast.error('Không tìm thấy ID bài nộp!');
+                        return;
+                      }
+                      setShowAiPanel(true);
+                    }}
                     className="flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5" /> Gợi ý AI
                   </button>
                 </div>
-                <textarea 
+                {showAiPanel && currentSubmission?.baiNopId && (
+                  <AiSuggestionsPanel
+                    submissionId={currentSubmission.baiNopId}
+                    onApply={(text) => setComment(text)}
+                    onClose={() => setShowAiPanel(false)}
+                  />
+                )}
+                <textarea
                   rows={6}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}

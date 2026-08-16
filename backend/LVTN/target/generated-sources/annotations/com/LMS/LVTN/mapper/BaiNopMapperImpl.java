@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-16T16:26:02+0700",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-16T22:52:20+0700",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
 public class BaiNopMapperImpl implements BaiNopMapper {
@@ -24,9 +24,9 @@ public class BaiNopMapperImpl implements BaiNopMapper {
 
         BaiNop baiNop = new BaiNop();
 
-        baiNop.setChiTietBaiLam( request.getChiTietBaiLam() );
-        baiNop.setFileDinhKem( request.getFileDinhKem() );
         baiNop.setNoiDungText( request.getNoiDungText() );
+        baiNop.setFileDinhKem( request.getFileDinhKem() );
+        baiNop.setChiTietBaiLam( request.getChiTietBaiLam() );
 
         return baiNop;
     }
@@ -44,15 +44,15 @@ public class BaiNopMapperImpl implements BaiNopMapper {
         baiNopResponse.setHocSinhId( entityHocSinhHocSinhId( entity ) );
         baiNopResponse.setHoTenHocSinh( entityHocSinhHoTen( entity ) );
         baiNopResponse.setBaiNopId( entity.getBaiNopId() );
-        baiNopResponse.setChiTietBaiLam( entity.getChiTietBaiLam() );
-        baiNopResponse.setDiemTuDong( entity.getDiemTuDong() );
-        baiNopResponse.setFileDinhKem( entity.getFileDinhKem() );
-        baiNopResponse.setLaNopTre( entity.getLaNopTre() );
         baiNopResponse.setNoiDungText( entity.getNoiDungText() );
-        baiNopResponse.setSoLanLam( entity.getSoLanLam() );
-        baiNopResponse.setThoiDiemNop( entity.getThoiDiemNop() );
-        baiNopResponse.setTrangThai( entity.getTrangThai() );
+        baiNopResponse.setFileDinhKem( entity.getFileDinhKem() );
+        baiNopResponse.setDiemTuDong( entity.getDiemTuDong() );
         baiNopResponse.setXpNhanDuoc( entity.getXpNhanDuoc() );
+        baiNopResponse.setChiTietBaiLam( entity.getChiTietBaiLam() );
+        baiNopResponse.setSoLanLam( entity.getSoLanLam() );
+        baiNopResponse.setTrangThai( entity.getTrangThai() );
+        baiNopResponse.setLaNopTre( entity.getLaNopTre() );
+        baiNopResponse.setThoiDiemNop( entity.getThoiDiemNop() );
 
         return baiNopResponse;
     }
@@ -63,14 +63,14 @@ public class BaiNopMapperImpl implements BaiNopMapper {
             return;
         }
 
-        if ( request.getChiTietBaiLam() != null ) {
-            entity.setChiTietBaiLam( request.getChiTietBaiLam() );
+        if ( request.getNoiDungText() != null ) {
+            entity.setNoiDungText( request.getNoiDungText() );
         }
         if ( request.getFileDinhKem() != null ) {
             entity.setFileDinhKem( request.getFileDinhKem() );
         }
-        if ( request.getNoiDungText() != null ) {
-            entity.setNoiDungText( request.getNoiDungText() );
+        if ( request.getChiTietBaiLam() != null ) {
+            entity.setChiTietBaiLam( request.getChiTietBaiLam() );
         }
     }
 

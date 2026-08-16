@@ -750,7 +750,7 @@ export const studentService = {
       };
     });
 
-    return {
+    const result = {
       ...baiTap,
       loai: dangBais.length > 1 ? 'NHIEU_CAU' : (danhSachCauHoi[0]?.kieu || 'NHIEU_CAU'),
       cheDoGiaoDien: danhSachCauHoi[0]?.giaoDien || 'MAC_DINH',
@@ -762,6 +762,11 @@ export const studentService = {
       },
       danhSachChiTiet: dangBais
     };
+    // BaiTapResponse (GET /bai-tap/{id}) không có canSubmit/attemptsUsed — gán mặc định
+    // giống getH5PAssignmentDetail, tránh việc undefined bị hiểu nhầm là "đã hết lượt".
+    if ((result as any).canSubmit === undefined) (result as any).canSubmit = true;
+    if ((result as any).attemptsUsed === undefined) (result as any).attemptsUsed = 0;
+    return result;
   },
 
   submitQuizAssignment: async (assignmentId: number, baiLam: Record<string, unknown>) => {

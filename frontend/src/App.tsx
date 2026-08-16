@@ -14,6 +14,7 @@ import SelectChild from './pages/auth/SelectChild';
 // Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminClasses from './pages/admin/AdminClasses';
 import ClassDetails from './pages/admin/AdminClassDetail';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
@@ -118,6 +119,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="users/:userId" element={<AdminUserDetail />} />
+          <Route path="classes" element={<AdminClasses />} />
           <Route path="classes/:id" element={<ClassDetails />} />
           <Route path="academics" element={<AdminAcademics />} />
           <Route path="operations" element={<AdminOperations />} />

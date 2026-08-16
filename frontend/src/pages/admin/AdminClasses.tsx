@@ -71,13 +71,9 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
       tenLop: formData.get('tenLop') as string,
       khoiLop: Number(formData.get('khoiLop')),
       giaoVienChuNhiemId: formData.get('giaoVienChuNhiemId') ? Number(formData.get('giaoVienChuNhiemId')) : null,
-      siSoToiDa: 40,
-      trangThai: 'ACTIVE',
-      // Get the current year ID by inferring from config or assuming we just pass what the API needs
-      // Note: Backend LopHoc uses namHocId. We should fetch namHocs or try to find current namHocId.
-      // Wait, let's just pass 1 for now if we can't find it easily from CauHinhHeThong. 
-      // CauHinhHeThong has namHocDanhGia? Let's just use 1 as fallback or ask user.
-      namHocId: 1 
+      siSoToiDa: Number(formData.get('siSoToiDa')) || 40,
+      trangThai: formData.get('trangThai') === 'on' ? 'ACTIVE' : 'INACTIVE',
+      namHocId: selectedNamHocId || 1 
     };
 
     if (!payload.tenLop) {
@@ -107,6 +103,11 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
       setIsSubmitting(false);
     }
   };
+
+  const [namHocList, setNamHocList] = useState<any[]>([]);
+  useEffect(() => {
+    academicService.getNamHocs().then(setNamHocList).catch(console.error);
+  }, []);
 
   const filteredClasses = classes.filter(c => 
     c.grade === activeGrade && 
@@ -228,70 +229,138 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
 
       {/* MODAL THÊM LỚP MỚI */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">Thêm lớp học mới</h3>
-              </div>
-              <button 
-                type="button" 
-                onClick={() => setShowAddModal(false)} 
-                className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <CreateClassModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          activeGrade={activeGrade}
+          grades={grades}
+          teachers={teachers}
+          namHocList={namHocList}
+          selectedNamHocId={selectedNamHocId}
+          onSubmit={handleCreateClass}
+          isSubmitting={isSubmitting}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namHocList, selectedNamHocId, onSubmit, isSubmitting }: any) {
+  const [trangThai, setTrangThai] = useState('ACTIVE');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
+  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">Thêm Lớp Học Mới</h3>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={onSubmit} className="p-6 bg-slate-50/50 space-y-5 max-h-[80vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Tên lớp <span className="text-red-500">*</span></label>
+              <input type="text" name="tenLop" required placeholder="VD: 1A3" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
             </div>
             
-            <form onSubmit={handleCreateClass} className="p-6 bg-slate-50/50 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Tên lớp</label>
-                <input 
-                  type="text" 
-                  name="tenLop"
-                  placeholder="VD: 1A3"
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Thuộc khối</label>
-                <select name="khoiLop" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" defaultValue={activeGrade}>
-                  {grades.map(g => <option key={g} value={g}>Khối {g}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Giáo viên chủ nhiệm</label>
-                <select name="giaoVienChuNhiemId" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-                  <option value="">-- Chọn giáo viên --</option>
-                  {teachers.map((t: any) => (
-                    <option key={t.nguoiDungId || t.giaoVienId} value={t.giaoVienId || t.nguoiDungId}>
-                      {t.hoTen || t.tenDangNhap}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setShowAddModal(false)} 
-                >
-                  Hủy bỏ
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Đang tạo...' : 'Tạo lớp mới'}
-                </Button>
-              </div>
-            </form>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Khối lớp</label>
+              <select name="khoiLop" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" defaultValue={activeGrade}>
+                {grades.map((g: any) => <option key={g} value={g}>Khối {g}</option>)}
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">Năm học</label>
+            <select name="namHocId" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-100 text-slate-600" value={selectedNamHocId || ''} readOnly>
+              {namHocList.map((nh: any) => <option key={nh.namHocId} value={nh.namHocId}>{nh.tenNamHoc}</option>)}
+              {!selectedNamHocId && <option value="">Chưa chọn năm học</option>}
+            </select>
+          </div>
+
+          <div className="space-y-2 relative">
+            <label className="text-sm font-bold text-slate-700">Giáo viên chủ nhiệm</label>
+            <input type="hidden" name="giaoVienChuNhiemId" value={selectedTeacherId} />
+            <div 
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl cursor-text flex items-center bg-white"
+              onClick={() => setIsTeacherDropdownOpen(true)}
+            >
+              {selectedTeacherId ? (
+                <div className="flex-1">
+                  {teachers.find((t: any) => String(t.giaoVienId || t.id) === selectedTeacherId)?.hoTen}
+                  <span className="text-slate-400 text-xs ml-2">({teachers.find((t: any) => String(t.giaoVienId || t.id) === selectedTeacherId)?.maGiaoVien})</span>
+                </div>
+              ) : (
+                <span className="text-slate-400 flex-1 text-sm">-- Tìm kiếm giáo viên --</span>
+              )}
+            </div>
+
+            {isTeacherDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                <div className="p-2 border-b border-slate-100 flex items-center gap-2">
+                  <Search className="w-4 h-4 text-slate-400" />
+                  <input type="text" placeholder="Tìm theo tên hoặc mã GV..." className="w-full text-sm outline-none py-1" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} autoFocus />
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  <div className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-50 cursor-pointer italic" onClick={() => { setSelectedTeacherId(''); setIsTeacherDropdownOpen(false); }}>-- Bỏ chọn --</div>
+                  {teachers.filter((t: any) => t.hoTen?.toLowerCase().includes(searchTerm.toLowerCase()) || t.maGiaoVien?.toLowerCase().includes(searchTerm.toLowerCase())).map((t: any) => (
+                    <div 
+                      key={t.giaoVienId || t.id} 
+                      className={`px-4 py-2 text-sm hover:bg-slate-50 cursor-pointer ${String(t.giaoVienId || t.id) === selectedTeacherId ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'}`}
+                      onClick={() => { setSelectedTeacherId(String(t.giaoVienId || t.id)); setIsTeacherDropdownOpen(false); }}
+                    >
+                      {t.hoTen} <span className="text-xs text-slate-400 ml-1">({t.maGiaoVien})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Overlay to close dropdown */}
+            {isTeacherDropdownOpen && <div className="fixed inset-0 z-40" onClick={() => setIsTeacherDropdownOpen(false)}></div>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Sĩ số tối đa</label>
+              <input type="number" name="siSoToiDa" defaultValue={40} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Sĩ số hiện tại</label>
+              <div className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-500 font-medium flex items-center justify-between cursor-not-allowed">
+                <span>0 học sinh</span>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">Mới tạo</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-200 pt-4 mt-2">
+            <label className="text-sm font-bold text-slate-700">Trạng thái lớp</label>
+            <label className="flex items-center cursor-pointer">
+              <div className="relative">
+                <input type="checkbox" name="trangThai" className="sr-only" checked={trangThai === 'ACTIVE'} onChange={(e) => setTrangThai(e.target.checked ? 'ACTIVE' : 'INACTIVE')} />
+                <div className={`block w-10 h-6 rounded-full transition-colors ${trangThai === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${trangThai === 'ACTIVE' ? 'transform translate-x-4' : ''}`}></div>
+              </div>
+              <span className="ml-3 text-sm font-medium text-slate-600 w-24">{trangThai === 'ACTIVE' ? 'Đang mở' : 'Đã khóa'}</span>
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>Hủy bỏ</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang tạo...' : 'Tạo lớp mới'}</Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

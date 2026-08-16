@@ -148,13 +148,22 @@ export const studentService = {
               const lopRes = await api.get(`/lophoc/${hoSo.lopHocId}`);
               const lop = lopRes.data.data || lopRes.data;
               if (lop?.khoiLop) {
-                const sachRes = await api.get(`/sach`);
-                const allBooks = sachRes.data.data || sachRes.data || [];
-                myBooks = allBooks.filter((s: any) => 
-                  s.khoiLop === lop.khoiLop && 
-                  (!s.loaiSach || s.loaiSach === 'SACH_GIAO_KHOA') &&
-                  (!s.hocKy || s.hocKy === 1)
-                );
+                const currentHocKyId = localStorage.getItem('academic-storage') 
+                  ? JSON.parse(localStorage.getItem('academic-storage') as string).state?.currentHocKyId 
+                  : null;
+                  
+                if (currentHocKyId && hoSo.hocSinhId) {
+                  const sachRes = await api.get(`/sach/sach-giao-khoa/hoc-sinh/${hoSo.hocSinhId}/hoc-ky/${currentHocKyId}`);
+                  myBooks = sachRes.data.data || sachRes.data || [];
+                } else {
+                  // Fallback
+                  const sachRes = await api.get(`/sach`);
+                  const allBooks = sachRes.data.data || sachRes.data || [];
+                  myBooks = allBooks.filter((s: any) => 
+                    s.khoiLop === lop.khoiLop && 
+                    (!s.loaiSach || s.loaiSach === 'SACH_GIAO_KHOA')
+                  );
+                }
               }
             }
           }

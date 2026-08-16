@@ -33,11 +33,18 @@ public interface SachRepository extends JpaRepository<Sach, Integer> {
     @Query("SELECT s FROM Sach s WHERE s.maMon = :maMon AND (s.hocKy.hocKyId = :hocKyId OR s.hocKy IS NULL)")
     List<Sach> findByMaMonAndHocKyIdOrNull(@Param("maMon") String maMon, @Param("hocKyId") Integer hocKyId);
 
-    // Strict queries without NULL fallback
-    List<Sach> findByHocKy_HocKyId(Integer hocKyId);
-    List<Sach> findByMaMonAndHocKy_HocKyId(String maMon, Integer hocKyId);
-    List<Sach> findByLoaiSachAndKhoiLopAndMaMonAndHocKy_HocKyId(com.LMS.LVTN.enums.LoaiSach loaiSach, Short khoiLop, String maMon, Integer hocKyId);
-    List<Sach> findByLoaiSachAndKhoiLopAndHocKy_HocKyId(com.LMS.LVTN.enums.LoaiSach loaiSach, Short khoiLop, Integer hocKyId);
+    // Strict queries with HocKy 0 fallback for Global books
+    @Query("SELECT s FROM Sach s WHERE s.hocKy.hocKyId = :hocKyId OR (s.hocKy.soHocKy = 0 AND s.hocKy.namHoc.namHocId = (SELECT h.namHoc.namHocId FROM HocKy h WHERE h.hocKyId = :hocKyId))")
+    List<Sach> findByHocKy_HocKyId(@Param("hocKyId") Integer hocKyId);
+
+    @Query("SELECT s FROM Sach s WHERE s.maMon = :maMon AND (s.hocKy.hocKyId = :hocKyId OR (s.hocKy.soHocKy = 0 AND s.hocKy.namHoc.namHocId = (SELECT h.namHoc.namHocId FROM HocKy h WHERE h.hocKyId = :hocKyId)))")
+    List<Sach> findByMaMonAndHocKy_HocKyId(@Param("maMon") String maMon, @Param("hocKyId") Integer hocKyId);
+
+    @Query("SELECT s FROM Sach s WHERE s.loaiSach = :loaiSach AND s.khoiLop = :khoiLop AND s.maMon = :maMon AND (s.hocKy.hocKyId = :hocKyId OR (s.hocKy.soHocKy = 0 AND s.hocKy.namHoc.namHocId = (SELECT h.namHoc.namHocId FROM HocKy h WHERE h.hocKyId = :hocKyId)))")
+    List<Sach> findByLoaiSachAndKhoiLopAndMaMonAndHocKy_HocKyId(@Param("loaiSach") com.LMS.LVTN.enums.LoaiSach loaiSach, @Param("khoiLop") Short khoiLop, @Param("maMon") String maMon, @Param("hocKyId") Integer hocKyId);
+
+    @Query("SELECT s FROM Sach s WHERE s.loaiSach = :loaiSach AND s.khoiLop = :khoiLop AND (s.hocKy.hocKyId = :hocKyId OR (s.hocKy.soHocKy = 0 AND s.hocKy.namHoc.namHocId = (SELECT h.namHoc.namHocId FROM HocKy h WHERE h.hocKyId = :hocKyId)))")
+    List<Sach> findByLoaiSachAndKhoiLopAndHocKy_HocKyId(@Param("loaiSach") com.LMS.LVTN.enums.LoaiSach loaiSach, @Param("khoiLop") Short khoiLop, @Param("hocKyId") Integer hocKyId);
     
     @Query("SELECT s FROM Sach s WHERE s.hocKy.namHoc.namHocId = :namHocId")
     List<Sach> findByNamHocId(@Param("namHocId") Integer namHocId);

@@ -229,12 +229,14 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
               >
                 {hocKyList.length > 0 ? (
                   hocKyList.map(hk => (
-                    <option key={hk.hocKyId} value={hk.hocKyId}>Học kỳ {hk.soHocKy}</option>
+                    <option key={hk.hocKyId} value={hk.hocKyId}>
+                      {hk.soHocKy === 0 ? 'Cả năm (Dùng chung)' : `Học kỳ ${hk.soHocKy}`}
+                    </option>
                   ))
                 ) : (
                   <option value="">Không có học kỳ</option>
                 )}
-                <option value="-1">Toàn năm học (Dùng chung)</option>
+                <option value="-1">Tất cả trong năm</option>
               </select>
               <select
                 className="flex-1 h-8 text-xs border-slate-200 rounded-md bg-white text-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
@@ -428,8 +430,8 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
       </div>
 
       <CreateSachModal isOpen={showSachModal} onClose={() => setShowSachModal(false)} onSuccess={() => { setShowSachModal(false); fetchData(); }} monHocList={monHocList} initialData={editingSach} />
-      {selectedBoSach && <CreateChuDeModal isOpen={showChuDeModal} onClose={() => setShowChuDeModal(false)} onSuccess={() => { setShowChuDeModal(false); fetchData(); if (!expandedBoSach.includes(selectedBoSach)) toggleBoSach(selectedBoSach); }} sachId={selectedBoSach} initialData={editingChuDe} />}
-      {selectedChuong && <CreateBaiHocModal isOpen={showBaiHocModal} onClose={() => setShowBaiHocModal(false)} onSuccess={() => { setShowBaiHocModal(false); fetchData(); if (!expandedChuong.includes(selectedChuong)) toggleChuong(selectedChuong); }} chuDeId={selectedChuong} initialData={editingBaiHoc} />}
+      {selectedBoSach && <CreateChuDeModal isOpen={showChuDeModal} onClose={() => setShowChuDeModal(false)} onSuccess={() => { setShowChuDeModal(false); fetchData(); if (!expandedBoSach.includes(selectedBoSach)) toggleBoSach(selectedBoSach); }} sachId={selectedBoSach} tenSach={boSachList.find(b => b.sachId === selectedBoSach)?.tenSach} initialData={editingChuDe} />}
+      {selectedChuong && <CreateBaiHocModal isOpen={showBaiHocModal} onClose={() => setShowBaiHocModal(false)} onSuccess={() => { setShowBaiHocModal(false); fetchData(); if (!expandedChuong.includes(selectedChuong)) toggleChuong(selectedChuong); }} chuDeId={selectedChuong} tenChuDe={chuongList.find(c => c.chuDeId === selectedChuong)?.tenChuDe} initialData={editingBaiHoc} />}
 
 
     </div>

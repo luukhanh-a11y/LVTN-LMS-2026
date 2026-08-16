@@ -303,10 +303,10 @@ export default function AdminClassDetail() {
                 <tbody className="divide-y divide-slate-100 bg-white">
                   {phanCongs.map((pc, idx) => (
                     <tr key={pc.phanCongId} className="hover:bg-slate-50/50 transition">
-                      <td className="px-6 py-4 font-bold text-slate-900">{pc.monHoc?.tenMon}</td>
-                      <td className="px-6 py-4">{pc.giaoVien?.hoTen} ({pc.giaoVien?.maGiaoVien})</td>
+                      <td className="px-6 py-4 font-bold text-slate-900">{pc.tenMon || 'N/A'}</td>
+                      <td className="px-6 py-4">{pc.tenGiaoVien || 'Chưa rõ'}</td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {pc.hocKy ? `Học kỳ ${pc.hocKy.soHocKy} (${pc.hocKy.namHoc?.tenNamHoc})` : 'Cả năm'}
+                        {pc.hocKyId ? `Học kỳ ${pc.soHocKy || pc.hocKyId} (${pc.tenNamHoc || 'N/A'})` : 'Cả năm'}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button 

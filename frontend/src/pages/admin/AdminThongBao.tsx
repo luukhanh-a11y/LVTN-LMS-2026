@@ -9,6 +9,7 @@ import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function AdminThongBao() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     tieuDe: '',
     noiDung: '',
@@ -45,18 +46,31 @@ export default function AdminThongBao() {
     }
     
     try {
-      await adminService.createThongBao({
-        tieuDe: formData.tieuDe,
-        noiDung: formData.noiDung,
-        loaiNguoiNhan: formData.loaiNguoiNhan,
-        nguoiDangId: user?.id || user?.userId,
-      });
-      toast.success('Gửi thông báo thành công');
+      if (editingId) {
+        await adminService.updateThongBao(editingId, {
+          tieuDe: formData.tieuDe,
+          noiDung: formData.noiDung,
+          loaiNguoiNhan: formData.loaiNguoiNhan,
+          nguoiDangId: user?.id || user?.userId,
+          laGhim: formData.ghim
+        });
+        toast.success('Cập nhật thông báo thành công');
+      } else {
+        await adminService.createThongBao({
+          tieuDe: formData.tieuDe,
+          noiDung: formData.noiDung,
+          loaiNguoiNhan: formData.loaiNguoiNhan,
+          nguoiDangId: user?.id || user?.userId,
+          laGhim: formData.ghim
+        });
+        toast.success('Gửi thông báo thành công');
+      }
       setFormData({ tieuDe: '', noiDung: '', dinhKem: '', ghim: false, loaiNguoiNhan: 'TAT_CA' });
       setIsEditorOpen(false);
+      setEditingId(null);
       fetchThongBao();
     } catch (err) {
-      toast.error('Có lỗi xảy ra khi gửi thông báo');
+      toast.error('Có lỗi xảy ra khi lưu thông báo');
     }
   };
 
@@ -82,7 +96,11 @@ export default function AdminThongBao() {
           <p className="text-sm text-slate-500 mt-1">Quản lý và gửi thông báo chung cho giáo viên, học sinh, phụ huynh.</p>
         </div>
         {!isEditorOpen && (
-          <Button onClick={() => setIsEditorOpen(true)} leftIcon={<Plus className="w-4 h-4" />}>
+          <Button onClick={() => {
+            setFormData({ tieuDe: '', noiDung: '', dinhKem: '', ghim: false, loaiNguoiNhan: 'TAT_CA' });
+            setEditingId(null);
+            setIsEditorOpen(true);
+          }} leftIcon={<Plus className="w-4 h-4" />}>
             Tạo Thông Báo Mới
           </Button>
         )}
@@ -92,8 +110,8 @@ export default function AdminThongBao() {
         <Card className="border-blue-200 shadow-md ring-1 ring-blue-50">
           <CardHeader className="bg-blue-50/50 border-b border-blue-100 p-5 flex flex-row items-center justify-between">
             <CardTitle className="text-blue-900 font-bold flex items-center gap-2">
-              <Send className="w-5 h-5 text-blue-600" />
-              Soạn Thông Báo Mới
+              {editingId ? <Edit2 className="w-5 h-5 text-blue-600" /> : <Send className="w-5 h-5 text-blue-600" />}
+              {editingId ? 'Chỉnh Sửa Thông Báo' : 'Soạn Thông Báo Mới'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -166,8 +184,10 @@ export default function AdminThongBao() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <Button type="button" variant="outline" onClick={() => setIsEditorOpen(false)}>Hủy</Button>
-                <Button type="submit" leftIcon={<Send className="w-4 h-4" />}>Đăng Thông Báo</Button>
+                <Button type="button" variant="outline" onClick={() => { setIsEditorOpen(false); setEditingId(null); }}>Hủy</Button>
+                <Button type="submit" leftIcon={editingId ? <Edit2 className="w-4 h-4" /> : <Send className="w-4 h-4" />}>
+                  {editingId ? 'Lưu Thay Đổi' : 'Đăng Thông Báo'}
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -181,7 +201,7 @@ export default function AdminThongBao() {
         <CardContent className="p-0">
           <div className="divide-y divide-slate-100">
             {thongBaoList.map((tb) => (
-              <div key={tb.id} className={`p-6 hover:bg-slate-50/50 transition-colors ${tb.ghim ? 'bg-amber-50/20' : ''}`}>
+              <div key={tb.id} className={`group p-6 hover:bg-slate-50/50 transition-colors ${tb.ghim ? 'bg-amber-50/20' : ''}`}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -213,6 +233,24 @@ export default function AdminThongBao() {
                     </div>
                   </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => {
+                          setFormData({
+                            tieuDe: tb.tieuDe,
+                            noiDung: tb.noiDung,
+                            dinhKem: tb.dinhKem || '',
+                            ghim: !!tb.ghim,
+                            loaiNguoiNhan: tb.loaiNguoiNhan || 'TAT_CA'
+                          });
+                          setEditingId(tb.thongBaoId || tb.id);
+                          setIsEditorOpen(true);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
                       <button 
                         onClick={() => handleDelete(tb.thongBaoId || tb.id)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"

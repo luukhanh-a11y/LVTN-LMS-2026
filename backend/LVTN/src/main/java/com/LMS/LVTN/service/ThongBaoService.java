@@ -162,6 +162,10 @@ public class ThongBaoService {
         if (!thongBaoRepository.existsById(id)) {
             throw new AppExceptions(Errorcode.THONG_BAO_NOT_FOUND);
         }
+        
+        // Remove related records in hop_thu_thong_bao first to avoid foreign key constraint violations
+        hopThuThongBaoRepository.deleteByThongBao_ThongBaoId(id);
+        
         thongBaoRepository.deleteById(id);
     }
 }

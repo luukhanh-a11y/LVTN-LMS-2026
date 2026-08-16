@@ -229,15 +229,20 @@ export default function TeachingAssignments() {
       {/* Modal Thêm phân công */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Thêm Phân công Giảng dạy">
         <form onSubmit={handleAddAssignment} className="space-y-4">
-          <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl space-y-1">
-            <div className="flex items-start gap-2 text-blue-800 text-sm font-medium">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <p>Chi tiết phân công</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Học kỳ</label>
+              <select className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 cursor-not-allowed" value={currentHocKyId || ''} disabled>
+                <option value={currentHocKyId || ''}>Học kỳ {currentHocKyId || '---'}</option>
+              </select>
+              <p className="text-xs text-slate-500 mt-1">Năm học: {selectedNamHocId || '---'}</p>
             </div>
-            <div className="pl-7 text-sm text-blue-900/80 grid grid-cols-2 gap-2 mt-2">
-              <div><span className="text-blue-900/50">Học kỳ:</span> {currentHocKyId || '---'}</div>
-              <div><span className="text-blue-900/50">Năm học:</span> {selectedNamHocId || '---'}</div>
-              <div className="col-span-2"><span className="text-blue-900/50">Lớp học:</span> <strong className="text-blue-900">{classes.find(c => c.lopHocId === Number(selectedClassId))?.tenLop}</strong></div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Lớp học</label>
+              <select className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 cursor-not-allowed" value={selectedClassId || ''} disabled>
+                <option value={selectedClassId || ''}>{classes.find(c => c.lopHocId === Number(selectedClassId))?.tenLop || '---'}</option>
+              </select>
             </div>
           </div>
           

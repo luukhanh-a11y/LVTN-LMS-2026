@@ -240,7 +240,7 @@ export default function AdminSettings() {
                     disabled={!selectedNamHocIdForHocKy}
                   >
                     <option value="">-- Chọn học kỳ --</option>
-                    {hocKyOptions.map((hk) => (
+                    {hocKyOptions.filter(hk => hk.soHocKy !== 0).map((hk) => (
                       <option key={hk.hocKyId} value={hk.hocKyId}>Học kỳ {hk.soHocKy}</option>
                     ))}
                   </select>

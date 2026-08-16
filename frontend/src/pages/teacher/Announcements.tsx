@@ -14,6 +14,7 @@ export default function Announcements() {
   const [classes, setClasses] = useState<any[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [audience, setAudience] = useState<string>('TAT_CA');
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
 
@@ -81,24 +82,48 @@ export default function Announcements() {
         }
       }
 
-      await teacherService.createAnnouncement({
-        title,
-        content,
-        audience,
-        fileDinhKem,
-        pinned: false
-      });
-      toast.success('Đã đăng thông báo thành công!');
+      if (editingId) {
+        await teacherService.updateAnnouncement(editingId, {
+          title,
+          content,
+          audience,
+          fileDinhKem,
+          pinned: false
+        });
+        toast.success('Đã cập nhật thông báo thành công!');
+      } else {
+        await teacherService.createAnnouncement({
+          title,
+          content,
+          audience,
+          fileDinhKem,
+          pinned: false
+        });
+        toast.success('Đã đăng thông báo thành công!');
+      }
+      
       setTitle('');
       setContent('');
       setFile(null);
+      setEditingId(null);
       setActiveTab('lich-su');
       fetchAnnouncements();
     } catch (err) {
       console.error(err);
-      toast.error('Gửi thông báo thất bại');
+      toast.error('Có lỗi xảy ra khi lưu thông báo');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa thông báo này?')) return;
+    try {
+      await teacherService.deleteAnnouncement(id);
+      toast.success('Đã xóa thông báo');
+      fetchAnnouncements();
+    } catch (err) {
+      toast.error('Lỗi khi xóa thông báo');
     }
   };
 
@@ -115,10 +140,15 @@ export default function Announcements() {
 
       <div className="flex items-center gap-6 border-b border-slate-200">
         <button 
-          onClick={() => setActiveTab('tao-moi')}
+          onClick={() => {
+            if (activeTab !== 'tao-moi') {
+              setTitle(''); setContent(''); setFile(null); setAudience('TAT_CA'); setEditingId(null);
+            }
+            setActiveTab('tao-moi');
+          }}
           className={cn("pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer", activeTab === 'tao-moi' ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-700")}
         >
-          Soạn thông báo
+          {editingId ? 'Chỉnh sửa thông báo' : 'Soạn thông báo'}
         </button>
         <button 
           onClick={() => setActiveTab('lich-su')}
@@ -188,9 +218,14 @@ export default function Announcements() {
               </div>
             </div>
 
-              <div className="pt-4 flex justify-end">
+              <div className="pt-4 flex justify-end gap-3">
+                {editingId && (
+                  <button type="button" onClick={() => { setActiveTab('lich-su'); setEditingId(null); setTitle(''); setContent(''); setFile(null); setAudience('TAT_CA'); }} className="px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition shadow-sm cursor-pointer">
+                    Hủy
+                  </button>
+                )}
                 <button disabled={loading} type="submit" className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-sm cursor-pointer disabled:opacity-50">
-                  <Send className="w-5 h-5" /> Phát hành thông báo
+                  <Send className="w-5 h-5" /> {editingId ? 'Lưu thay đổi' : 'Phát hành thông báo'}
                 </button>
               </div>
             </form>
@@ -242,6 +277,28 @@ export default function Announcements() {
                           <FilePlus className="w-4 h-4" /> Tệp đính kèm
                         </a>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          setTitle(item.tieuDe || item.title);
+                          setContent(item.noiDung || item.content);
+                          setAudience(item.audience || item.lopHocId || 'TAT_CA');
+                          // Can't restore file natively into input type=file, so just set file string info if possible, but leaving it clear for now is standard practice for attachments, or they have to upload again. We just don't overwrite if they don't select a new one. (We handle this simply by letting file be null).
+                          setFile(null);
+                          setEditingId(item.thongBaoId || item.id);
+                          setActiveTab('tao-moi');
+                        }}
+                        className="text-sm font-medium text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition"
+                      >
+                        Chỉnh sửa
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(item.thongBaoId || item.id)}
+                        className="text-sm font-medium text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg transition"
+                      >
+                        Xóa
+                      </button>
                     </div>
                   </div>
                 </div>

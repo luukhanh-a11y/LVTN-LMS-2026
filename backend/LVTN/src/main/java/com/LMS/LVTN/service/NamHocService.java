@@ -98,6 +98,15 @@ public class NamHocService {
                 // GiaoVienChuNhiem is left null for the new year
                 lopHocRepository.save(newLop);
             }
+        } else {
+            // Không clone -> tự động sinh Học kỳ 0, 1, 2 mặc định
+            short[] defaultSemesters = {0, 1, 2};
+            for (short soHk : defaultSemesters) {
+                HocKy newHk = new HocKy();
+                newHk.setNamHoc(savedNamHoc);
+                newHk.setSoHocKy(soHk);
+                hocKyRepository.save(newHk);
+            }
         }
 
         return enrichWithTrangThai(savedNamHoc, getNamHocHienTaiTuCauHinh());

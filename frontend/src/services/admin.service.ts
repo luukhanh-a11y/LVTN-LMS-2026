@@ -404,6 +404,11 @@ export const adminService = {
     return response.data?.data || response.data;
   },
 
+  updateThongBao: async (id: number, data: any): Promise<any> => {
+    const response = await api.put(`/thongbao/${id}`, data);
+    return response.data?.data || response.data;
+  },
+
   deleteThongBao: async (id: number): Promise<void> => {
     await api.delete(`/thongbao/${id}`);
   }

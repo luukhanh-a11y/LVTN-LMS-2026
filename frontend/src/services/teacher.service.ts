@@ -405,6 +405,32 @@ export const teacherService = {
     await api.post('/thongbao', payload);
   },
 
+  updateAnnouncement: async (id: number, dto: {
+    title: string;
+    content: string;
+    audience: string | number; // 'TAT_CA' or lopHocId
+    pinned: boolean;
+    fileDinhKem?: string | null;
+  }): Promise<void> => {
+    const user = useAuthStore.getState().user;
+    if (!user) throw new Error('Not logged in');
+    
+    const payload = {
+      nguoiGuiId: user.userId,
+      tieuDe: dto.title,
+      noiDung: dto.content,
+      loaiThongBao: 'NOI_BO',
+      laGhim: dto.pinned || false,
+      fileDinhKem: dto.fileDinhKem || null,
+      lopHocId: dto.audience === 'TAT_CA' ? null : Number(dto.audience)
+    };
+    await api.put(`/thongbao/${id}`, payload);
+  },
+
+  deleteAnnouncement: async (id: number): Promise<void> => {
+    await api.delete(`/thongbao/${id}`);
+  },
+
   getMyAnnouncements: async (): Promise<any[]> => {
     const user = useAuthStore.getState().user;
     if (!user) return [];

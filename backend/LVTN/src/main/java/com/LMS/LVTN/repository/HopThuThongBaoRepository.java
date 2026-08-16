@@ -15,5 +15,7 @@ public interface HopThuThongBaoRepository extends JpaRepository<HopThuThongBao, 
     List<HopThuThongBao> findByNguoiDung_NguoiDungIdOrderByThongBao_LaGhimDescThongBao_NgayDangDesc(String nguoiDungId);
     List<HopThuThongBao> findByNguoiDung_NguoiDungIdAndThongBao_LaGhimTrueOrderByThongBao_NgayDangDesc(String nguoiDungId);
     List<HopThuThongBao> findByNguoiDung_NguoiDungIdAndThongBao_LaGhimFalseOrderByThongBao_NgayDangDesc(String nguoiDungId);
+
+    void deleteByThongBao_ThongBaoId(Long thongBaoId);
 }
 

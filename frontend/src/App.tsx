@@ -14,12 +14,14 @@ import SelectChild from './pages/auth/SelectChild';
 // Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminClasses from './pages/admin/AdminClasses';
 import ClassDetails from './pages/admin/AdminClassDetail';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminAcademics from './pages/admin/AdminAcademics';
 import AdminOperations from './pages/admin/AdminOperations';
 import AdminThongBao from './pages/admin/AdminThongBao';
+import AdminGameAuthoringWorkspace from './pages/admin/AdminGameAuthoringWorkspace';
 
 // Pages - Teacher
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -117,11 +119,14 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="users/:userId" element={<AdminUserDetail />} />
+          <Route path="classes" element={<AdminClasses />} />
           <Route path="classes/:id" element={<ClassDetails />} />
           <Route path="academics" element={<AdminAcademics />} />
           <Route path="operations" element={<AdminOperations />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="announcements" element={<AdminThongBao />} />
+          <Route path="curriculum/games/new/:id" element={<AdminGameAuthoringWorkspace />} />
+          <Route path="curriculum/games/edit/:id" element={<AdminGameAuthoringWorkspace />} />
         </Route>
 
           {/* Teacher Routes */}

@@ -21,6 +21,7 @@ import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminAcademics from './pages/admin/AdminAcademics';
 import AdminOperations from './pages/admin/AdminOperations';
 import AdminThongBao from './pages/admin/AdminThongBao';
+import AdminGameAuthoringWorkspace from './pages/admin/AdminGameAuthoringWorkspace';
 
 // Pages - Teacher
 import TeacherDashboard from './pages/teacher/Dashboard';
@@ -125,6 +126,8 @@ function App() {
           <Route path="operations" element={<AdminOperations />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="announcements" element={<AdminThongBao />} />
+          <Route path="curriculum/games/new/:id" element={<AdminGameAuthoringWorkspace />} />
+          <Route path="curriculum/games/edit/:id" element={<AdminGameAuthoringWorkspace />} />
         </Route>
 
           {/* Teacher Routes */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { BookOpen, Layers, FileText, ChevronRight, ChevronDown, Plus, Pencil, Trash2, Copy } from 'lucide-react';
@@ -6,7 +7,6 @@ import toast from 'react-hot-toast';
 import { cn } from '../../lib/utils';
 import { adminService } from '../../services/admin.service';
 import { classService } from '../../services/class.service';
-import GameAuthoringForm from './components/GameAuthoringForm';
 import { CreateSachModal, CreateChuDeModal, CreateBaiHocModal } from './components/CurriculumForms';
 import { academicService } from '../../services/academic.service';
 import { Modal } from '../../components/ui/Modal';
@@ -18,6 +18,7 @@ const LOAI_SACH_LABEL: Record<string, string> = {
 };
 
 export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?: boolean }) {
+  const navigate = useNavigate();
   const [monHocList, setMonHocList] = useState<any[]>([]);
   const [boSachList, setBoSachList] = useState<any[]>([]);
   const [chuongList, setChuongList] = useState<any[]>([]);
@@ -367,7 +368,7 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
                   <CardTitle className="text-base font-semibold text-slate-700">
                     Kho Bài tập (Games)
                   </CardTitle>
-                  <Button size="sm" onClick={() => setSelectedDangBai(0)}>
+                  <Button size="sm" onClick={() => navigate(`/admin/curriculum/games/new/${selectedBaiHoc}`)}>
                     <Plus className="w-4 h-4 mr-1" /> Tạo Bài mới
                   </Button>
                 </CardHeader>
@@ -390,7 +391,7 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
                       return (
                         <div
                           key={dangBai.dangBaiId}
-                          onClick={() => setSelectedDangBai(dangBai.dangBaiId)}
+                          onClick={() => navigate(`/admin/curriculum/games/edit/${dangBai.dangBaiId}`)}
                           className={`p-3 border rounded-xl cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all ${selectedDangBai === dangBai.dangBaiId ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200' : 'border-slate-200 bg-white'}`}
                         >
                           <div className="font-semibold text-sm text-slate-800">{dangBai.tenDangBai}</div>
@@ -404,19 +405,6 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
                   </div>
                 </CardContent>
               </Card>
-
-              {selectedDangBai !== null && (
-                <GameAuthoringForm
-                  key={selectedDangBai}
-                  dangBaiId={selectedDangBai}
-                  baiHocId={selectedBaiHoc}
-                  onSaveSuccess={() => {
-                    fetchData();
-                    setSelectedDangBai(null);
-                  }}
-                  onCancel={() => setSelectedDangBai(null)}
-                />
-              )}
             </>
           ) : (
             <Card className="shadow-sm border-slate-200 min-h-[300px] flex items-center justify-center bg-slate-50/50 border-dashed">

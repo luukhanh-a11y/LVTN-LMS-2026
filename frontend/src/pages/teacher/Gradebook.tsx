@@ -42,22 +42,6 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
     return students.filter((s: any) => s.fullName.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [students, searchTerm]);
 
-  // Extract all unique assignment columns for Detailed view
-  const assignmentColumns = useMemo(() => {
-    if (isHomeroom && selectedSubject === 'all') return [];
-    const assignmentMap = new Map<number, string>();
-    students.forEach((student: any) => {
-      student.subjectGrades?.forEach((subject: any) => {
-        if (!isHomeroom || subject.subjectName === selectedSubject) {
-          subject.assignments?.forEach((assignment: any) => {
-            assignmentMap.set(assignment.assignmentId, assignment.title);
-          });
-        }
-      });
-    });
-    return Array.from(assignmentMap.entries()).map(([id, title]) => ({ id, title }));
-  }, [students, isHomeroom, selectedSubject]);
-
   // Extract all unique subject columns for GVCN view
   const subjectColumns = useMemo(() => {
     if (!isHomeroom) return [];
@@ -69,6 +53,26 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
     });
     return Array.from(subjectSet);
   }, [students, isHomeroom]);
+
+  // Danh sách môn giáo viên bộ môn (GVBM) đang xem được phân công dạy cho lớp này —
+  // backend (GradebookService) đã lọc subjectGrades theo đúng giaoVienId, ở đây chỉ gom
+  // tên môn duy nhất lại để đổ vào dropdown lọc.
+  const teacherSubjects = useMemo(() => {
+    if (isHomeroom) return [];
+    const subjectSet = new Set<string>();
+    students.forEach((student: any) => {
+      student.subjectGrades?.forEach((sg: any) => subjectSet.add(sg.subjectName));
+    });
+    return Array.from(subjectSet);
+  }, [students, isHomeroom]);
+
+  // Tự chọn môn đầu tiên khi vào trang (GVBM) hoặc khi danh sách môn đổi (đổi lớp) —
+  // selectedSubject mặc định là 'all', chỉ hợp lệ cho GVCN.
+  useEffect(() => {
+    if (!isHomeroom && teacherSubjects.length > 0 && !teacherSubjects.includes(selectedSubject)) {
+      setSelectedSubject(teacherSubjects[0]);
+    }
+  }, [isHomeroom, teacherSubjects]);
 
   return (
     <div className={embedded ? "flex-1 flex flex-col w-full bg-white" : "max-w-6xl mx-auto space-y-6 flex flex-col min-h-[calc(100vh-8rem)]"}>
@@ -122,16 +126,16 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
                 <FileSpreadsheet className="w-4 h-4" /> Xuất Excel
               </button>
             )}
-            {isHomeroom && (
+            {(isHomeroom || teacherSubjects.length > 0) && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-slate-600">Môn học:</span>
-                <select 
+                <select
                   value={selectedSubject}
                   onChange={e => setSelectedSubject(e.target.value)}
                   className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[200px] cursor-pointer"
                 >
-                  <option value="all">Tất cả môn học</option>
-                  {subjectColumns.map(sub => (
+                  {isHomeroom && <option value="all">Tất cả môn học</option>}
+                  {(isHomeroom ? subjectColumns : teacherSubjects).map(sub => (
                     <option key={sub} value={sub}>{sub}</option>
                   ))}
                 </select>
@@ -166,12 +170,8 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
                     </>
                   ) : (
                     <>
-                      {/* GVBM Columns */}
-                      {assignmentColumns.map(col => (
-                        <th key={col.id} className="px-6 py-4 font-semibold text-center truncate max-w-[120px]" title={col.title}>
-                          {col.title}
-                        </th>
-                      ))}
+                      {/* GVBM Columns — chỉ hiện điểm tổng hợp theo môn, không hiện từng bài tập
+                          riêng lẻ (dễ khiến bảng quá dài nếu môn có nhiều bài tập). */}
                       <th className="px-6 py-4 font-semibold text-center bg-slate-50">TB Bài tập</th>
                       <th className="px-6 py-4 font-semibold text-center bg-green-50">Tiến độ học liệu (%)</th>
                       <th className="px-6 py-4 font-semibold text-center bg-green-50">Số bài tự luyện</th>
@@ -212,19 +212,12 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
                         <>
                           {/* Detailed Data (GVBM or GVCN with selected subject) */}
                           {(() => {
-                            const subject = isHomeroom 
-                                ? student.subjectGrades?.find((s: any) => s.subjectName === selectedSubject)
-                                : student.subjectGrades?.[0];
+                            // Luôn ưu tiên đúng môn đang chọn; rơi về subjectGrades[0] chỉ trong
+                            // khoảnh khắc selectedSubject chưa kịp seed (useEffect ở trên).
+                            const subject = student.subjectGrades?.find((s: any) => s.subjectName === selectedSubject)
+                                ?? student.subjectGrades?.[0];
                             return (
                               <>
-                                {assignmentColumns.map(col => {
-                                  const assignment = subject?.assignments?.find((a: any) => a.assignmentId === Number(col.id));
-                                  return (
-                                    <td key={col.id} className="px-6 py-4 text-center font-medium">
-                                      {assignment?.score !== undefined && assignment?.score !== null ? assignment.score.toFixed(1) : '-'}
-                                    </td>
-                                  );
-                                })}
                                 <td className="px-6 py-4 text-center bg-slate-50 font-semibold">
                                   {subject?.averageAssignmentScore !== undefined && subject?.averageAssignmentScore !== null ? subject.averageAssignmentScore.toFixed(1) : '-'}
                                 </td>

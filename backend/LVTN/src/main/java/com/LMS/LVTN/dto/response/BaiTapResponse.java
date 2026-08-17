@@ -35,6 +35,7 @@ public class BaiTapResponse {
     private Object cauHinh; // JSON hoặc DTO câu hỏi đã giấu đáp án (cho tương thích ngược)
     private String loai; // "NHIEU_CAU", "TRAC_NGHIEM", "NOI_CAP", ...
     private Long soLuongNop; // Số bài nộp thực tế (đếm riêng, không map trực tiếp từ entity)
+    private Long soLuongChuaCham; // Số bài nộp đang ở trạng thái CHUA_CHAM của riêng bài tập này
 
     // Alias getters phục vụ trực tiếp cho Frontend (AssignmentQuizPlayer.tsx)
     public Long getAssignmentId() { return baiTapId; }

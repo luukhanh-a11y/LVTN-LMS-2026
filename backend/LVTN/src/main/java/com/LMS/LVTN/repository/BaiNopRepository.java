@@ -36,6 +36,9 @@ public interface BaiNopRepository extends JpaRepository<BaiNop, Long> {
     long countByHocSinh_HocSinhId(Long hocSinhId);
     long countByHocSinh_HocSinhIdAndLaNopTreFalse(Long hocSinhId);
     long countByBaiTap_BaiTapIdAndHocSinh_HocSinhId(Long baiTapId, Long hocSinhId);
+    // Cùng cách đếm với demChoChamTheoLop (COUNT bản ghi bai_nop, không distinct học sinh) —
+    // để số hiện trên từng thẻ bài tập cộng lại đúng khớp con số badge tổng của cả lớp.
+    long countByBaiTap_BaiTapIdAndTrangThai(Long baiTapId, TrangThaiBaiNop trangThai);
     List<BaiNop> findByBaiTap_BaiTapIdAndHocSinh_LopHoc_LopHocId(Long baiTapId, Long lopHocId);
     List<BaiNop> findByBaiTap_BaiTapIdAndHocSinh_HocSinhId(Long baiTapId, Long hocSinhId);
 

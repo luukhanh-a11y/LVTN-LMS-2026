@@ -72,6 +72,12 @@ export interface Submission {
   trangThai: 'CHUA_NOP' | 'DA_NOP' | 'DA_CHAM' | 'YC_LAM_LAI' | 'LUU_NHAP' | 'NOP_TRE';
   laNopTre: boolean;
   thoiDiemNop: string;
+  // Đánh giá thủ công đã có (nếu bài này từng được chấm) — rỗng nếu chưa từng chấm.
+  danhGiaId: number | null;
+  diemDanhGia: number | null;
+  xepLoaiDanhGia: string | null;
+  nhanXetDanhGia: string | null;
+  hanhDongDanhGia: string | null;
 }
 
 export interface SubmissionDetail {
@@ -359,16 +365,22 @@ export const teacherService = {
   getReports: async (classId?: number, semesterId?: number): Promise<any> => {
     const user = useAuthStore.getState().user;
     if (!user) throw new Error('Not logged in');
-    
+
+    // GradebookController cần Long giaoVienId = HoSoGiaoVien.giaoVienId, KHÔNG PHẢI
+    // user.userId (đó là nguoiDungId — khác bảng, khác không gian ID). Dùng nhầm khiến
+    // GradebookService không khớp được bất kỳ PhanCongGiangDay nào của giáo viên, luôn
+    // trả isHomeroomTeacher=false và subjectGrades rỗng dù giáo viên có dạy thật.
+    const profile = await teacherService.getMyTeacherProfile();
+
     // Default to current semester if not provided, assuming ID = 1 for now (or let backend handle if semesterId is null - wait, the API requires it)
     const effectiveSemesterId = semesterId || 1; // You may want to fetch the active semester here or require the component to pass it.
-    
-    const response = await api.get('/gradebook/classes', { 
-      params: { 
-        giaoVienId: user.userId, 
-        classId, 
-        semesterId: effectiveSemesterId 
-      } 
+
+    const response = await api.get('/gradebook/classes', {
+      params: {
+        giaoVienId: profile.giaoVienId,
+        classId,
+        semesterId: effectiveSemesterId
+      }
     });
     return response.data?.data || response.data;
   },

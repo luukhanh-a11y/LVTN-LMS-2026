@@ -9,6 +9,7 @@ import com.LMS.LVTN.entity.HoSoGiaoVien;
 import com.LMS.LVTN.entity.HocKy;
 import com.LMS.LVTN.entity.LopHoc;
 import com.LMS.LVTN.enums.LoaiThongBao;
+import com.LMS.LVTN.enums.TrangThaiBaiNop;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.BaiTapMapper;
@@ -119,6 +120,8 @@ public class BaiTapService {
         return baiTapRepository.findByLopHoc_LopHocId(lopHocId).stream()
                 .map(baiTapMapper::toResponse)
                 .peek(res -> res.setSoLuongNop(baiNopRepository.countDistinctHocSinhByBaiTapId(res.getBaiTapId())))
+                .peek(res -> res.setSoLuongChuaCham(
+                        baiNopRepository.countByBaiTap_BaiTapIdAndTrangThai(res.getBaiTapId(), TrangThaiBaiNop.CHUA_CHAM)))
                 .collect(Collectors.toList());
     }
 

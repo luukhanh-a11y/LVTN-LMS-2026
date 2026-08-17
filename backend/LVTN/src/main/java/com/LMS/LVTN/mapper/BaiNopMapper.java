@@ -21,6 +21,11 @@ public interface BaiNopMapper {
     @Mapping(source = "baiTap.tieuDe", target = "tieuDeBaiTap")
     @Mapping(source = "hocSinh.hocSinhId", target = "hocSinhId")
     @Mapping(source = "hocSinh.hoTen", target = "hoTenHocSinh")
+    @Mapping(source = "danhGiaBaiLam.danhGiaId", target = "danhGiaId")
+    @Mapping(source = "danhGiaBaiLam.diemSo", target = "diemDanhGia")
+    @Mapping(source = "danhGiaBaiLam.xepLoai", target = "xepLoaiDanhGia")
+    @Mapping(source = "danhGiaBaiLam.nhanXet", target = "nhanXetDanhGia")
+    @Mapping(source = "danhGiaBaiLam.hanhDong", target = "hanhDongDanhGia")
     BaiNopResponse toResponse(BaiNop entity);
 
     void updateBaiNop(BaiNopRequest request, @org.mapstruct.MappingTarget BaiNop entity);

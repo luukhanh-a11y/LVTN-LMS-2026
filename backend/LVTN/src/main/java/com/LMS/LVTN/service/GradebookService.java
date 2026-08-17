@@ -116,8 +116,10 @@ public class GradebookService {
         GradebookResponse.SubjectGradeData subjectData = new GradebookResponse.SubjectGradeData();
         subjectData.setSubjectName(subjectName);
         
-        // Bài tập
-        List<BaiTap> baiTaps = baiTapRepository.findByLopHoc_LopHocIdAndGiaoVien_GiaoVienIdAndHocKy_HocKyId(classId, teacherId, semesterId);
+        // Bài tập — lọc đúng theo môn (maMon), không phải toàn bộ bài tập của giáo viên trong
+        // lớp: 1 giáo viên có thể dạy nhiều môn cho cùng 1 lớp (vd Toán + Tiếng Việt), nếu
+        // không lọc thì bài tập của 2 môn sẽ bị tính giống hệt nhau.
+        List<BaiTap> baiTaps = baiTapRepository.findByLopHocAndGiaoVienAndHocKyAndMonHoc(classId, teacherId, semesterId, maMon);
         List<GradebookResponse.AssignmentScore> assignmentScores = new ArrayList<>();
         double totalAssScore = 0;
         int assCount = 0;

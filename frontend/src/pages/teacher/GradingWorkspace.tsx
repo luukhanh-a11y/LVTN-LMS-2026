@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, AlertCircle, FileText, Send, RotateCcw, Sparkles, Medal, X, Paperclip, Download, ChevronLeft, Maximize2, Minimize2 } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle, FileText, Send, RotateCcw, Sparkles, Medal, X, Paperclip, Download, ChevronLeft, Maximize2, Minimize2, CalendarDays } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
 import { AiSuggestionsPanel } from './components/AiSuggestionsPanel';
 import H5PPlayer from '../../components/h5p/H5PPlayer';
 import H5PAnswerReview from '../../components/h5p/H5PAnswerReview';
+
+// Cùng cách nhóm theo ngày giao đang dùng ở ParentAssignments.tsx, để nhất quán trong toàn app.
+function formatDateGroup(dateStr: string | null | undefined) {
+  if (!dateStr) return { key: 'unknown', label: 'Không xác định', timestamp: 0 };
+  const d = new Date(dateStr);
+  const now = new Date();
+  const dMidnight = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diffDays = Math.round((dMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+  const dateFormatted = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  let label: string;
+  if (diffDays === -1) label = `Hôm qua, ${dateFormatted}`;
+  else if (diffDays === 0) label = `Hôm nay, ${dateFormatted}`;
+  else if (diffDays === 1) label = `Ngày mai, ${dateFormatted}`;
+  else label = d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  return { key: dMidnight.toString(), label, timestamp: dMidnight };
+}
 
 export default function GradingWorkspace() {
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
@@ -73,6 +92,18 @@ export default function GradingWorkspace() {
   if (!selectedAssignmentId) {
     const filteredAssignments = assignments;
 
+    // Nhóm bài tập theo ngày giao (ngayTao) — assignments đã được sắp mới nhất trước
+    // (xem useEffect theo selectedClassId), giữ nguyên thứ tự đó trong từng nhóm.
+    const assignmentGroupsMap = new Map<string, { label: string; timestamp: number; items: any[] }>();
+    filteredAssignments.forEach((a) => {
+      const { key, label, timestamp } = formatDateGroup(a.ngayTao);
+      if (!assignmentGroupsMap.has(key)) {
+        assignmentGroupsMap.set(key, { label, timestamp, items: [] });
+      }
+      assignmentGroupsMap.get(key)!.items.push(a);
+    });
+    const groupedAssignments = Array.from(assignmentGroupsMap.values()).sort((x, y) => y.timestamp - x.timestamp);
+
     return (
       <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
         <div>
@@ -135,35 +166,58 @@ export default function GradingWorkspace() {
                   </div>
                   <p>Vui lòng chọn một lớp học ở danh sách bên trái.</p>
                 </div>
+              ) : filteredAssignments.length === 0 ? (
+                <div className="py-16 flex flex-col items-center justify-center text-slate-400">
+                  <FileText className="w-12 h-12 text-slate-200 mb-3" />
+                  <p className="font-medium text-slate-500">Lớp này hiện không có bài tập nào cần chấm.</p>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in">
-                  {filteredAssignments.map(a => (
-                    <button 
-                      key={a.baiTapId || a.id}
-                      onClick={() => setSelectedAssignmentId(a.baiTapId || a.id)}
-                      className="p-5 bg-white border border-slate-200 rounded-2xl hover:border-blue-500 hover:shadow-md transition cursor-pointer text-left flex flex-col group h-full relative overflow-hidden"
-                    >
-                      <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <h4 className="font-bold text-slate-900 group-hover:text-blue-700 transition leading-relaxed mb-3">{a.tieuDe || a.title}</h4>
-                      
-                      <div className="mt-auto space-y-2 w-full">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-500">Đã nộp:</span>
-                          <span className="font-bold text-blue-600">{a.soLuongNop || a.submitted || 0}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-500">Hạn nộp:</span>
-                          <span className="font-medium text-slate-700">{a.deadline ? new Date(a.deadline).toLocaleDateString() : 'N/A'}</span>
-                        </div>
+                <div className="space-y-6 animate-in fade-in">
+                  {groupedAssignments.map((group, gIdx) => (
+                    <div key={gIdx} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4 text-slate-400" />
+                        <h4 className="text-sm font-bold text-slate-600 capitalize">{group.label}</h4>
+                        <div className="flex-1 h-px bg-slate-200 ml-2"></div>
                       </div>
-                    </button>
-                  ))}
-                  {filteredAssignments.length === 0 && (
-                    <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-400">
-                      <FileText className="w-12 h-12 text-slate-200 mb-3" />
-                      <p className="font-medium text-slate-500">Lớp này hiện không có bài tập nào cần chấm.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {group.items.map(a => (
+                          <button
+                            key={a.baiTapId || a.id}
+                            onClick={() => setSelectedAssignmentId(a.baiTapId || a.id)}
+                            className="p-5 bg-white border border-slate-200 rounded-2xl hover:border-blue-500 hover:shadow-md transition cursor-pointer text-left flex flex-col group h-full relative overflow-hidden"
+                          >
+                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <h4 className="font-bold text-slate-900 group-hover:text-blue-700 transition leading-relaxed">{a.tieuDe || a.title}</h4>
+                              {!!a.soLuongChuaCham && (
+                                <span className="shrink-0 flex items-center justify-center font-bold text-xs rounded-full px-2 py-0.5 min-w-[22px] bg-red-500 text-white">
+                                  {a.soLuongChuaCham > 99 ? '99+' : a.soLuongChuaCham}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-auto space-y-2 w-full">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-500">Đã nộp:</span>
+                                <span className="font-bold text-blue-600">{a.soLuongNop || a.submitted || 0}</span>
+                              </div>
+                              {!!a.soLuongChuaCham && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-slate-500">Chưa chấm:</span>
+                                  <span className="font-bold text-red-600">{a.soLuongChuaCham}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-500">Hạn nộp:</span>
+                                <span className="font-medium text-slate-700">{a.deadline ? new Date(a.deadline).toLocaleDateString() : 'N/A'}</span>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
@@ -177,9 +231,25 @@ export default function GradingWorkspace() {
   // MÀN HÌNH 3: KHÔNG GIAN CHẤM BÀI CHÍNH
   const activeAssignment = assignments.find(a => (a.baiTapId || a.id) === selectedAssignmentId);
   
+  // Chọn 1 học sinh: nếu bài đã từng được chấm (có danhGiaId) thì khôi phục lại đúng điểm/
+  // xếp loại/nhận xét cũ thay vì để trống — tránh nhìn nhầm là "chưa chấm" khi xem lại.
+  const applyStudentSelection = (sub: any) => {
+    setSelectedStudent(sub.baiNopId || sub.id);
+    if (sub.danhGiaId) {
+      setManualScore(sub.diemDanhGia != null ? String(sub.diemDanhGia) : '');
+      setClassification(sub.xepLoaiDanhGia || 'HOAN_THANH_TOT');
+      setComment(sub.nhanXetDanhGia || '');
+    } else {
+      setManualScore('');
+      setClassification('HOAN_THANH_TOT');
+      setComment('');
+    }
+    setShowAiPanel(false);
+  };
+
   // Set default selected student if none selected
   if (!selectedStudent && submissions.length > 0) {
-    setSelectedStudent(submissions[0].baiNopId || submissions[0].id);
+    applyStudentSelection(submissions[0]);
   }
 
   const currentSubmissionRaw = submissions.find(s => (s.baiNopId || s.id) === selectedStudent);
@@ -254,13 +324,21 @@ export default function GradingWorkspace() {
 
     try {
       const profile = await teacherService.getMyTeacherProfile();
-      await teacherService.evaluateSubmission(currentSubmission.baiNopId, {
+      const dto = {
         teacherId: profile.giaoVienId,
         grade: classification,
         comment: comment,
         action: action,
         diemSo
-      } as any);
+      } as any;
+
+      // Bài đã từng được chấm (có danhGiaId) → phải PUT (sửa lại), backend chặn POST trùng
+      // bai_nop_id. Chưa từng chấm → POST như bình thường.
+      if (currentSubmissionRaw?.danhGiaId) {
+        await teacherService.updateEvaluation(currentSubmissionRaw.danhGiaId, dto);
+      } else {
+        await teacherService.evaluateSubmission(currentSubmission.baiNopId, dto);
+      }
       toast.success('Đã lưu đánh giá thành công!');
       // Refresh submissions
       const updatedSubmissions = await teacherService.getSubmissions(selectedAssignmentId!);
@@ -319,13 +397,7 @@ export default function GradingWorkspace() {
               <button
                 type="button"
                 key={sub.baiNopId || sub.id}
-                onClick={() => {
-                  setSelectedStudent(sub.baiNopId || sub.id);
-                  setComment('');
-                  setManualScore('');
-                  setClassification('HOAN_THANH_TOT');
-                  setShowAiPanel(false);
-                }}
+                onClick={() => applyStudentSelection(sub)}
                 className={cn(
                   "w-full flex items-center justify-between p-3 rounded-xl text-left transition-all cursor-pointer",
                   selectedStudent === (sub.baiNopId || sub.id) 
@@ -559,7 +631,7 @@ export default function GradingWorkspace() {
           {/* Footer Panel (Action Buttons) */}
           <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-3">
             <button type="button" onClick={() => handleSubmitGrade('DUYET')} className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition font-bold cursor-pointer shadow-sm">
-              <CheckCircle2 className="w-5 h-5" /> Lưu kết quả
+              <CheckCircle2 className="w-5 h-5" /> {currentSubmissionRaw?.danhGiaId ? 'Chấm lại bài' : 'Lưu kết quả'}
             </button>
             <button type="button" onClick={() => handleSubmitGrade('YC_LAM_LAI')} className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition font-bold cursor-pointer border border-slate-200">
               <RotateCcw className="w-4 h-4" /> Yêu cầu làm lại

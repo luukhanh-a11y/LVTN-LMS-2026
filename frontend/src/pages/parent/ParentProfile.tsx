@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { KeyRound, Shield, Save, X, Phone, Mail, User, ShieldCheck, LogOut, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/axios';
+import { authService } from '../../services/auth.service';
 import { useNavigate } from 'react-router-dom';
 
 export default function ParentProfile() {
@@ -9,6 +10,12 @@ export default function ParentProfile() {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Change password form state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Form State
   const [hoTen, setHoTen] = useState('');
@@ -52,11 +59,11 @@ export default function ParentProfile() {
         setHoTen(baseUser.hoTen || baseUser.fullName || '');
       }
 
-      // Lấy danh sách con
+      // Lấy danh sách con — endpoint thật (PhuHuynhPortalController.getChildren, ChildItemDTO:
+      // id/name/className/avatar), trả mảng thô không bọc ApiResponse. /phu-huynh/children (cũ)
+      // không tồn tại, khiến danh sách con luôn rỗng dù có liên kết thật.
       try {
-        // Tùy endpoint của bạn, ví dụ /phu-huynh/children
-        // Nếu không có endpoint này, mảng sẽ rỗng
-        const childrenRes = await api.get('/phu-huynh/children');
+        const childrenRes = await api.get('/parents/me/children');
         if (Array.isArray(childrenRes.data)) {
           setChildrenInfo(childrenRes.data);
         }
@@ -72,8 +79,25 @@ export default function ParentProfile() {
     }
   };
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const PHONE_REGEX = /^0\d{9,10}$/;
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (email && !EMAIL_REGEX.test(email)) {
+      toast.error('Email liên hệ không đúng định dạng');
+      return;
+    }
+    if (emailNhanThongBao && !EMAIL_REGEX.test(emailNhanThongBao)) {
+      toast.error('Email nhận thông báo không đúng định dạng');
+      return;
+    }
+    if (soDienThoai && !PHONE_REGEX.test(soDienThoai)) {
+      toast.error('Số điện thoại không đúng định dạng (bắt đầu bằng 0, 10-11 số)');
+      return;
+    }
+
     setIsSaving(true);
     try {
       // 1. Cập nhật base user (phone, email)
@@ -85,8 +109,7 @@ export default function ParentProfile() {
       // 2. Cập nhật hồ sơ phụ huynh
       await api.put('/hoso-phuhuynh/my-profile', {
         hoTen,
-        emailNhanThongBao,
-        soDienThoai // backend thường dùng sđt chung
+        emailNhanThongBao
       });
 
       toast.success('Đã cập nhật thông tin hồ sơ thành công!');
@@ -99,10 +122,35 @@ export default function ParentProfile() {
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Đổi mật khẩu thành công!');
-    setShowPasswordForm(false);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Vui lòng nhập đầy đủ các trường');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Mật khẩu nhập lại không khớp');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      toast.success('Đổi mật khẩu thành công!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordForm(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Mật khẩu hiện tại không đúng');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleLogout = () => {
@@ -176,9 +224,14 @@ export default function ParentProfile() {
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <KeyRound className="w-4 h-4 text-emerald-600" /> Cập nhật mật khẩu
                 </h3>
-                <button 
-                  type="button" 
-                  onClick={() => setShowPasswordForm(false)}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordForm(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
                   className="p-1.5 text-slate-400 hover:bg-slate-200 bg-slate-100 rounded-full transition cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -188,18 +241,42 @@ export default function ParentProfile() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Mật khẩu hiện tại</label>
-                  <input type="password" required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white" />
+                  <input
+                    type="password"
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Mật khẩu mới</label>
-                  <input type="password" required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700">Nhập lại mật khẩu</label>
                   <div className="flex gap-2">
-                    <input type="password" required className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white" />
-                    <button type="button" onClick={handleChangePassword} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition">
-                      Lưu
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={isChangingPassword}
+                      onClick={handleChangePassword}
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition disabled:opacity-50"
+                    >
+                      {isChangingPassword ? 'Đang lưu...' : 'Lưu'}
                     </button>
                   </div>
                 </div>
@@ -230,10 +307,10 @@ export default function ParentProfile() {
                   <Users className="w-4 h-4 text-slate-400" /> Thông tin con cái (Chỉ đọc)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                  {childrenInfo.length > 0 ? childrenInfo.map((child: any, idx) => (
-                    <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50 flex flex-col">
-                      <span className="font-semibold text-slate-800">{child.hoTen || child.fullName || 'Tên học sinh'}</span>
-                      <span className="text-xs text-slate-500 mt-1">Lớp: {child.tenLop || child.className || 'Chưa cập nhật'}</span>
+                  {childrenInfo.length > 0 ? childrenInfo.map((child: any) => (
+                    <div key={child.id} className="p-3 border border-slate-200 rounded-xl bg-slate-50 flex flex-col">
+                      <span className="font-semibold text-slate-800">{child.name || child.hoTen || child.fullName || 'Tên học sinh'}</span>
+                      <span className="text-xs text-slate-500 mt-1">Lớp: {child.className || child.tenLop || 'Chưa cập nhật'}</span>
                     </div>
                   )) : (
                     <div className="p-4 text-center text-slate-500 text-sm border border-dashed rounded-xl w-full col-span-2 bg-slate-50">

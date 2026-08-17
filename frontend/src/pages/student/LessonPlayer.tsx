@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowLeft, ChevronUp, ChevronDown, Minimize, Maximize, CheckCircle2, BookOpen, Loader2, Star, Gem, Lightbulb, ArrowRight, XCircle } from 'lucide-react';
@@ -51,6 +51,19 @@ export default function LessonPlayer() {
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [nextLessonId, setNextLessonId] = useState<number | null>(null);
   const [showBanner, setShowBanner] = useState(false);
+  // Theo dõi timer ẩn banner "sai" (5s) để huỷ được khi có banner mới hoặc đổi câu —
+  // nếu không, timer cũ có thể tắt nhầm banner "đúng" đang hiển thị hợp lệ sau đó.
+  const hideBannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHideBannerTimeout = () => {
+    if (hideBannerTimeoutRef.current) {
+      clearTimeout(hideBannerTimeoutRef.current);
+      hideBannerTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => clearHideBannerTimeout, []);
+
   const [isFullscreen, setIsFullscreen] = useState(true);
   const [itemsList, setItemsList] = useState<any[]>([]);
   const [activeItemIndex, setActiveItemIndex] = useState(0);
@@ -76,6 +89,7 @@ export default function LessonPlayer() {
     if (!lessonId) return;
     setIsLoading(true);
     setQuizResult(null);
+    clearHideBannerTimeout();
     setShowBanner(false);
     setAutoNextTime(null);
 
@@ -167,6 +181,7 @@ export default function LessonPlayer() {
     setDapAnChuan(activeItem.dapAnChuan ?? null);
     setDangBaiId(activeItem.dangBaiId);
     setQuizResult(null);
+    clearHideBannerTimeout();
     setShowBanner(false);
     setAutoNextTime(null);
     setGameKey(k => k + 1);
@@ -214,13 +229,18 @@ export default function LessonPlayer() {
         setCompleted(true);
       }
       
+      // Huỷ timer ẩn banner của lượt trước (nếu có) — tránh nó tắt nhầm banner của lượt này.
+      clearHideBannerTimeout();
       setShowBanner(true);
       setGameKey(k => k + 1); // Reset game logic
 
       // If wrong, or if last item, hide banner automatically
       // If right but not last item, we keep the banner open for them to click Next
       if (!isPassed) {
-        setTimeout(() => setShowBanner(false), 5000);
+        hideBannerTimeoutRef.current = setTimeout(() => {
+          setShowBanner(false);
+          hideBannerTimeoutRef.current = null;
+        }, 5000);
       }
       
       // Start auto next only if there is a next level
@@ -407,7 +427,7 @@ export default function LessonPlayer() {
             </div>
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => setShowBanner(false)}
+                onClick={() => { clearHideBannerTimeout(); setShowBanner(false); }}
                 className="text-sm font-bold px-3 py-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-slate-700 transition-all"
               >
                 Đóng
@@ -453,8 +473,9 @@ export default function LessonPlayer() {
                   onSubmit={handleSubmitQuiz}
                   onReset={() => {
                     setQuizResult(null);
+                    clearHideBannerTimeout();
                     setShowBanner(false);
-    setAutoNextTime(null);
+                    setAutoNextTime(null);
                     setGameKey(k => k + 1);
                   }}
                   submitting={submitting}

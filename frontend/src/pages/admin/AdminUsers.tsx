@@ -1,12 +1,99 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Filter, Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle, Eye, Lock, Unlock } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import Button from '../../components/Button';
 import { adminService } from '../../services/admin.service';
 import { classService } from '../../services/class.service';
 import { useAcademicStore } from '../../stores/useAcademicStore';
+
+// Khớp đúng thứ tự cột file mẫu do backend sinh ra (NguoiDungExcelService.exportTemplate)
+// và cách backend đọc từng dòng (NguoiDungExcelService.createCommonUser/processPhuHuynh):
+// 0 Vai trò · 1 Tên đăng nhập · 2 Mật khẩu · 3 Họ tên · 4 Email · 5 SĐT ·
+// 6 Giới tính · 7 Ngày sinh · 8 Mã HS/GV · 9 Lớp học ID/Bộ môn · 10 Mã con · 11 Mối quan hệ
+interface ImportPreviewRow {
+  stt: number;
+  vaiTro: string;
+  vaiTroChuan: 'HOC_SINH' | 'GIAO_VIEN' | 'PHU_HUYNH' | null;
+  tenDangNhap: string;
+  hoTen: string;
+  email: string;
+  maCon: string;
+  isValid: boolean;
+  errors: string[];
+}
+
+const IMPORT_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_IMPORT_EXTENSIONS = ['xlsx', 'xls'];
+
+function normalizeVaiTro(raw: string): 'HOC_SINH' | 'GIAO_VIEN' | 'PHU_HUYNH' | null {
+  const v = raw.trim().toUpperCase();
+  if (v === 'HOC_SINH' || v === 'HỌC SINH') return 'HOC_SINH';
+  if (v === 'GIAO_VIEN' || v === 'GIÁO VIÊN' || v === 'GIÁO VIEN') return 'GIAO_VIEN';
+  if (v === 'PHU_HUYNH' || v === 'PHỤ HUYNH') return 'PHU_HUYNH';
+  return null;
+}
+
+function buildImportPreview(data: any[][]): ImportPreviewRow[] {
+  // Bỏ dòng tiêu đề (dòng 0) và các dòng trống hoàn toàn — giống isRowEmpty() ở backend.
+  const rows = data.slice(1).filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''));
+
+  const usernameCounts = new Map<string, number>();
+  const emailCounts = new Map<string, number>();
+  for (const row of rows) {
+    const tenDangNhap = String(row[1] ?? '').trim().toLowerCase();
+    const email = String(row[4] ?? '').trim().toLowerCase();
+    if (tenDangNhap) usernameCounts.set(tenDangNhap, (usernameCounts.get(tenDangNhap) ?? 0) + 1);
+    if (email) emailCounts.set(email, (emailCounts.get(email) ?? 0) + 1);
+  }
+
+  return rows.map((row, idx) => {
+    const errors: string[] = [];
+
+    const vaiTroRaw = String(row[0] ?? '').trim();
+    const tenDangNhap = String(row[1] ?? '').trim();
+    const hoTen = String(row[3] ?? '').trim();
+    const email = String(row[4] ?? '').trim();
+    const maCon = String(row[10] ?? '').trim();
+
+    const vaiTroChuan = vaiTroRaw ? normalizeVaiTro(vaiTroRaw) : null;
+    if (!vaiTroRaw) errors.push('Thiếu Vai trò');
+    else if (!vaiTroChuan) errors.push("Vai trò không hợp lệ (chỉ nhận HOC_SINH / GIAO_VIEN / PHU_HUYNH)");
+
+    if (!tenDangNhap) errors.push('Thiếu Tên đăng nhập');
+    if (!hoTen) errors.push('Thiếu Họ tên');
+
+    if (tenDangNhap && (usernameCounts.get(tenDangNhap.toLowerCase()) ?? 0) > 1) {
+      errors.push('Tên đăng nhập bị trùng với 1 dòng khác trong file này');
+    }
+    if (email) {
+      if (!IMPORT_EMAIL_REGEX.test(email)) {
+        errors.push('Email không đúng định dạng');
+      } else if ((emailCounts.get(email.toLowerCase()) ?? 0) > 1) {
+        errors.push('Email bị trùng với 1 dòng khác trong file này');
+      }
+    }
+
+    if (vaiTroChuan === 'PHU_HUYNH' && !maCon) {
+      errors.push('Phụ huynh bắt buộc phải có Mã con/Tên đăng nhập con ở cột "Mã con"');
+    }
+
+    return {
+      stt: idx + 2, // +2 = bù lại dòng tiêu đề + chỉ số bắt đầu từ 1, khớp số dòng thật trong Excel
+      vaiTro: vaiTroRaw,
+      vaiTroChuan,
+      tenDangNhap,
+      hoTen,
+      email,
+      maCon,
+      isValid: errors.length === 0,
+      errors,
+    };
+  });
+}
 
 export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,11 +226,73 @@ export default function AdminUsers() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [importFile, setImportFile] = useState<File | null>(null);
-  
+  const [importPreview, setImportPreview] = useState<ImportPreviewRow[]>([]);
+  const [isParsingImportFile, setIsParsingImportFile] = useState(false);
+
+  const resetImportState = () => {
+    setImportFile(null);
+    setImportPreview([]);
+    setIsParsingImportFile(false);
+  };
+
+  const handleImportFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    const extension = selected.name.split('.').pop()?.toLowerCase() ?? '';
+    if (!ALLOWED_IMPORT_EXTENSIONS.includes(extension)) {
+      toast.error('Chỉ chấp nhận file Excel (.xlsx, .xls)');
+      e.target.value = '';
+      return;
+    }
+    if (selected.size > MAX_IMPORT_FILE_SIZE) {
+      toast.error('File vượt quá dung lượng cho phép (tối đa 10MB)');
+      e.target.value = '';
+      return;
+    }
+
+    setImportFile(selected);
+    setImportPreview([]);
+    setIsParsingImportFile(true);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        setImportPreview(buildImportPreview(data));
+      } catch {
+        toast.error('Không đọc được file — file có thể bị hỏng hoặc sai định dạng');
+        setImportFile(null);
+        e.target.value = '';
+      } finally {
+        setIsParsingImportFile(false);
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Không đọc được file');
+      setImportFile(null);
+      setIsParsingImportFile(false);
+      e.target.value = '';
+    };
+    reader.readAsBinaryString(selected);
+  };
+
+  const importHasErrors = importPreview.some((r) => !r.isValid);
+
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!importFile) {
       toast.error('Vui lòng chọn file Excel');
+      return;
+    }
+    if (isParsingImportFile) {
+      toast.error('Đang đọc file, vui lòng đợi giây lát');
+      return;
+    }
+    if (importHasErrors) {
+      toast.error('File còn dòng chưa hợp lệ — sửa file rồi chọn lại trước khi import');
       return;
     }
     setIsImporting(true);
@@ -151,6 +300,7 @@ export default function AdminUsers() {
       await adminService.importUsers(importFile);
       toast.success('Import thành công!');
       setShowImportModal(false);
+      resetImportState();
       fetchUsers();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi import');
@@ -161,6 +311,12 @@ export default function AdminUsers() {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (newUserPassword.length < 6) {
+      toast.error('Mật khẩu khởi tạo phải có ít nhất 6 ký tự');
+      return;
+    }
+
     setIsAdding(true);
     try {
       const roleMap: Record<string, string> = {
@@ -452,41 +608,35 @@ export default function AdminUsers() {
       {/* MODAL IMPORT EXCEL */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
                   Import Danh sách từ Excel
                 </h3>
               </div>
-              <button 
-                type="button" 
-                onClick={() => !isImporting && setShowImportModal(false)} 
+              <button
+                type="button"
+                onClick={() => { if (!isImporting) { setShowImportModal(false); resetImportState(); } }}
                 className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition cursor-pointer"
                 disabled={isImporting}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <form onSubmit={handleImport} className="p-8 bg-slate-50/50 space-y-6">
-              
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Loại tài khoản cần Import</label>
-                <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-                  <option>Danh sách Học sinh</option>
-                  <option>Danh sách Giáo viên</option>
-                   <option>Danh sách Phụ huynh</option>
-                </select>
-                <p className="text-xs text-slate-500">Lưu ý: Nếu SĐT phụ huynh trùng nhau, hệ thống sẽ tự động gộp vào chung một tài khoản Phụ huynh.</p>
+
+            <form onSubmit={handleImport} className="p-8 bg-slate-50/50 space-y-6 overflow-y-auto">
+
+              <div className="p-3 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-600">
+                Vai trò của từng người được đọc từ cột "Vai trò" ngay trong file (HOC_SINH / GIAO_VIEN / PHU_HUYNH) — 1 file có thể trộn cả 3 loại. Nếu SĐT phụ huynh trùng nhau, hệ thống sẽ tự động gộp vào chung một tài khoản Phụ huynh.
               </div>
 
               <div className="border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center bg-white hover:bg-emerald-50/50 hover:border-emerald-300 transition cursor-pointer group relative">
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept=".xlsx, .xls"
-                  onChange={(e) => setImportFile(e.target.files ? e.target.files[0] : null)}
+                  onChange={handleImportFileSelect}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
@@ -499,6 +649,60 @@ export default function AdminUsers() {
                 </button>
               </div>
 
+              {isParsingImportFile && (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="w-4 h-4 border-2 border-slate-300 border-t-emerald-600 rounded-full animate-spin"></div>
+                  Đang đọc file...
+                </div>
+              )}
+
+              {!isParsingImportFile && importPreview.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {importHasErrors ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-200">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {importPreview.filter((r) => !r.isValid).length}/{importPreview.length} dòng lỗi — sửa file rồi chọn lại
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {importPreview.length} dòng hợp lệ, sẵn sàng import
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <div className="max-h-56 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-100 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-bold text-slate-600">Dòng</th>
+                            <th className="px-3 py-2 text-left font-bold text-slate-600">Vai trò</th>
+                            <th className="px-3 py-2 text-left font-bold text-slate-600">Tên đăng nhập</th>
+                            <th className="px-3 py-2 text-left font-bold text-slate-600">Họ tên</th>
+                            <th className="px-3 py-2 text-left font-bold text-slate-600">Lỗi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {importPreview.map((row) => (
+                            <tr key={row.stt} className={cn('border-t border-slate-100', !row.isValid && 'bg-red-50/60')}>
+                              <td className="px-3 py-2 text-slate-500">{row.stt}</td>
+                              <td className="px-3 py-2 text-slate-700">{row.vaiTro || '—'}</td>
+                              <td className="px-3 py-2 text-slate-700">{row.tenDangNhap || '—'}</td>
+                              <td className="px-3 py-2 text-slate-700">{row.hoTen || '—'}</td>
+                              <td className="px-3 py-2 text-red-600 font-medium">{row.errors.join('; ')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <div className="flex items-center gap-3 text-sm text-blue-800">
                   <AlertCircle className="w-5 h-5" />
@@ -508,18 +712,18 @@ export default function AdminUsers() {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   variant="outline"
-                  onClick={() => setShowImportModal(false)} 
+                  onClick={() => { setShowImportModal(false); resetImportState(); }}
                   disabled={isImporting}
                 >
                   Hủy bỏ
                 </Button>
-                <button 
-                  type="submit" 
-                  disabled={isImporting}
-                  className="flex items-center justify-center min-w-[140px] gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold hover:bg-emerald-700 rounded-xl transition shadow-sm cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                <button
+                  type="submit"
+                  disabled={isImporting || isParsingImportFile || !importFile || importHasErrors}
+                  className="flex items-center justify-center min-w-[140px] gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold hover:bg-emerald-700 rounded-xl transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isImporting ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -594,12 +798,13 @@ export default function AdminUsers() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Mật khẩu khởi tạo</label>
-                  <input 
+                  <input
                     type="password"
                     required
+                    minLength={6}
                     value={newUserPassword}
                     onChange={(e) => setNewUserPassword(e.target.value)}
-                    placeholder="••••••••" 
+                    placeholder="Tối thiểu 6 ký tự"
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>

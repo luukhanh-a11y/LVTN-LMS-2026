@@ -214,6 +214,16 @@ export default function TeacherAssignments() {
       setErrorMsg('Vui lòng điền đầy đủ Tiêu đề, chọn Lớp và Hạn chót!');
       return;
     }
+    if (new Date(deadline).getTime() <= Date.now()) {
+      setSubmitStatus('error');
+      setErrorMsg('Hạn nộp phải ở tương lai!');
+      return;
+    }
+    if (maxResubmitCount < -1 || maxResubmitCount > 20) {
+      setSubmitStatus('error');
+      setErrorMsg('Số lần nộp lại tối đa không hợp lệ (từ -1 đến 20, -1 = không giới hạn)!');
+      return;
+    }
     if (!teacherProfile) {
       setSubmitStatus('error');
       setErrorMsg('Không xác định được hồ sơ giáo viên, vui lòng tải lại trang!');
@@ -556,7 +566,13 @@ export default function TeacherAssignments() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Hạn chót (Deadline)" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            <Input
+              label="Hạn chót (Deadline)"
+              type="datetime-local"
+              value={deadline}
+              min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+              onChange={(e) => setDeadline(e.target.value)}
+            />
             <div className="flex items-center gap-3 pt-6">
               <label htmlFor="maxResubmit" className="text-sm font-medium text-slate-700 cursor-pointer w-56">
                 Số lần nộp lại tối đa (0 = không cho nộp lại, -1 = không giới hạn)
@@ -567,6 +583,7 @@ export default function TeacherAssignments() {
                 className="w-20 px-3 py-1.5 border border-slate-300 rounded-lg outline-none focus:border-primary text-sm"
                 value={maxResubmitCount}
                 min={-1}
+                max={20}
                 onChange={(e) => setMaxResubmitCount(Number(e.target.value))}
               />
             </div>

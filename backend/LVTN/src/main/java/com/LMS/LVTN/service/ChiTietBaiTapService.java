@@ -11,6 +11,7 @@ import com.LMS.LVTN.mapper.ChiTietBaiTapMapper;
 import com.LMS.LVTN.repository.BaiTapRepository;
 import com.LMS.LVTN.repository.ChiTietBaiTapRepository;
 import com.LMS.LVTN.repository.DangBaiRepository;
+import com.LMS.LVTN.validation.NoiDungSgkValidator;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -29,6 +30,7 @@ public class ChiTietBaiTapService {
     BaiTapRepository baiTapRepository;
     DangBaiRepository dangBaiRepository;
     ChiTietBaiTapMapper chiTietBaiTapMapper;
+    NoiDungSgkValidator noiDungSgkValidator;
 
     @Transactional
     public ChiTietBaiTapResponse create(ChiTietBaiTapRequest request) {
@@ -36,9 +38,7 @@ public class ChiTietBaiTapService {
             throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
         }
 
-        if (dangBaiRepository.isSachGiaoKhoa(request.getDangBaiId())) {
-            throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
-        }
+        noiDungSgkValidator.validateKhongPhaiSgk(request.getDangBaiId());
 
         BaiTap baiTap = baiTapRepository.findById(request.getBaiTapId())
                 .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
@@ -91,9 +91,7 @@ public class ChiTietBaiTapService {
 
         DangBai dangBai = null;
         if (request.getDangBaiId() != null) {
-            if (dangBaiRepository.isSachGiaoKhoa(request.getDangBaiId())) {
-                throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
-            }
+            noiDungSgkValidator.validateKhongPhaiSgk(request.getDangBaiId());
             dangBai = dangBaiRepository.findById(request.getDangBaiId())
                     .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
         }

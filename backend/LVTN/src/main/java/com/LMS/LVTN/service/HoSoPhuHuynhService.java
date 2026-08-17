@@ -73,6 +73,22 @@ public class HoSoPhuHuynhService {
         return hoSoPhuHuynhMapper.toResponse(hoSoPhuHuynhRepository.save(entity));
     }
 
+    public HoSoPhuHuynhResponse updateMyProfile(String token, HoSoPhuHuynhRequest request) {
+        try {
+            String nguoiDungId = authenticationService.getMaNguoiDungFromToken(token);
+            NguoiDung nguoiDung = nguoiDungRepository.findById(nguoiDungId)
+                    .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+            HoSoPhuHuynh entity = nguoiDung.getHoSoPhuHuynh();
+            if (entity == null) {
+                throw new AppExceptions(Errorcode.HO_SO_PHU_HUYNH_NOT_FOUND);
+            }
+            hoSoPhuHuynhMapper.updateHoSoPhuHuynh(request, entity);
+            return hoSoPhuHuynhMapper.toResponse(hoSoPhuHuynhRepository.save(entity));
+        } catch (ParseException e) {
+            throw new AppExceptions(Errorcode.INVALID_TOKEN);
+        }
+    }
+
     public void delete(Long id) {
         if (!hoSoPhuHuynhRepository.existsById(id)) {
             throw new AppExceptions(Errorcode.HO_SO_PHU_HUYNH_NOT_FOUND);

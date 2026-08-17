@@ -5,6 +5,7 @@ import com.LMS.LVTN.dto.request.TaoBaiTapRequest;
 import com.LMS.LVTN.dto.response.ApiResponse;
 import com.LMS.LVTN.dto.response.BaiTapResponse;
 import com.LMS.LVTN.service.BaiTapService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,7 +22,7 @@ public class BaiTapController {
     BaiTapService baiTapService;
 
     @PostMapping
-    public ApiResponse<BaiTapResponse> create(@RequestBody TaoBaiTapRequest request) {
+    public ApiResponse<BaiTapResponse> create(@Valid @RequestBody TaoBaiTapRequest request) {
         return ApiResponse.<BaiTapResponse>builder()
                 .data(baiTapService.create(request.getBaiTap(), request.getDanhSachChiTiet()))
                 .build();
@@ -56,7 +57,7 @@ public class BaiTapController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<BaiTapResponse> update(@PathVariable Long id, @RequestBody BaiTapRequest request) {
+    public ApiResponse<BaiTapResponse> update(@PathVariable Long id, @Valid @RequestBody BaiTapRequest request) {
         return ApiResponse.<BaiTapResponse>builder()
                 .data(baiTapService.update(id, request))
                 .build();

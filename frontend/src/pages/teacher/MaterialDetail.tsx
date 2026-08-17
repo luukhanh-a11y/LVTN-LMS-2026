@@ -147,8 +147,16 @@ export default function TeacherMaterialDetail() {
       toast.error('Vui lòng chọn lớp học');
       return;
     }
+    if (deadline && new Date(deadline).getTime() <= Date.now()) {
+      toast.error('Hạn nộp phải ở tương lai');
+      return;
+    }
+    if (maxResubmitCount < 1 || maxResubmitCount > 100) {
+      toast.error('Số lần làm bài tối đa phải từ 1 đến 100');
+      return;
+    }
     if (!material) return;
-    
+
     setAssigning(true);
     try {
       const profile = await teacherService.getMyTeacherProfile();
@@ -356,9 +364,10 @@ export default function TeacherMaterialDetail() {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">Hạn nộp (Tùy chọn)</label>
-            <input 
-              type="datetime-local" 
+            <input
+              type="datetime-local"
               value={deadline}
+              min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
               onChange={(e) => setDeadline(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={assigning}

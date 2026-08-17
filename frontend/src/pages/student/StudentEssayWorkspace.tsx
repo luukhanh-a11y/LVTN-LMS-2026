@@ -34,11 +34,25 @@ export default function StudentEssayWorkspace() {
     }
   }, [assignmentId]);
 
+  const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024; // 20MB, khớp giới hạn thật của backend
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
-      toast.success('Đã đính kèm file thành công!');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Chỉ được tải lên file ảnh (chụp bài làm)');
+      e.target.value = '';
+      return;
     }
+    if (file.size > MAX_ATTACHMENT_SIZE) {
+      toast.error('Ảnh vượt quá dung lượng cho phép (tối đa 20MB)');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadedFile(file);
+    toast.success('Đã đính kèm file thành công!');
   };
 
   const handleSubmit = async () => {

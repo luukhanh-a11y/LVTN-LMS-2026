@@ -12,6 +12,7 @@ import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.NguoiDungMapper;
 import com.LMS.LVTN.repository.NguoiDungRepository;
+import com.LMS.LVTN.validation.NguoiDungUniquenessValidator;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -38,6 +39,7 @@ public class NguoiDungService {
 
     NguoiDungRepository nguoiDungRepository;
     NguoiDungMapper nguoiDungMapper;
+    NguoiDungUniquenessValidator nguoiDungUniquenessValidator;
     AuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
@@ -233,12 +235,8 @@ public class NguoiDungService {
         if (request.getVaiTro() == null || request.getTrangThai() == null) {
             throw new AppExceptions(Errorcode.INVALID_KEY);
         }
-        if (request.getTenDangNhap() != null && nguoiDungRepository.existsByTenDangNhap(request.getTenDangNhap())) {
-            throw new AppExceptions(Errorcode.DATA_EXISTED);
-        }
-        if (request.getEmail() != null && nguoiDungRepository.existsByEmail(request.getEmail())) {
-            throw new AppExceptions(Errorcode.DATA_EXISTED);
-        }
+        nguoiDungUniquenessValidator.validateTenDangNhapUnique(request.getTenDangNhap());
+        nguoiDungUniquenessValidator.validateEmailUnique(request.getEmail());
 
         NguoiDung nguoiDung = nguoiDungMapper.toEntity(request);
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
@@ -253,6 +251,24 @@ public class NguoiDungService {
 
         nguoiDungMapper.updateThongTinNguoiDung(request, nguoiDung);
         return nguoiDungMapper.toResponse(nguoiDungRepository.save(nguoiDung));
+    }
+
+    public NguoiDungResponse updateMyInfo(String token, NguoiDungRequest request) {
+        try {
+            // Tự cập nhật hồ sơ: chặn cứng tenDangNhap/matKhau dù DTO có 2 field đó —
+            // đổi mật khẩu phải đi qua /auth/change-password, không qua đường này.
+            request.setTenDangNhap(null);
+            request.setMatKhau(null);
+
+            String nguoiDungId = authenticationService.getMaNguoiDungFromToken(token);
+            NguoiDung nguoiDung = nguoiDungRepository.findById(nguoiDungId)
+                    .orElseThrow(() -> new AppExceptions(Errorcode.USER_NOT_FOUND));
+
+            nguoiDungMapper.updateThongTinNguoiDung(request, nguoiDung);
+            return nguoiDungMapper.toResponse(nguoiDungRepository.save(nguoiDung));
+        } catch (ParseException e) {
+            throw new AppExceptions(Errorcode.INVALID_TOKEN);
+        }
     }
 
     public void deleteNguoiDung(String id) {

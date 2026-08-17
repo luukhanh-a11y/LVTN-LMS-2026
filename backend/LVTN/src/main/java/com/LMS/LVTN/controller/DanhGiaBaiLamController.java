@@ -4,6 +4,7 @@ import com.LMS.LVTN.dto.request.DanhGiaBaiLamRequest;
 import com.LMS.LVTN.dto.response.ApiResponse;
 import com.LMS.LVTN.dto.response.DanhGiaBaiLamResponse;
 import com.LMS.LVTN.service.DanhGiaBaiLamService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,7 +21,7 @@ public class DanhGiaBaiLamController {
     DanhGiaBaiLamService danhGiaBaiLamService;
 
     @PostMapping
-    public ApiResponse<DanhGiaBaiLamResponse> create(@RequestBody DanhGiaBaiLamRequest request) {
+    public ApiResponse<DanhGiaBaiLamResponse> create(@Valid @RequestBody DanhGiaBaiLamRequest request) {
         return ApiResponse.<DanhGiaBaiLamResponse>builder()
                 .data(danhGiaBaiLamService.create(request))
                 .build();
@@ -55,7 +56,7 @@ public class DanhGiaBaiLamController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<DanhGiaBaiLamResponse> update(@PathVariable Long id, @RequestBody DanhGiaBaiLamRequest request) {
+    public ApiResponse<DanhGiaBaiLamResponse> update(@PathVariable Long id, @Valid @RequestBody DanhGiaBaiLamRequest request) {
         return ApiResponse.<DanhGiaBaiLamResponse>builder()
                 .data(danhGiaBaiLamService.update(id, request))
                 .build();

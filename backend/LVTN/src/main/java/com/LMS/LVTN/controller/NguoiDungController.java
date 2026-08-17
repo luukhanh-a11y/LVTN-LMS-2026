@@ -12,6 +12,7 @@ import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.service.AuthenticationService;
 import com.LMS.LVTN.service.NguoiDungExcelService;
 import com.LMS.LVTN.service.NguoiDungService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -94,7 +95,7 @@ public class NguoiDungController {
     }
 
     @PostMapping
-    public ApiResponse<NguoiDungResponse> createNguoiDung(@RequestBody NguoiDungCreateRequest request) {
+    public ApiResponse<NguoiDungResponse> createNguoiDung(@Valid @RequestBody NguoiDungCreateRequest request) {
         return ApiResponse.<NguoiDungResponse>builder()
                 .data(nguoiDungService.createNguoiDung(request))
                 .build();
@@ -121,9 +122,18 @@ public class NguoiDungController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<NguoiDungResponse> updateThongTinNguoiDung(@PathVariable String id, @RequestBody NguoiDungRequest request) {
+    public ApiResponse<NguoiDungResponse> updateThongTinNguoiDung(@PathVariable String id, @Valid @RequestBody NguoiDungRequest request) {
         return ApiResponse.<NguoiDungResponse>builder()
                 .data(nguoiDungService.updateThongTinNguoiDung(id, request))
+                .build();
+    }
+
+    @PutMapping("/my-info")
+    public ApiResponse<NguoiDungResponse> updateMyInfo(
+            @RequestHeader("Authorization") String token,
+            @Valid @RequestBody NguoiDungRequest request) {
+        return ApiResponse.<NguoiDungResponse>builder()
+                .data(nguoiDungService.updateMyInfo(token, request))
                 .build();
     }
 

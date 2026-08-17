@@ -13,7 +13,6 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +23,6 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
     setError('');
     setEmail('');
     setOtp('');
-    setNewPassword('');
   };
 
   const handleClose = () => {
@@ -51,10 +49,10 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
     setIsLoading(true);
     setError('');
     try {
-      await authService.resetPassword({ email, otp, newPassword });
+      await authService.verifyOtpReset({ email, otp });
       setIsSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Mã OTP hoặc mật khẩu không hợp lệ. Vui lòng thử lại!');
+      setError(err.response?.data?.message || 'Mã OTP không đúng hoặc đã hết hạn. Vui lòng thử lại!');
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +79,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
           {isSuccess ? (
             <div className="animate-in fade-in zoom-in duration-300 mt-6">
               <p className="text-emerald-700 font-bold text-[15px] mb-6 leading-relaxed bg-emerald-50 p-4 rounded-2xl border-2 border-emerald-100">
-                Đổi mật mã thành công! Giờ cậu có thể đăng nhập bằng mật mã mới rồi nhé! ✨
+                Xác nhận thành công! Mật mã mới đã được gửi về email của bạn — dùng mật mã đó để đăng nhập nhé! ✨
               </p>
               <Button onClick={handleClose} className="w-full h-12 rounded-full font-bold text-base">
                 Tuyệt vời!
@@ -130,9 +128,9 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
                 </div>
               )}
 
-              <div className="space-y-4 mb-6">
-                <Input 
-                  placeholder="Mã OTP (6 số)" 
+              <div className="space-y-4 mb-2">
+                <Input
+                  placeholder="Mã OTP (6 số)"
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
@@ -140,22 +138,17 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
                   maxLength={6}
                   className="bg-slate-50 border-slate-200 h-14 focus:bg-white tracking-[0.5em] text-center text-xl font-black rounded-2xl"
                 />
-                <Input 
-                  placeholder="Mật mã bí mật mới" 
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  className="bg-slate-50 border-slate-200 h-14 focus:bg-white rounded-2xl font-medium tracking-[0.2em]"
-                />
               </div>
-              
-              <Button 
-                type="submit" 
+              <p className="text-slate-400 font-medium text-[13px] mb-6 text-center leading-relaxed">
+                Xác nhận đúng mã OTP, hệ thống sẽ tự tạo mật mã mới và gửi về email của bạn.
+              </p>
+
+              <Button
+                type="submit"
                 disabled={isLoading}
                 className="w-full h-14 rounded-2xl font-bold text-lg"
               >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Lưu mật mã mới'}
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Xác nhận'}
               </Button>
               
               <button 

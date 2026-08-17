@@ -36,7 +36,10 @@ public class SecurityConfig {
             "/api/auth/verify-otp-reset",
             "/api/upload",
             "/uploads/**",
-            "/error"
+            "/error",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
     };
 
 

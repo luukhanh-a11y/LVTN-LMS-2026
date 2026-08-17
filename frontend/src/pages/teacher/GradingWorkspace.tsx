@@ -39,6 +39,15 @@ export default function GradingWorkspace() {
   }, [selectedClassId]);
 
   useEffect(() => {
+    // Đổi bài tập là đổi hẳn danh sách bài nộp — selectedStudent cũ (nếu còn) không khớp
+    // với bài nộp nào trong danh sách mới, phải xoá để màn hình tự chọn lại đúng học sinh
+    // đầu tiên thay vì đứng im ở trạng thái "chưa có dữ liệu".
+    setSelectedStudent(null);
+    setComment('');
+    setManualScore('');
+    setClassification('HOAN_THANH_TOT');
+    setShowAiPanel(false);
+
     if (selectedAssignmentId) {
       teacherService.getSubmissions(selectedAssignmentId).then(setSubmissions).catch(() => {});
       teacherService.getDangBaiByBaiTap(selectedAssignmentId)
@@ -233,6 +242,16 @@ export default function GradingWorkspace() {
 
   const handleSubmitGrade = async (action: 'DUYET' | 'YC_LAM_LAI') => {
     if (!currentSubmission?.baiNopId) return;
+
+    let diemSo: number | undefined;
+    if (!isAutoGraded) {
+      diemSo = Number(manualScore);
+      if (manualScore.trim() === '' || Number.isNaN(diemSo) || diemSo < 0 || diemSo > 10) {
+        toast.error('Điểm số phải là một số từ 0 đến 10');
+        return;
+      }
+    }
+
     try {
       const profile = await teacherService.getMyTeacherProfile();
       await teacherService.evaluateSubmission(currentSubmission.baiNopId, {
@@ -240,7 +259,7 @@ export default function GradingWorkspace() {
         grade: classification,
         comment: comment,
         action: action,
-        diemSo: !isAutoGraded ? Number(manualScore) : undefined
+        diemSo
       } as any);
       toast.success('Đã lưu đánh giá thành công!');
       // Refresh submissions
@@ -303,6 +322,8 @@ export default function GradingWorkspace() {
                 onClick={() => {
                   setSelectedStudent(sub.baiNopId || sub.id);
                   setComment('');
+                  setManualScore('');
+                  setClassification('HOAN_THANH_TOT');
                   setShowAiPanel(false);
                 }}
                 className={cn(
@@ -475,13 +496,16 @@ export default function GradingWorkspace() {
                 </div>
               ) : (
                 // LUỒNG THỦ CÔNG: Input to, màu xanh thương hiệu thu hút nhập liệu
-                <input 
-                  type="number" 
-                  key={selectedStudent} 
+                <input
+                  type="number"
+                  key={selectedStudent}
                   placeholder="0.0"
+                  min={0}
+                  max={10}
+                  step={0.1}
                   value={manualScore}
                   onChange={(e) => setManualScore(e.target.value)}
-                  className="w-32 text-center text-6xl font-black text-blue-600 bg-transparent border-b-2 border-slate-200 focus:border-blue-600 focus:outline-none pb-2 mx-auto tracking-tighter placeholder:text-slate-200" 
+                  className="w-32 text-center text-6xl font-black text-blue-600 bg-transparent border-b-2 border-slate-200 focus:border-blue-600 focus:outline-none pb-2 mx-auto tracking-tighter placeholder:text-slate-200"
                 />
               )}
             </div>

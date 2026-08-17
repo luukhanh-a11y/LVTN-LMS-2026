@@ -145,9 +145,25 @@ export default function StudentAssignments() {
     }
   };
 
+  const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024; // 20MB, khớp giới hạn thật của backend
+  const ALLOWED_ATTACHMENT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'mp3', 'mp4', 'wav'];
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    if (!ALLOWED_ATTACHMENT_EXTENSIONS.includes(extension)) {
+      toast.error('Loại file không được hỗ trợ');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_SIZE) {
+      toast.error('File vượt quá dung lượng cho phép (tối đa 20MB)');
+      e.target.value = '';
+      return;
+    }
+
     setIsUploadingFile(true);
     try {
       const result = await studentService.uploadFile(file);
@@ -329,7 +345,7 @@ export default function StudentAssignments() {
                             )}
                             <p className="text-sm text-slate-400 font-medium">{isUploadingFile ? 'Đang tải lên...' : 'Đính kèm file (tối đa 20MB)'}</p>
                         </div>
-                        <input type="file" className="hidden" disabled={isUploadingFile} onChange={handleFileChange} />
+                        <input type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.mp3,.mp4,.wav" className="hidden" disabled={isUploadingFile} onChange={handleFileChange} />
                     </label>
                  </div>
                )}

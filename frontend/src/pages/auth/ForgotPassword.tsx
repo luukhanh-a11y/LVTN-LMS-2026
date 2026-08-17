@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { authService } from '../../services/auth.service';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -11,7 +12,6 @@ export default function ForgotPassword() {
 
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,16 +20,10 @@ export default function ForgotPassword() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:8080/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Lỗi gửi OTP');
+      await authService.forgotPassword({ email });
       setStep(2);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Lỗi gửi OTP');
     } finally {
       setLoading(false);
     }
@@ -40,17 +34,11 @@ export default function ForgotPassword() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:8080/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Lỗi đổi mật khẩu');
-      toast.success('Đổi mật khẩu thành công! Bạn có thể đăng nhập.');
+      await authService.verifyOtpReset({ email, otp });
+      toast.success('Xác nhận thành công! Mật khẩu mới đã được gửi về email của bạn.');
       navigate('/login');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Mã OTP không đúng hoặc đã hết hạn');
     } finally {
       setLoading(false);
     }
@@ -94,24 +82,19 @@ export default function ForgotPassword() {
         </form>
       ) : (
         <form onSubmit={handleVerify} className="space-y-6">
-          <Input 
-            label="Mã OTP (6 chữ số)" 
-            placeholder="123456" 
+          <Input
+            label="Mã OTP (6 chữ số)"
+            placeholder="123456"
             maxLength={6}
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
-            required 
+            required
           />
-          <Input 
-            label="Mật khẩu mới" 
-            type="password" 
-            placeholder="••••••••" 
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required 
-          />
+          <p className="text-sm text-slate-500">
+            Xác nhận đúng mã OTP, hệ thống sẽ tự tạo mật khẩu mới và gửi về email của bạn. Bạn sẽ được yêu cầu đổi lại mật khẩu ngay lần đăng nhập kế tiếp.
+          </p>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu'}
+            {loading ? 'Đang xử lý...' : 'Xác nhận'}
           </Button>
         </form>
       )}

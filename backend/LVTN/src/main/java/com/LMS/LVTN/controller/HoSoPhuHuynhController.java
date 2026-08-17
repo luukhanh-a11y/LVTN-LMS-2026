@@ -7,6 +7,7 @@ import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.service.AuthenticationService;
 import com.LMS.LVTN.service.HoSoPhuHuynhService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -46,10 +47,19 @@ public class HoSoPhuHuynhController {
 
     @PutMapping("/{id}")
     public ApiResponse<HoSoPhuHuynhResponse> update(
-            @PathVariable Long id, 
-            @RequestBody HoSoPhuHuynhRequest request) {
+            @PathVariable Long id,
+            @Valid @RequestBody HoSoPhuHuynhRequest request) {
         return ApiResponse.<HoSoPhuHuynhResponse>builder()
                 .data(hoSoPhuHuynhService.update(id, request))
+                .build();
+    }
+
+    @PutMapping("/my-profile")
+    public ApiResponse<HoSoPhuHuynhResponse> updateMyProfile(
+            @RequestHeader("Authorization") String token,
+            @Valid @RequestBody HoSoPhuHuynhRequest request) {
+        return ApiResponse.<HoSoPhuHuynhResponse>builder()
+                .data(hoSoPhuHuynhService.updateMyProfile(token, request))
                 .build();
     }
 

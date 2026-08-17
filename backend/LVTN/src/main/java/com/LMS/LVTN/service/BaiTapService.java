@@ -18,6 +18,7 @@ import com.LMS.LVTN.repository.DangBaiRepository;
 import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
 import com.LMS.LVTN.repository.HocKyRepository;
 import com.LMS.LVTN.repository.LopHocRepository;
+import com.LMS.LVTN.validation.NoiDungSgkValidator;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -41,6 +42,7 @@ public class BaiTapService {
     BaiNopRepository baiNopRepository;
     ChiTietBaiTapService chiTietBaiTapService;
     ThongBaoService thongBaoService;
+    NoiDungSgkValidator noiDungSgkValidator;
 
     @Transactional
     public BaiTapResponse create(BaiTapRequest request, List<ChiTietBaiTapRequest> chiTietRequests) {
@@ -67,9 +69,7 @@ public class BaiTapService {
                 if (ctReq.getDangBaiId() == null || !dangBaiRepository.existsById(ctReq.getDangBaiId())) {
                     throw new AppExceptions(Errorcode.DATA_NOT_FOUND);
                 }
-                if (dangBaiRepository.isSachGiaoKhoa(ctReq.getDangBaiId())) {
-                    throw new AppExceptions(Errorcode.INVALID_DATA, "Không thể giao bài tập từ Sách giáo khoa");
-                }
+                noiDungSgkValidator.validateKhongPhaiSgk(ctReq.getDangBaiId());
             }
         }
 

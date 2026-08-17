@@ -55,8 +55,9 @@ export const authService = {
     const response = await api.post('/auth/forgot-password', payload);
     return response.data;
   },
-  resetPassword: async (payload: { email: string; otp: string; newPassword: string }) => {
-    const response = await api.post('/auth/reset-password', payload);
+  verifyOtpReset: async (payload: { email: string; otp: string }) => {
+    // Backend tự sinh mật khẩu mới ngẫu nhiên và gửi qua email — không nhận newPassword từ client.
+    const response = await api.post('/auth/verify-otp-reset', payload);
     return response.data;
   },
   changePassword: async (oldPassword: string, newPassword: string) => {

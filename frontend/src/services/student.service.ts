@@ -358,10 +358,16 @@ export const studentService = {
     }
   },
 
-  markNotificationRead: async (notificationId: number) => {    
+  markNotificationRead: async (notificationId: number) => {
+    await api.post(`/hop-thu-thong-bao/mark-as-read/${notificationId}`);
   },
 
-  markAllNotificationsRead: async () => {    
+  // Backend không có endpoint "đánh dấu tất cả" — gọi lặp lại endpoint đánh dấu
+  // từng cái cho danh sách id chưa đọc do phía gọi (component) truyền vào.
+  markAllNotificationsRead: async (notificationIds: number[]) => {
+    await Promise.all(
+      notificationIds.map((id) => api.post(`/hop-thu-thong-bao/mark-as-read/${id}`))
+    );
   },
 
   getRewards: async () => {
@@ -748,7 +754,23 @@ export const studentService = {
   },
 
   getQuizHistory: async (dangBaiId: number) => {
-    return [];
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      const hocSinhId = (hsRes.data.data || hsRes.data)?.hocSinhId;
+      if (!hocSinhId) return [];
+
+      const res = await api.get(`/lich-su-tu-hoc/dang-bai/${dangBaiId}`, {
+        params: { maHocSinh: hocSinhId }
+      });
+      const list = res.data.data || res.data || [];
+      // API không đảm bảo thứ tự — sắp theo thoiGianNop mới nhất trước, vì nơi gọi
+      // (LessonPlayer.tsx) chỉ đọc phần tử đầu tiên làm lần nộp gần nhất.
+      return [...list].sort(
+        (a: any, b: any) => new Date(b.thoiGianNop).getTime() - new Date(a.thoiGianNop).getTime()
+      );
+    } catch (err) {
+      return [];
+    }
   },
 
   getH5PAssignmentDetail: async (assignmentId: number) => {

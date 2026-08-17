@@ -118,6 +118,10 @@ export default function CreateAssignment() {
         toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
         return;
       }
+      if (new Date(deadline).getTime() <= Date.now()) {
+        toast.error('Hạn nộp phải ở tương lai');
+        return;
+      }
       setCurrentStep(2);
     } else {
       const dangBaiIds = Object.keys(selectedDangBais);
@@ -266,7 +270,13 @@ export default function CreateAssignment() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Hạn nộp (Deadline) <span className="text-red-500">*</span></label>
-                  <input type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none bg-white" />
+                  <input
+                    type="datetime-local"
+                    value={deadline}
+                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                    onChange={e => setDeadline(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none bg-white"
+                  />
                 </div>
               </div>
             </div>

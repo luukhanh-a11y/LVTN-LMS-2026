@@ -126,8 +126,7 @@ function App() {
           <Route path="operations" element={<AdminOperations />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="announcements" element={<AdminThongBao />} />
-          <Route path="curriculum/games/new/:id" element={<AdminGameAuthoringWorkspace />} />
-          <Route path="curriculum/games/edit/:id" element={<AdminGameAuthoringWorkspace />} />
+          <Route path="curriculum/games/:action/:id" element={<AdminGameAuthoringWorkspace />} />
         </Route>
 
           {/* Teacher Routes */}

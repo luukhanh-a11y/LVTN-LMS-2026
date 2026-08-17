@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, MonitorPlay, Settings } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
@@ -69,7 +69,7 @@ export default function AdminGameAuthoringWorkspace() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50 [&_button[type='submit']]:!hidden">
           <div className="max-w-2xl mx-auto">
             {loai === 'TRAC_NGHIEM' || loai === 'DIEN_KHUYET' ? (
               <QuizForm {...commonProps} />
@@ -93,7 +93,7 @@ export default function AdminGameAuthoringWorkspace() {
       {/* Header */}
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/admin/curriculum')} className="gap-2 text-slate-600">
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/academics')} className="gap-2 text-slate-600">
             <ArrowLeft className="w-4 h-4" /> Quay lại Quản lý Học vụ
           </Button>
           <div className="h-6 w-px bg-slate-200"></div>
@@ -105,23 +105,25 @@ export default function AdminGameAuthoringWorkspace() {
       </header>
 
       {/* Main Workspace: Split View */}
-      <main className="flex-1 flex overflow-hidden">
-        {/* Left Pane: Form Editor */}
-        <div className="w-1/2 border-r border-slate-200 overflow-y-auto p-6 bg-slate-50/50">
-          <div className="max-w-3xl ml-auto mr-4">
-            <GameAuthoringForm
-              dangBaiId={dangBaiId}
-              baiHocId={baiHocId}
-              onSaveSuccess={() => navigate('/admin/curriculum')}
-              onCancel={() => navigate('/admin/curriculum')}
-              onPreviewUpdate={(payload) => setLivePayload(payload)}
-            />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Pane: Live Preview */}
+        <div className="h-[55vh] min-h-[500px] border-b border-slate-300 p-6 bg-slate-200/50 overflow-hidden shrink-0 shadow-inner">
+          <div className="h-full w-full max-w-screen-2xl mx-auto">
+            {renderLivePreview()}
           </div>
         </div>
 
-        {/* Right Pane: Live Preview */}
-        <div className="w-1/2 p-6 bg-slate-100 overflow-hidden">
-          {renderLivePreview()}
+        {/* Bottom Pane: Form Editor */}
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+          <div className="max-w-5xl mx-auto">
+            <GameAuthoringForm
+              dangBaiId={dangBaiId}
+              baiHocId={baiHocId}
+              onSaveSuccess={() => navigate('/admin/academics')}
+              onCancel={() => navigate('/admin/academics')}
+              onPreviewUpdate={(payload) => setLivePayload(payload)}
+            />
+          </div>
         </div>
       </main>
     </div>

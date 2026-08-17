@@ -117,10 +117,21 @@ export default function QuizForm({
     );
   };
 
+  const renderMediaBlock = (text?: string, img?: string, audio?: string) => {
+    if (!text && !img && !audio) return null;
+    return (
+      <div className="inline-flex items-center gap-3 mx-2 align-middle bg-white/50 px-3 py-1 rounded-2xl border border-amber-200/50">
+        {text && <span className="font-semibold text-slate-700">{text}</span>}
+        {img && <img src={img} alt="media" className="h-14 rounded-lg object-contain shadow-sm border border-slate-100" />}
+        {audio && <audio src={audio} controls className="h-10 w-40" />}
+      </div>
+    );
+  };
+
   const renderDanhSachCho = (danhSach: any[]) => {
     return (
-      <div className="flex flex-col space-y-6 bg-amber-50/60 p-8 rounded-[2rem] border-2 border-amber-200/50 shadow-inner">
-        {danhSach.map((cho) => {
+      <div className="flex flex-col space-y-8 bg-amber-50/60 p-8 rounded-[2.5rem] border-2 border-amber-200/50 shadow-inner">
+        {danhSach.map((cho, idx) => {
           const blankId = cho.id;
           let isCorrect = null;
           if (hasResult) {
@@ -136,9 +147,10 @@ export default function QuizForm({
           }
 
           return (
-            <div key={blankId} className="leading-[3.5rem] text-xl text-slate-700 font-medium whitespace-pre-wrap flex items-center flex-wrap">
-              {cho.vanBanTruoc && <span className="mr-2">{cho.vanBanTruoc}</span>}
-              <span className="inline-block mx-2 relative group">
+            <div key={blankId} className="leading-[4rem] text-xl text-slate-700 font-medium whitespace-pre-wrap flex items-center flex-wrap p-4 bg-white/40 rounded-3xl border border-white/60">
+              <span className="w-8 h-8 flex items-center justify-center bg-amber-200 text-amber-800 font-black rounded-full text-sm mr-3 shrink-0 shadow-sm">{idx + 1}</span>
+              {renderMediaBlock(cho.vanBanTruoc, cho.vanBanTruocHinhAnh, cho.vanBanTruocAmThanh)}
+              <span className="inline-block mx-2 relative group self-center mt-1">
                 <input
                   type="text"
                   value={dienKhuyetValues[blankId] || ''}
@@ -165,7 +177,7 @@ export default function QuizForm({
                   </div>
                 )}
               </span>
-              {cho.vanBanSau && <span className="ml-2">{cho.vanBanSau}</span>}
+              {renderMediaBlock(cho.vanBanSau, cho.vanBanSauHinhAnh, cho.vanBanSauAmThanh)}
             </div>
           );
         })}

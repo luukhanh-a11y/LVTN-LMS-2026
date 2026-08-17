@@ -21,13 +21,21 @@ public class NoiDungDienKhuyet extends NoiDungCoBan {
     @JsonAlias({"dapAnTheoCho", "danhSachDapAn", "dap_an_theo_cho"})
     private Map<String, Object> dapAnTheoCho;
 
+    @JsonAlias({"dapAnChoTrong", "dap_an_cho_trong"})
+    private List<Map<String, Object>> dapAnChoTrong;
+
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ChoTrong {
         private String id;
         private String vanBanTruoc;
+        private String vanBanTruocHinhAnh;
+        private String vanBanTruocAmThanh;
         private String vanBanSau;
+        private String vanBanSauHinhAnh;
+        private String vanBanSauAmThanh;
         private List<String> danhSachLuaChon;
+        private List<GameItemDTO> danhSachLuaChonMoi;
         @JsonAlias({"dapAnDung", "dap_an_dung"})
         private List<String> dapAnDung;
     }

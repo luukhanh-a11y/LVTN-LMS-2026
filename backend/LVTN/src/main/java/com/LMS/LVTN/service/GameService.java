@@ -85,7 +85,20 @@ public class GameService {
                         choTrong.setDapAnDung(null);
                     }
                 }
-                String dapAnJson = writeMapper.writeValueAsString(Map.of("dapAnTheoCho", dapAnMap));
+                // Extract dapAnChoTrong
+                List<Map<String, Object>> dapAnChoTrongList = null;
+                if (dienKhuyet.getDapAnChoTrong() != null) {
+                    dapAnChoTrongList = dienKhuyet.getDapAnChoTrong();
+                    dienKhuyet.setDapAnChoTrong(null);
+                }
+
+                Map<String, Object> dapAnFinalMap = new HashMap<>();
+                dapAnFinalMap.put("dapAnTheoCho", dapAnMap);
+                if (dapAnChoTrongList != null) {
+                    dapAnFinalMap.put("dapAnChoTrong", dapAnChoTrongList);
+                }
+                
+                String dapAnJson = writeMapper.writeValueAsString(dapAnFinalMap);
 
                 String cauHoiJson = writeMapper.writeValueAsString(dienKhuyet);
 

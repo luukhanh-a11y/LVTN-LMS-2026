@@ -8,6 +8,7 @@ import com.LMS.LVTN.entity.BaiTap;
 import com.LMS.LVTN.entity.HoSoGiaoVien;
 import com.LMS.LVTN.entity.HocKy;
 import com.LMS.LVTN.entity.LopHoc;
+import com.LMS.LVTN.entity.MonHoc;
 import com.LMS.LVTN.enums.LoaiThongBao;
 import com.LMS.LVTN.enums.TrangThaiBaiNop;
 import com.LMS.LVTN.exception.AppExceptions;
@@ -19,6 +20,7 @@ import com.LMS.LVTN.repository.DangBaiRepository;
 import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
 import com.LMS.LVTN.repository.HocKyRepository;
 import com.LMS.LVTN.repository.LopHocRepository;
+import com.LMS.LVTN.repository.MonHocRepository;
 import com.LMS.LVTN.validation.NoiDungSgkValidator;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ public class BaiTapService {
     LopHocRepository lopHocRepository;
     HocKyRepository hocKyRepository;
     DangBaiRepository dangBaiRepository;
+    MonHocRepository monHocRepository;
     BaiNopRepository baiNopRepository;
     ChiTietBaiTapService chiTietBaiTapService;
     ThongBaoService thongBaoService;
@@ -78,6 +81,11 @@ public class BaiTapService {
         if (giaoVien != null) baiTap.setGiaoVien(giaoVien);
         if (lopHoc != null) baiTap.setLopHoc(lopHoc);
         if (hocKy != null) baiTap.setHocKy(hocKy);
+        if (request.getMonHocId() != null) {
+            MonHoc monHoc = monHocRepository.findById(request.getMonHocId())
+                    .orElseThrow(() -> new AppExceptions(Errorcode.DATA_NOT_FOUND));
+            baiTap.setMonHoc(monHoc);
+        }
         BaiTap savedBaiTap = baiTapRepository.save(baiTap);
 
         if (lopHoc != null && giaoVien != null && giaoVien.getNguoiDung() != null) {

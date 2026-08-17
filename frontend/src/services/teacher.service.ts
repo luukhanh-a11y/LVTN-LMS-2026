@@ -477,7 +477,7 @@ export const teacherService = {
     await api.post(`/goi-y-ai-nhan-xet/${suggestionId}/chon`);
   },
 
-  generateExerciseSuggestions: async (payload: { grade?: number; subjectId?: number; topicHint?: string }): Promise<{ suggestions: string[] }> => {
+  generateExerciseSuggestions: async (payload: { grade?: number; subjectId?: number; topicHint?: string; lessonHint?: string }): Promise<{ suggestions: string[] }> => {
     const response = await api.post('/goi-y-ai-bai-tap', payload);
     return response.data?.data || response.data;
   },

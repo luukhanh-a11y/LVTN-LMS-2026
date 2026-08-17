@@ -22,7 +22,7 @@ public class GoiYAiBaiTapController {
     @PostMapping
     public ApiResponse<GoiYAiBaiTapResponse> generate(@RequestBody GoiYAiBaiTapRequest request) {
         List<String> suggestions = goiYAiBaiTapService.generateExerciseSuggestions(
-                request.getGrade(), request.getSubjectId(), request.getTopicHint());
+                request.getGrade(), request.getSubjectId(), request.getTopicHint(), request.getLessonHint());
         return ApiResponse.<GoiYAiBaiTapResponse>builder()
                 .data(new GoiYAiBaiTapResponse(suggestions))
                 .build();

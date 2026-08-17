@@ -33,13 +33,19 @@ public interface BaiTapRepository extends JpaRepository<BaiTap, Long> {
     List<BaiTap> findByChiTietDangBaiMonHoc(@Param("lopHocId") Long lopHocId, @Param("giaoVienId") Long giaoVienId,
                                              @Param("hocKyId") Integer hocKyId, @Param("maMon") String maMon);
 
+    // Bài tự luận tự do (không có nội dung SGK đính kèm) lưu môn học trực tiếp ở BaiTap.monHoc.
+    @Query("SELECT b FROM BaiTap b WHERE b.lopHoc.lopHocId = :lopHocId AND b.giaoVien.giaoVienId = :giaoVienId " +
+           "AND b.hocKy.hocKyId = :hocKyId AND b.monHoc.maMon = :maMon")
+    List<BaiTap> findByDirectMonHoc(@Param("lopHocId") Long lopHocId, @Param("giaoVienId") Long giaoVienId,
+                                     @Param("hocKyId") Integer hocKyId, @Param("maMon") String maMon);
+
     // Dùng cho bảng điểm khi 1 giáo viên dạy nhiều môn cho cùng 1 lớp — nếu không lọc theo môn,
-    // bài tập của môn A sẽ bị tính lẫn vào môn B chỉ vì cùng giáo viên/lớp/học kỳ. Bài tự luận
-    // không đính kèm nội dung SGK nào sẽ không khớp môn nào — hạn chế sẵn có của mô hình dữ liệu.
+    // bài tập của môn A sẽ bị tính lẫn vào môn B chỉ vì cùng giáo viên/lớp/học kỳ.
     default List<BaiTap> findByLopHocAndGiaoVienAndHocKyAndMonHoc(Long lopHocId, Long giaoVienId, Integer hocKyId, String maMon) {
         Map<Long, BaiTap> combined = new LinkedHashMap<>();
         for (BaiTap b : findByLegacyDangBaiMonHoc(lopHocId, giaoVienId, hocKyId, maMon)) combined.put(b.getBaiTapId(), b);
         for (BaiTap b : findByChiTietDangBaiMonHoc(lopHocId, giaoVienId, hocKyId, maMon)) combined.put(b.getBaiTapId(), b);
+        for (BaiTap b : findByDirectMonHoc(lopHocId, giaoVienId, hocKyId, maMon)) combined.put(b.getBaiTapId(), b);
         return new ArrayList<>(combined.values());
     }
 }

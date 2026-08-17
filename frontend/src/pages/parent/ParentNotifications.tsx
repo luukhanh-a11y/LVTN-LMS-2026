@@ -31,9 +31,10 @@ export default function ParentNotifications() {
   };
 
   const handleMarkAllRead = async () => {
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     try {
-      await parentService.markAllNotificationsRead();
+      await parentService.markAllNotificationsRead(unreadIds);
     } catch (err) {
       console.error('Failed to mark all notifications read', err);
     }

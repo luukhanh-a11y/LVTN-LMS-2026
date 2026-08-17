@@ -46,7 +46,7 @@ export default function AdminClassDetail() {
       setClassInfo({
         name: classData.tenLop || `Lớp ${id}`,
         grade: classData.khoiLop,
-        teacher: classData.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
+        teacher: classData.tenGiaoVienChuNhiem || 'Chưa phân công',
         totalStudents: studentsData.length,
         status: classData.trangThai === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa',
         id: classData.lopHocId,
@@ -59,7 +59,7 @@ export default function AdminClassDetail() {
         maHs: s.maHocSinh || `HS${1000 + s.hocSinhId}`,
         name: s.fullName,
         dob: new Date(s.ngaySinh).toLocaleDateString('vi-VN'),
-        gender: s.gioiTinh === 'MALE' ? 'Nam' : 'Nữ'
+        gender: s.gioiTinh === 'NAM' ? 'Nam' : s.gioiTinh === 'NU' ? 'Nữ' : 'Khác'
       }));
       setStudents(mapped);
       

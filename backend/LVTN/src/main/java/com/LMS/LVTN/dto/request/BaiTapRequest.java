@@ -19,6 +19,9 @@ public class BaiTapRequest {
     private Long lopHocId;
     private Integer hocKyId;
 
+    // Chỉ dùng cho bài tự luận tự do (không có nội dung SGK để suy ra môn học)
+    private Integer monHocId;
+
     @NotBlank(message = "Tiêu đề bài tập không được để trống")
     private String tieuDe;
 

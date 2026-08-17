@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Search, Download, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
@@ -31,7 +32,64 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
   }, [classId]);
 
   const handleExport = () => {
-    toast.success('Đang xuất bảng điểm ra file Excel...');
+    if (!filteredStudents.length) {
+      toast.error('Không có dữ liệu để xuất.');
+      return;
+    }
+
+    const showAllSubjects = isHomeroom && selectedSubject === 'all';
+    let headers: string[];
+    let rows: (string | number)[][];
+
+    if (showAllSubjects) {
+      headers = ['STT', 'Mã HS', 'Họ và tên', ...subjectColumns, 'Trung bình Học kỳ', 'Tiến độ chung (%)', 'Đánh giá'];
+      rows = filteredStudents.map((student: any, index: number) => {
+        const subjectVals = subjectColumns.map(sub => {
+          const sa = student.homeroomGrades?.subjectAverages?.find((s: any) => s.subjectName === sub);
+          return sa?.finalSubjectScore !== undefined && sa?.finalSubjectScore !== null ? Number(sa.finalSubjectScore.toFixed(1)) : '-';
+        });
+        return [
+          index + 1,
+          student.studentCode,
+          student.fullName,
+          ...subjectVals,
+          student.homeroomGrades?.semesterAverage !== undefined && student.homeroomGrades?.semesterAverage !== null ? Number(student.homeroomGrades.semesterAverage.toFixed(1)) : '-',
+          student.homeroomGrades?.overallProgress !== undefined && student.homeroomGrades?.overallProgress !== null ? Math.round(student.homeroomGrades.overallProgress) : '-',
+          student.status,
+        ];
+      });
+    } else {
+      headers = ['STT', 'Mã HS', 'Họ và tên', 'TB Bài tập', 'Tiến độ học liệu (%)', 'Số bài tự luyện', 'TB Tự học', 'ĐTB Môn', 'Đánh giá'];
+      rows = filteredStudents.map((student: any, index: number) => {
+        const subject = student.subjectGrades?.find((s: any) => s.subjectName === selectedSubject) ?? student.subjectGrades?.[0];
+        return [
+          index + 1,
+          student.studentCode,
+          student.fullName,
+          subject?.averageAssignmentScore !== undefined && subject?.averageAssignmentScore !== null ? Number(subject.averageAssignmentScore.toFixed(1)) : '-',
+          subject?.selfStudyProgress !== undefined && subject?.selfStudyProgress !== null ? subject.selfStudyProgress : '-',
+          subject?.selfStudyCount ?? 0,
+          subject?.averageSelfStudyScore !== undefined && subject?.averageSelfStudyScore !== null ? Number(subject.averageSelfStudyScore.toFixed(1)) : '-',
+          subject?.finalSubjectScore !== undefined && subject?.finalSubjectScore !== null ? Number(subject.finalSubjectScore.toFixed(1)) : '-',
+          student.status,
+        ];
+      });
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = headers.map(() => ({ wch: 16 }));
+    const wb = XLSX.utils.book_new();
+    const sheetName = (showAllSubjects ? 'Tong hop' : (selectedSubject || 'Bang diem'))
+      .replace(/[\\/?*[\]:]/g, ' ')
+      .slice(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    const classPart = (reportData?.className || 'Lop').replace(/[^\p{L}\p{N}]+/gu, '_');
+    const subjectPart = showAllSubjects ? '' : `_${(selectedSubject || '').replace(/[^\p{L}\p{N}]+/gu, '_')}`;
+    const datePart = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `BangDiem_${classPart}${subjectPart}_${datePart}.xlsx`);
+
+    toast.success('Đã xuất bảng điểm ra file Excel!');
   };
 
   const isHomeroom = reportData?.isHomeroomTeacher || reportData?.homeroomTeacher;

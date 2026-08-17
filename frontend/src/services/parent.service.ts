@@ -21,17 +21,45 @@ export const parentService = {
     return response.data;
   },
 
+  // Không có /parents/me/notifications trên backend — dùng chung /hop-thu-thong-bao
+  // theo nguoiDungId, giống cách student.service.ts đã làm đúng.
   getNotifications: async () => {
-    const response = await api.get('/parents/me/notifications');
-    return response.data;
+    try {
+      const infoRes = await api.get('/nguoi-dung/my-info');
+      const nguoiDungId = (infoRes.data.data || infoRes.data).nguoiDungId;
+      if (!nguoiDungId) return [];
+      const [ghimRes, khongGhimRes] = await Promise.all([
+        api.get(`/hop-thu-thong-bao/nguoi-dung/${nguoiDungId}/ghim`),
+        api.get(`/hop-thu-thong-bao/nguoi-dung/${nguoiDungId}/khong-ghim`)
+      ]);
+
+      const mapNoti = (n: any, pinned: boolean) => ({
+        id: n.thongBaoId,
+        title: n.tieuDe,
+        content: n.noiDung,
+        createdAt: n.ngayDang || n.ngayTao,
+        date: (n.ngayDang || n.ngayTao) ? new Date(n.ngayDang || n.ngayTao).toLocaleDateString('vi-VN') : '',
+        read: !!n.daDoc || !!n.trangThaiDoc,
+        pinned,
+        type: n.loaiThongBao
+      });
+
+      const rawGhim = (ghimRes.data.data || ghimRes.data || []).map((n: any) => mapNoti(n, true));
+      const rawKhongGhim = (khongGhimRes.data.data || khongGhimRes.data || []).map((n: any) => mapNoti(n, false));
+      return [...rawGhim, ...rawKhongGhim];
+    } catch {
+      return [];
+    }
   },
 
   markNotificationRead: async (notificationId: number) => {
-    await api.post(`/parents/me/notifications/${notificationId}/read`);
+    await api.post(`/hop-thu-thong-bao/mark-as-read/${notificationId}`);
   },
 
-  markAllNotificationsRead: async () => {
-    await api.post('/parents/me/notifications/read-all');
+  markAllNotificationsRead: async (notificationIds: number[]) => {
+    await Promise.all(
+      notificationIds.map((id) => api.post(`/hop-thu-thong-bao/mark-as-read/${id}`))
+    );
   },
 
   getRewards: async (childId: number) => {
@@ -44,9 +72,16 @@ export const parentService = {
     return response.data;
   },
 
+  // Chưa có endpoint /parents/me/... cho kết quả cuối năm — dùng thẳng /ket-qua-cuoi-nam/hoc-sinh/{id}
+  // (giáo viên cũng dùng chung endpoint này). Trả về null nếu học sinh chưa được xét (bình thường
+  // giữa năm học) thay vì ném lỗi, để không làm hỏng phần điểm trung bình môn đã tải được.
   getKetQuaCuoiNam: async (childId: number) => {
-    const response = await api.get(`/parents/me/children/${childId}/ket-qua-cuoi-nam`);
-    return response.data;
+    try {
+      const response = await api.get(`/ket-qua-cuoi-nam/hoc-sinh/${childId}`);
+      return response.data?.data || null;
+    } catch {
+      return null;
+    }
   },
 
   getSubjects: async () => {

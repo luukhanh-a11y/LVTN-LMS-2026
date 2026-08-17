@@ -21,17 +21,17 @@ export default function ParentGrades() {
           setGradeData({
             semester: 'Học kỳ 1',
             subjects: dtb.map((d: any) => ({
-              id: d.monHocId,
+              id: d.maMon,
               name: d.tenMon,
-              scoreHomework: d.diem || 0,
-              scoreSelfStudy: d.diem || 0,
-              finalScore: d.diem || 0
+              scoreHomework: d.diemTrungBinhBaiTap || 0,
+              scoreSelfStudy: d.diemTrungBinhTuHoc || 0,
+              finalScore: d.diemTrungBinhChung || 0
             })),
             finalResult: kq ? {
               academic: kq.ketQuaHocTap || 'Chưa xét',
               conduct: kq.ketQuaRenLuyen || 'Chưa xét',
               decision: kq.quyetDinh === 'LEN_LOP' ? 'LÊN LỚP' : (kq.quyetDinh === 'O_LAI' ? 'Ở LẠI' : 'Chưa quyết định'),
-              teacher: kq.nguoiDanhGiaTieuDe || 'Giáo viên',
+              teacher: kq.tenGiaoVienXet || 'Giáo viên',
               note: kq.ghiChu || 'Không có nhận xét'
             } : null
           });

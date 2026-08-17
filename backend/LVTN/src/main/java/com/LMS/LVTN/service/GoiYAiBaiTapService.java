@@ -37,12 +37,12 @@ public class GoiYAiBaiTapService {
             "Đề xuất 1 bài tập bổ sung có độ khó cao hơn một chút dành cho học sinh khá giỏi, mở rộng thêm từ chủ đề."
     );
 
-    public List<String> generateExerciseSuggestions(Integer grade, int subjectId, String topicHint) {
+    public List<String> generateExerciseSuggestions(Integer grade, int subjectId, String topicHint, String lessonHint) {
         MonHoc subject = monHocRepository.findById(subjectId).orElse(null);
 
         List<String> suggestions = new ArrayList<>();
         for (String instruction : EXERCISE_INSTRUCTIONS) {
-            String prompt = buildPrompt(grade, subject, topicHint, instruction);
+            String prompt = buildPrompt(grade, subject, topicHint, lessonHint, instruction);
             ollamaClient.generate(CONTENT_PERSONA, prompt, 0.8)
                     .map(String::strip)
                     .filter(s -> !s.isBlank())
@@ -54,7 +54,7 @@ public class GoiYAiBaiTapService {
         return suggestions;
     }
 
-    private String buildPrompt(Integer grade, MonHoc subject, String topicHint, String instruction) {
+    private String buildPrompt(Integer grade, MonHoc subject, String topicHint, String lessonHint, String instruction) {
         StringBuilder sb = new StringBuilder();
         sb.append(instruction).append("\n\n");
         sb.append("Bối cảnh:\n");
@@ -66,6 +66,9 @@ public class GoiYAiBaiTapService {
         }
         if (topicHint != null && !topicHint.isBlank()) {
             sb.append("- Chủ đề bài giảng đang soạn: ").append(topicHint.strip()).append("\n");
+        }
+        if (lessonHint != null && !lessonHint.isBlank()) {
+            sb.append("- Tên bài học liên quan: ").append(lessonHint.strip()).append("\n");
         }
         return sb.toString();
     }

@@ -444,14 +444,22 @@ export default function GradingWorkspace() {
                   </div>
                 </div>
                 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowBadgeModal(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-white text-orange-600 hover:bg-orange-50 rounded-xl text-sm font-bold transition cursor-pointer border border-slate-200 shadow-sm"
                 >
                   <Medal className="w-4 h-4" /> Tặng huy hiệu
                 </button>
               </div>
+
+              {/* ĐỀ BÀI: nội dung/yêu cầu giáo viên đã giao, để tiện đối chiếu khi chấm */}
+              {activeAssignment?.moTa && (
+                <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                  <p className="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">Đề bài</p>
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{activeAssignment.moTa}</p>
+                </div>
+              )}
 
               {/* LUỒNG 0: BÀI H5P (Xem chi tiết từng câu trả lời đúng/sai của học sinh) */}
               {isH5P && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, ListChecks, ChevronRight, ChevronLeft, Search, CheckCircle2, Sparkles, LayoutTemplate } from 'lucide-react';
+import { FileText, ListChecks, ChevronRight, ChevronLeft, Search, CheckCircle2, Sparkles, LayoutTemplate, PenLine } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -23,22 +23,28 @@ export default function CreateAssignment() {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedMonHocId, setSelectedMonHocId] = useState('');
   const [deadline, setDeadline] = useState('');
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   // Step 2 Drill-down State
   const [sachList, setSachList] = useState<any[]>([]);
   const [selectedSachId, setSelectedSachId] = useState('');
-  
+
   const [chuDeList, setChuDeList] = useState<any[]>([]);
   const [selectedChuDeId, setSelectedChuDeId] = useState('');
-  
+
   const [baiHocList, setBaiHocList] = useState<any[]>([]);
   const [selectedBaiHocId, setSelectedBaiHocId] = useState('');
-  
+
   const [dangBaiList, setDangBaiList] = useState<any[]>([]);
-  
+
   // Map dangBaiId -> cheDoGiaoDien
   const [selectedDangBais, setSelectedDangBais] = useState<Record<number, string>>({});
+
+  // Bài tự luận tự do (không cần nội dung SGK) — xuất hiện ngay khi chọn xong Chủ đề
+  const [essayTopic, setEssayTopic] = useState('');
+  const [essayDescription, setEssayDescription] = useState('');
+  const [essaySuggestions, setEssaySuggestions] = useState<string[]>([]);
+  const [isGeneratingEssaySuggestion, setIsGeneratingEssaySuggestion] = useState(false);
+  const [isCreatingEssay, setIsCreatingEssay] = useState(false);
 
   // Popup xem toàn bộ nội dung H5P (câu hỏi + đáp án) khi bấm vào 1 câu H5P trong danh sách
   const [previewH5P, setPreviewH5P] = useState<{ contentId: string; title: string } | null>(null);
@@ -90,6 +96,20 @@ export default function CreateAssignment() {
     teacherService.getBaiHocByChuDe(Number(selectedChuDeId))
       .then(setBaiHocList).catch(() => setBaiHocList([]));
   }, [selectedChuDeId]);
+
+  // Tự điền "Chủ đề bài tự luận" từ Chủ đề SGK vừa chọn — giáo viên sửa lại được, không khoá cứng.
+  useEffect(() => {
+    if (!selectedChuDeId) {
+      setEssayTopic('');
+      setEssayDescription('');
+      setEssaySuggestions([]);
+      return;
+    }
+    const chuDe = chuDeList.find(c => String(c.chuDeId) === String(selectedChuDeId));
+    setEssayTopic(chuDe?.tenChuDe || '');
+    setEssayDescription('');
+    setEssaySuggestions([]);
+  }, [selectedChuDeId, chuDeList]);
 
   const handleFetchQuestions = async () => {
     if (!selectedBaiHocId) {
@@ -170,33 +190,80 @@ export default function CreateAssignment() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleAISuggest = async () => {
-    if (!selectedClassId || !selectedMonHocId) {
-      toast.error('Vui lòng chọn Lớp và Môn học trước khi nhờ AI gợi ý!');
+  const handleGenerateEssaySuggestion = async () => {
+    if (!essayTopic.trim()) {
+      toast.error('Vui lòng nhập Chủ đề bài tự luận trước khi nhờ AI gợi ý!');
       return;
     }
 
-    const loadingToast = toast.loading('🤖 AI đang phân tích chương trình học...', {
+    setIsGeneratingEssaySuggestion(true);
+    const loadingToast = toast.loading('🤖 AI đang soạn gợi ý đề bài...', {
       style: { minWidth: '250px' }
     });
 
     try {
       const currentClass = classes.find(c => String(c.id) === String(selectedClassId));
-      
+      const selectedBaiHoc = baiHocList.find(b => String(b.baiHocId) === String(selectedBaiHocId));
+
       const response = await teacherService.generateExerciseSuggestions({
         grade: currentClass?.grade,
-        subjectId: Number(selectedMonHocId),
+        subjectId: selectedMonHocId ? Number(selectedMonHocId) : undefined,
+        topicHint: essayTopic.trim(),
+        lessonHint: selectedBaiHoc?.tenBaiHoc,
       });
 
       if (response && response.suggestions && response.suggestions.length > 0) {
-        setAiSuggestions(response.suggestions);
-        toast.success('AI đã đưa ra gợi ý tiêu đề!', { id: loadingToast });
+        setEssaySuggestions(response.suggestions);
+        toast.success('AI đã đưa ra gợi ý đề bài!', { id: loadingToast });
       } else {
         toast.error('AI không tìm thấy gợi ý nào phù hợp.', { id: loadingToast });
       }
     } catch (error) {
       console.error('AI Suggestion Error:', error);
       toast.error('Lỗi kết nối AI. Vui lòng thử lại sau.', { id: loadingToast });
+    } finally {
+      setIsGeneratingEssaySuggestion(false);
+    }
+  };
+
+  const handleCreateEssayAssignment = async () => {
+    if (!essayTopic.trim()) {
+      toast.error('Vui lòng nhập Chủ đề bài tự luận!');
+      return;
+    }
+    if (!profile?.giaoVienId || !selectedClassId || !deadline) {
+      toast.error('Thiếu thông tin Lớp/Hạn nộp — vui lòng quay lại Bước 1.');
+      return;
+    }
+
+    setIsCreatingEssay(true);
+    try {
+      const payload = {
+        baiTap: {
+          giaoVienId: profile.giaoVienId,
+          lopHocId: Number(selectedClassId),
+          hocKyId: currentHocKyId,
+          monHocId: selectedMonHocId ? Number(selectedMonHocId) : undefined,
+          tieuDe: essayTopic.trim(),
+          moTa: essayDescription.trim() || `Các con hãy viết một đoạn văn ngắn về chủ đề "${essayTopic.trim()}".`,
+          loaiBaiTap: 'TU_LUAN',
+          thoiDiemBatDau: new Date().toISOString().slice(0, 19),
+          deadline: new Date(deadline).toISOString().slice(0, 19),
+          soLanNopLaiToiDa: 3,
+          trangThai: 'DANG_MO'
+        },
+        danhSachChiTiet: []
+      };
+
+      await teacherService.createAssignment(payload);
+      toast.success('Đã tạo và giao bài tự luận thành công!');
+      setEssayTopic('');
+      setEssayDescription('');
+      setEssaySuggestions([]);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Lỗi khi tạo bài tự luận. Vui lòng thử lại.');
+    } finally {
+      setIsCreatingEssay(false);
     }
   };
 
@@ -208,11 +275,6 @@ export default function CreateAssignment() {
           <h2 className="text-2xl font-bold text-slate-900">Tạo bài tập mới</h2>
           <p className="text-sm text-slate-500 mt-1">Thiết lập bài tập và cá nhân hóa trải nghiệm học sinh.</p>
         </div>
-        {currentStep === 1 && (
-          <button onClick={handleAISuggest} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition font-medium shadow-sm cursor-pointer text-sm">
-            <Sparkles className="w-4 h-4" /> AI Gợi ý Đề bài
-          </button>
-        )}
       </div>
 
       <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
@@ -225,21 +287,6 @@ export default function CreateAssignment() {
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Tiêu đề bài tập <span className="text-red-500">*</span></label>
                   <input type="text" value={assignmentTitle} onChange={e => setAssignmentTitle(e.target.value)} placeholder="VD: Bài tập cuối tuần..." className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
-                  
-                  {aiSuggestions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {aiSuggestions.map((sug, idx) => (
-                        <button 
-                          type="button"
-                          key={idx} 
-                          onClick={() => setAssignmentTitle(sug)}
-                          className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-medium hover:bg-purple-100 transition cursor-pointer text-left"
-                        >
-                          ✨ {sug}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -317,6 +364,76 @@ export default function CreateAssignment() {
                   Lấy câu hỏi
                 </button>
               </div>
+
+              {/* Hoặc tạo bài tự luận tự do — không cần chọn Bài học/nội dung SGK nào, chỉ
+                  cần Chủ đề đã chọn ở trên để AI có ngữ cảnh gợi ý đề bài. */}
+              {selectedChuDeId && (
+                <div className="bg-white p-5 rounded-xl border border-purple-200 shadow-sm space-y-4">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <PenLine className="w-5 h-5 text-purple-600" />
+                    Hoặc tạo bài tự luận tự do (không cần chọn nội dung SGK)
+                  </h3>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Chủ đề bài tự luận</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={essayTopic}
+                        onChange={e => setEssayTopic(e.target.value)}
+                        placeholder="VD: Gia đình em"
+                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGenerateEssaySuggestion}
+                        disabled={isGeneratingEssaySuggestion}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition font-medium shadow-sm cursor-pointer text-sm disabled:opacity-50 shrink-0"
+                      >
+                        <Sparkles className="w-4 h-4" /> {isGeneratingEssaySuggestion ? 'Đang soạn...' : 'Gợi ý AI'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {essaySuggestions.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-500">Chọn 1 gợi ý để đổ vào ô mô tả bên dưới:</label>
+                      <div className="space-y-2">
+                        {essaySuggestions.map((sug, idx) => (
+                          <button
+                            type="button"
+                            key={idx}
+                            onClick={() => setEssayDescription(sug)}
+                            className="w-full text-left px-3 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-sm hover:bg-purple-100 transition cursor-pointer"
+                          >
+                            ✨ {sug}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Mô tả / yêu cầu bài tự luận</label>
+                    <textarea
+                      value={essayDescription}
+                      onChange={e => setEssayDescription(e.target.value)}
+                      placeholder="Chọn 1 gợi ý AI ở trên, hoặc tự gõ yêu cầu cho học sinh..."
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none bg-white resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCreateEssayAssignment}
+                    disabled={isCreatingEssay}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white font-medium hover:bg-purple-700 rounded-lg transition shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    <PenLine className="w-4 h-4" /> {isCreatingEssay ? 'Đang tạo...' : 'Tạo & Giao bài tự luận'}
+                  </button>
+                </div>
+              )}
 
               {/* Danh sách câu hỏi và Cấu hình Giao diện */}
               <div className="space-y-6">

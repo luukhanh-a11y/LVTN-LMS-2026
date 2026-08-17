@@ -201,17 +201,17 @@ export default function AdminThongBao() {
         <CardContent className="p-0">
           <div className="divide-y divide-slate-100">
             {thongBaoList.map((tb) => (
-              <div key={tb.id} className={`group p-6 hover:bg-slate-50/50 transition-colors ${tb.ghim ? 'bg-amber-50/20' : ''}`}>
+              <div key={tb.thongBaoId} className={`group p-6 hover:bg-slate-50/50 transition-colors ${tb.laGhim ? 'bg-amber-50/20' : ''}`}>
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-slate-900 text-lg">{tb.tieuDe}</h3>
-                      {tb.ghim && (
+                      {tb.laGhim && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
                           <Pin className="w-3 h-3 mr-1" /> Đã ghim
                         </span>
                       )}
-                      {new Date(tb.ngayTao).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
+                      {new Date(tb.ngayDang).getTime() > Date.now() - 24 * 60 * 60 * 1000 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                           Mới
                         </span>
@@ -219,7 +219,7 @@ export default function AdminThongBao() {
                     </div>
                     <p className="text-sm text-slate-600 line-clamp-2">{tb.noiDung}</p>
                     <div className="flex items-center gap-4 text-xs font-medium text-slate-500 pt-1">
-                      <span>{new Date(tb.ngayTao).toLocaleDateString('vi-VN')} {new Date(tb.ngayTao).toLocaleTimeString('vi-VN')}</span>
+                      <span>{new Date(tb.ngayDang).toLocaleDateString('vi-VN')} {new Date(tb.ngayDang).toLocaleTimeString('vi-VN')}</span>
                       <span>•</span>
                       <span>Đến: {tb.loaiNguoiNhan === 'TAT_CA' ? 'Toàn trường' : tb.loaiNguoiNhan === 'GIAO_VIEN' ? 'Giáo viên' : tb.loaiNguoiNhan === 'HOC_SINH' ? 'Học sinh' : 'Phụ huynh'}</span>
                       {tb.dinhKem && (
@@ -239,10 +239,10 @@ export default function AdminThongBao() {
                             tieuDe: tb.tieuDe,
                             noiDung: tb.noiDung,
                             dinhKem: tb.dinhKem || '',
-                            ghim: !!tb.ghim,
+                            ghim: !!tb.laGhim,
                             loaiNguoiNhan: tb.loaiNguoiNhan || 'TAT_CA'
                           });
-                          setEditingId(tb.thongBaoId || tb.id);
+                          setEditingId(tb.thongBaoId);
                           setIsEditorOpen(true);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
@@ -252,7 +252,7 @@ export default function AdminThongBao() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDelete(tb.thongBaoId || tb.id)}
+                        onClick={() => handleDelete(tb.thongBaoId)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                         title="Xóa"
                       >

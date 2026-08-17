@@ -7,4 +7,5 @@ public class GoiYAiBaiTapRequest {
     private Integer grade;
     private Short subjectId;
     private String topicHint;
+    private String lessonHint;
 }

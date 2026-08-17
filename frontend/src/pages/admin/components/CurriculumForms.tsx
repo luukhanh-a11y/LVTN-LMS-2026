@@ -206,9 +206,9 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          <Input label="ID Ngoại (Hệ thống khác)" type="number" value={bookIdNgoai} onChange={e => setBookIdNgoai(e.target.value)} placeholder="VD: 407" />
-          <Input label="Tổng số trang" type="number" value={tongSoTrang} onChange={e => setTongSoTrang(e.target.value)} placeholder="VD: 120" />
-          <Input label="Năm xuất bản" type="number" value={namXuatBan} onChange={e => setNamXuatBan(e.target.value)} placeholder="VD: 2024" />
+          <Input label="ID Ngoại (Hệ thống khác)" type="number" value={bookIdNgoai} onChange={e => setBookIdNgoai(e.target.value === '' ? '' : Number(e.target.value))} placeholder="VD: 407" />
+          <Input label="Tổng số trang" type="number" value={tongSoTrang} onChange={e => setTongSoTrang(e.target.value === '' ? '' : Number(e.target.value))} placeholder="VD: 120" />
+          <Input label="Năm xuất bản" type="number" value={namXuatBan} onChange={e => setNamXuatBan(e.target.value === '' ? '' : Number(e.target.value))} placeholder="VD: 2024" />
         </div>
 
         <Input label="Bản quyền" value={banQuyen} onChange={e => setBanQuyen(e.target.value)} placeholder="VD: Nhà xuất bản Giáo dục" />
@@ -339,9 +339,9 @@ export function CreateChuDeModal({ isOpen, onClose, onSuccess, sachId, tenSach, 
         <Input label="Đường dẫn (Slug)" value={slug} onChange={e => setSlug(e.target.value)} placeholder="VD: chu-de-1-phep-cong" />
 
         <div className="grid grid-cols-3 gap-4">
-          <Input label="Số thứ tự" type="number" value={soThuTu} onChange={e => setSoThuTu(e.target.value)} />
-          <Input label="Trang bắt đầu" type="number" value={soTrang} onChange={e => setSoTrang(e.target.value)} />
-          <Input label="ID Ngoại (Mục lục)" type="number" value={bookIndexIdNgoai} onChange={e => setBookIndexIdNgoai(e.target.value)} />
+          <Input label="Số thứ tự" type="number" value={soThuTu} onChange={e => setSoThuTu(e.target.value === '' ? '' : Number(e.target.value))} />
+          <Input label="Trang bắt đầu" type="number" value={soTrang} onChange={e => setSoTrang(e.target.value === '' ? '' : Number(e.target.value))} />
+          <Input label="ID Ngoại (Mục lục)" type="number" value={bookIndexIdNgoai} onChange={e => setBookIndexIdNgoai(e.target.value === '' ? '' : Number(e.target.value))} />
         </div>
 
         {isEdit && (
@@ -434,9 +434,9 @@ export function CreateBaiHocModal({ isOpen, onClose, onSuccess, chuDeId, tenChuD
         <Input label="Đường dẫn (Slug)" value={slug} onChange={e => setSlug(e.target.value)} placeholder="VD: bai-1-so-0" />
 
         <div className="grid grid-cols-3 gap-4">
-          <Input label="Số thứ tự" type="number" value={soThuTu} onChange={e => setSoThuTu(e.target.value)} />
-          <Input label="Trang bắt đầu" type="number" value={soTrang} onChange={e => setSoTrang(e.target.value)} />
-          <Input label="ID Ngoại (Mục lục)" type="number" value={bookIndexIdNgoai} onChange={e => setBookIndexIdNgoai(e.target.value)} />
+          <Input label="Số thứ tự" type="number" value={soThuTu} onChange={e => setSoThuTu(e.target.value === '' ? '' : Number(e.target.value))} />
+          <Input label="Trang bắt đầu" type="number" value={soTrang} onChange={e => setSoTrang(e.target.value === '' ? '' : Number(e.target.value))} />
+          <Input label="ID Ngoại (Mục lục)" type="number" value={bookIndexIdNgoai} onChange={e => setBookIndexIdNgoai(e.target.value === '' ? '' : Number(e.target.value))} />
         </div>
 
         {isEdit && (

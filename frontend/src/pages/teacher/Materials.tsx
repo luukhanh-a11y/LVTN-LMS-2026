@@ -23,7 +23,7 @@ export default function Materials() {
 
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -41,10 +41,10 @@ export default function Materials() {
       setSelectedBook(null);
       return;
     }
-    
+
     // Lấy tất cả các lớp thuộc Khối đang chọn
     const classesInGrade = classes.filter(c => c.grade === selectedGrade);
-    
+
     // Gom tất cả các môn học mà giáo viên dạy trong toàn bộ các lớp của Khối này
     const subjectsMap = new Map();
     classesInGrade.forEach(c => {
@@ -58,7 +58,7 @@ export default function Materials() {
     });
 
     const subjects = Array.from(subjectsMap.values());
-    
+
     if (subjects.length === 0) {
       setBooks([]);
       setSelectedBook(null);
@@ -66,7 +66,7 @@ export default function Materials() {
     }
 
     teacherService.getMyTeacherProfile().then(profile => {
-      const promises = subjects.map((subj: any) => 
+      const promises = subjects.map((subj: any) =>
         teacherService.getSachBaiTapTheoPhanCong({
           giaoVienId: profile.giaoVienId,
           lopHocId: subj.lopHocId,
@@ -81,10 +81,10 @@ export default function Materials() {
       return Promise.all(promises);
     }).then(results => {
       const allBooks = results.flat();
-      
+
       // Loại bỏ các sách trùng lặp (vì 1 sách có thể được fetch nhiều lần nếu có nhiều lớp học cùng môn)
       const uniqueBooks = Array.from(new Map(allBooks.map(b => [b.sachId || b.id, b])).values());
-      
+
       setBooks(uniqueBooks);
       if (uniqueBooks.length > 0) setSelectedBook(uniqueBooks[0].sachId || uniqueBooks[0].id);
       else setSelectedBook(null);
@@ -124,23 +124,23 @@ export default function Materials() {
     }
     setLoading(true);
     let cancelled = false;
-    
+
     Promise.all([
       teacherService.getDangBaiByBaiHoc(selectedLesson),
       teacherService.getMyTeacherProfile().then(profile => teacherService.getMyMaterials(profile.giaoVienId))
     ])
-    .then(([heThongData, cuaToiData]) => {
-      if (cancelled) return;
-      const filteredCuaToi = cuaToiData.filter((m: any) => Number(m.baiHocId) === Number(selectedLesson) && m.nguonGoc === 'GIAO_VIEN_BO_SUNG');
-      
-      // Combine and prevent duplicates just in case
-      const existingIds = new Set(heThongData.map((m: any) => m.dangBaiId || m.id));
-      const additionalMaterials = filteredCuaToi.filter((m: any) => !existingIds.has(m.dangBaiId || m.id));
-      
-      setMaterials([...heThongData, ...additionalMaterials]);
-    })
-    .catch(console.error)
-    .finally(() => { if (!cancelled) setLoading(false); });
+      .then(([heThongData, cuaToiData]) => {
+        if (cancelled) return;
+        const filteredCuaToi = cuaToiData.filter((m: any) => Number(m.baiHocId) === Number(selectedLesson) && m.nguonGoc === 'GIAO_VIEN_BO_SUNG');
+
+        // Combine and prevent duplicates just in case
+        const existingIds = new Set(heThongData.map((m: any) => m.dangBaiId || m.id));
+        const additionalMaterials = filteredCuaToi.filter((m: any) => !existingIds.has(m.dangBaiId || m.id));
+
+        setMaterials([...heThongData, ...additionalMaterials]);
+      })
+      .catch(console.error)
+      .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
   }, [selectedLesson]);
@@ -151,7 +151,7 @@ export default function Materials() {
   });
 
   const getQuestionIcon = (type: string) => {
-    switch(type) {
+    switch (type) {
       case 'TRAC_NGHIEM': return <HelpCircle className="w-5 h-5 text-blue-500" />;
       case 'NOI_CAP': return <Layers className="w-5 h-5 text-purple-500" />;
       case 'TU_LUAN': return <BookOpen className="w-5 h-5 text-orange-500" />;
@@ -190,7 +190,7 @@ export default function Materials() {
                 {m.loaiNoiDung === 'H5P' ? (
                   <p className="text-purple-700 font-medium">🎮 Nội dung tương tác H5P — bấm để xem chi tiết.</p>
                 ) : (
-                <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
+                  <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
                 )}
                 {m.loaiNoiDung !== 'H5P' && cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
                   <ul className="mt-2 space-y-1">
@@ -199,7 +199,7 @@ export default function Materials() {
                       const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
                       const isCorrect = dapAnChuan !== null && (
                         (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                        (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) || 
+                        (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) ||
                         (String(dapAnChuan) === String(val))
                       );
                       return (
@@ -247,14 +247,14 @@ export default function Materials() {
       </div>
 
       <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm flex overflow-hidden">
-        
+
         {/* Sidebar Bộ lọc */}
         <div className="w-80 border-r border-slate-200 bg-slate-50 p-6 flex flex-col gap-6 overflow-y-auto">
-          
+
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">1. Khối</label>
-            <select 
-              value={selectedGrade || ''} 
+            <select
+              value={selectedGrade || ''}
               onChange={(e) => setSelectedGrade(Number(e.target.value))}
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
             >
@@ -265,8 +265,8 @@ export default function Materials() {
 
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700">2. Sách bài tập</label>
-            <select 
-              value={selectedBook || ''} 
+            <select
+              value={selectedBook || ''}
               onChange={(e) => setSelectedBook(Number(e.target.value))}
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
             >
@@ -279,7 +279,7 @@ export default function Materials() {
             <label className="text-sm font-semibold text-slate-700">3. Chủ đề</label>
             <div className="flex flex-col gap-2">
               {topics.map(t => (
-                <button 
+                <button
                   key={t.chuDeId || t.id}
                   type="button"
                   onClick={() => setSelectedTopic(t.chuDeId || t.id)}
@@ -298,7 +298,7 @@ export default function Materials() {
             <label className="text-sm font-semibold text-slate-700">4. Bài học</label>
             <div className="flex flex-col gap-2">
               {lessons.map(l => (
-                <button 
+                <button
                   key={l.baiHocId || l.id}
                   type="button"
                   onClick={() => setSelectedLesson(l.baiHocId || l.id)}
@@ -323,19 +323,19 @@ export default function Materials() {
             </h3>
             <div className="relative w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Tìm kiếm..." 
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" 
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>
-          
+
           <div className="p-6 flex-1 overflow-y-auto space-y-4">
             {loading ? (
-               <div className="text-center py-12 text-slate-500">Đang tải dữ liệu...</div>
+              <div className="text-center py-12 text-slate-500">Đang tải dữ liệu...</div>
             ) : filteredMaterials.map(renderMaterialCard)}
 
             {!loading && filteredMaterials.length === 0 && (

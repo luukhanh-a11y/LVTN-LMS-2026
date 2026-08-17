@@ -64,6 +64,17 @@ export const studentService = {
         try {
           const btRes = await api.get(`/bai-tap/lop-hoc/${lopHocId}`);
           let allTasks = (btRes.data.data || btRes.data || []).filter((t: any) => t.trangThai === 'DANG_MO' || !t.trangThai);
+          
+          let mySubmissions: any[] = [];
+          const hsId = hoSo.hocSinhId || hoSo.id || hoSo.nguoiDungId;
+          if (hsId) {
+            try {
+              const subRes = await api.get(`/bai-nop/hoc-sinh/${hsId}`);
+              mySubmissions = subRes.data.data || subRes.data || [];
+            } catch (e) {}
+          }
+          const submittedIds = new Set(mySubmissions.map((s: any) => s.baiTapId));
+          allTasks = allTasks.filter((t: any) => !submittedIds.has(t.baiTapId));
           allTasks.sort((a: any, b: any) => (b.baiTapId || 0) - (a.baiTapId || 0));
           const rawTasks = allTasks.slice(0, 5);
           upcomingTasks = rawTasks.map((t: any) => {
@@ -215,17 +226,32 @@ export const studentService = {
     try {
       const btRes = await api.get(`/bai-tap/lop-hoc/${hoSo.lopHocId}`);
       const rawTasks = btRes.data.data || btRes.data || [];
-      return rawTasks.map((t: any) => ({
-        id: t.baiTapId || t.id,
-        title: t.tenBaiTap || t.tieuDe,
-        dueDate: t.deadline || t.hanNop,
-        assignedDate: t.thoiDiemBatDau || t.ngayTao,
-        xpReward: t.xpReward || 0,
-        completed: false,
-        subjectName: t.monHoc?.tenMon,
-        type: t.loaiBaiTap || 'TRAC_NGHIEM',
-        status: t.trangThai || t.status
-      }));
+
+      let mySubmissions: any[] = [];
+      const hsId = hoSo.hocSinhId || hoSo.id || hoSo.nguoiDungId;
+      if (hsId) {
+        try {
+          const subRes = await api.get(`/bai-nop/hoc-sinh/${hsId}`);
+          mySubmissions = subRes.data.data || subRes.data || [];
+        } catch (e) {}
+      }
+      const submittedMap = new Map(mySubmissions.map((s: any) => [s.baiTapId, s]));
+
+      return rawTasks.map((t: any) => {
+        const sub = submittedMap.get(t.baiTapId || t.id);
+        const isCompleted = !!sub;
+        return {
+          id: t.baiTapId || t.id,
+          title: t.tenBaiTap || t.tieuDe,
+          dueDate: t.deadline || t.hanNop,
+          assignedDate: t.thoiDiemBatDau || t.ngayTao,
+          xpReward: t.xpReward || 0,
+          completed: isCompleted,
+          subjectName: t.monHoc?.tenMon,
+          type: t.loaiBaiTap || 'TRAC_NGHIEM',
+          status: isCompleted ? (sub.trangThai || 'DA_NOP') : (t.trangThai || t.status)
+        };
+      });
     } catch (err) {
       return [];
     }

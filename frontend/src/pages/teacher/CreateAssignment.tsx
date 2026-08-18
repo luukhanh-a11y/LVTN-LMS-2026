@@ -120,9 +120,24 @@ export default function CreateAssignment() {
       return;
     }
     try {
-      const questions = await teacherService.getDangBaiByBaiHoc(Number(selectedBaiHocId));
+      const allQuestions = await teacherService.getDangBaiByBaiHoc(Number(selectedBaiHocId));
+      // Dạng bài Tự luận không có đáp án chuẩn để hệ thống tự chấm — nếu lẫn vào bài tập
+      // "Chọn câu hỏi" (luôn bị gán loaiBaiTap=TRAC_NGHIEM), backend sẽ tự cho câu này 0 điểm
+      // và không có cách chấm tay đúng nghĩa cho nó. Câu tự luận phải đi qua nút "Tạo bài tự
+      // luận tự do" riêng bên dưới, không được chọn chung ở đây.
+      const questions = allQuestions.filter((q: any) => {
+        try {
+          const parsed = q.duLieuGame ? JSON.parse(q.duLieuGame) : {};
+          return parsed.loai !== 'TU_LUAN';
+        } catch {
+          return true;
+        }
+      });
+      if (questions.length < allQuestions.length) {
+        toast('Đã ẩn các câu Tự luận — hãy dùng nút "Tạo bài tự luận tự do" bên dưới cho loại câu này.', { icon: 'ℹ️' });
+      }
       setDangBaiList(questions);
-      
+
       setAllFetchedQuestions(prev => {
         const next = { ...prev };
         questions.forEach((q: any) => {
@@ -285,6 +300,43 @@ export default function CreateAssignment() {
     } finally {
       setIsCreatingEssay(false);
     }
+  };
+
+  // Mỗi giao diện game chỉ được lập trình sẵn cho 1 loại câu hỏi nhất định (xem switch
+  // renderGameByGiaoDien ở AssignmentQuizPlayer.tsx / LessonPlayer.tsx) — Đào Vàng, Đuổi Bắt,
+  // Ếch qua sông, Bắn bóng bay, Ai là triệu phú, Thu hoạch nông sản chỉ chạy với Trắc nghiệm;
+  // Ong Tìm Mật chỉ chạy với Điền khuyết; Phân Loại/Kéo thả chỉ chạy với Nối cặp. Chọn nhầm tổ
+  // hợp (vd Ếch qua sông cho câu Điền khuyết) khiến trang làm bài âm thầm rơi về form mặc định
+  // thay vì báo lỗi — nên chỉ liệt kê đúng lựa chọn hợp lệ theo loại câu hỏi thay vì hiện cả 9.
+  const getGiaoDienOptions = (q: any): { value: string; label: string }[] => {
+    let loai = '';
+    try {
+      loai = q.duLieuGame ? (JSON.parse(q.duLieuGame).loai || '') : '';
+    } catch { }
+
+    const macDinh = { value: 'MAC_DINH', label: 'Mặc định (Tiêu chuẩn)' };
+    if (loai === 'TRAC_NGHIEM') {
+      return [
+        macDinh,
+        { value: 'DAO_VANG', label: 'Đào Vàng' },
+        { value: 'DUOI_BAT', label: 'Đuổi Bắt' },
+        { value: 'THU_HOACH_NONG_SAN', label: 'Thu hoạch Nông sản' },
+        { value: 'ECH_QUA_SONG', label: 'Ếch qua sông' },
+        { value: 'BAN_BONG_BAY', label: 'Bắn bóng bay' },
+        { value: 'TRIEU_PHU', label: 'Ai là triệu phú' },
+      ];
+    }
+    if (loai === 'DIEN_KHUYET') {
+      return [macDinh, { value: 'ONG_TIM_MAT', label: 'Ong Tìm Mật' }];
+    }
+    if (loai === 'NOI_CAP') {
+      return [
+        macDinh,
+        { value: 'PHAN_LOAI', label: 'Phân Loại (Thùng rác)' },
+        { value: 'KEO_THA_GHEP_CAP', label: 'Kéo thả ghép cặp (nhiều cặp)' },
+      ];
+    }
+    return [macDinh];
   };
 
   // Render preview sống bằng đúng component học sinh dùng thật (thay vì dump chuỗi
@@ -554,21 +606,14 @@ export default function CreateAssignment() {
                                 <label className="text-xs font-semibold text-slate-600 mb-1.5 flex items-center gap-1.5">
                                   <LayoutTemplate className="w-3.5 h-3.5" /> Chế độ hiển thị
                                 </label>
-                                <select 
+                                <select
                                   value={selectedDangBais[q.dangBaiId]}
                                   onChange={e => setSelectedDangBais({ ...selectedDangBais, [q.dangBaiId]: e.target.value })}
                                   className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm bg-white focus:outline-none"
                                 >
-                                  <option value="MAC_DINH">Mặc định (Tiêu chuẩn)</option>
-                                  <option value="DAO_VANG">Đào Vàng</option>
-                                  <option value="DUOI_BAT">Đuổi Bắt</option>
-                                  <option value="THU_HOACH_NONG_SAN">Thu hoạch Nông sản</option>
-                                  <option value="ECH_QUA_SONG">Ếch qua sông</option>
-                                  <option value="BAN_BONG_BAY">Bắn bóng bay</option>
-                                  <option value="TRIEU_PHU">Ai là triệu phú</option>
-                                  <option value="ONG_TIM_MAT">Ong Tìm Mật</option>
-                                  <option value="PHAN_LOAI">Phân Loại (Thùng rác)</option>
-                                  <option value="KEO_THA_GHEP_CAP">Kéo thả ghép cặp (nhiều cặp)</option>
+                                  {getGiaoDienOptions(q).map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
                                 </select>
                               </div>
                             </div>

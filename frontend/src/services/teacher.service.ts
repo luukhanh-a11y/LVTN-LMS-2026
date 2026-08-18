@@ -405,8 +405,10 @@ export const teacherService = {
     // trả isHomeroomTeacher=false và subjectGrades rỗng dù giáo viên có dạy thật.
     const profile = await teacherService.getMyTeacherProfile();
 
-    // Default to current semester if not provided, assuming ID = 1 for now (or let backend handle if semesterId is null - wait, the API requires it)
-    const effectiveSemesterId = semesterId || 1; // You may want to fetch the active semester here or require the component to pass it.
+    // API bắt buộc phải có semesterId. Cả 2 nơi gọi hàm này (Gradebook.tsx, useReportsViewModel.ts)
+    // giờ đều truyền học kỳ hiện tại/đang chọn — fallback về 1 chỉ còn là lưới an toàn cuối cùng,
+    // không nên dựa vào nó (trước đây Gradebook.tsx không truyền gì nên luôn rơi vào đây).
+    const effectiveSemesterId = semesterId || 1;
 
     const response = await api.get('/gradebook/classes', {
       params: {

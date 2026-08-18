@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { teacherService } from '../../services/teacher.service';
+import { useAcademicStore } from '../../stores/useAcademicStore';
 
 export default function Gradebook({ embedded = false, classId: propClassId }: { embedded?: boolean, classId?: number }) {
   const { classId: paramClassId } = useParams();
@@ -14,12 +15,17 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
+  const { currentHocKyId } = useAcademicStore();
 
   useEffect(() => {
+    // Trước đây không truyền semesterId nên teacherService.getReports() luôn mặc định
+    // hocKyId=1 (HK1 năm học đầu tiên) — bảng điểm giáo viên hiện sai dữ liệu bất cứ khi
+    // nào trường đang ở học kỳ/năm học khác. Phải đợi currentHocKyId nạp xong rồi mới gọi.
+    if (!currentHocKyId) return;
     const fetchReports = async () => {
       setLoading(true);
       try {
-        const data = await teacherService.getReports(classId ? Number(classId) : undefined);
+        const data = await teacherService.getReports(classId ? Number(classId) : undefined, currentHocKyId);
         setReportData(data);
       } catch (err) {
         console.error(err);
@@ -29,7 +35,7 @@ export default function Gradebook({ embedded = false, classId: propClassId }: { 
       }
     };
     fetchReports();
-  }, [classId]);
+  }, [classId, currentHocKyId]);
 
   const handleExport = () => {
     if (!filteredStudents.length) {

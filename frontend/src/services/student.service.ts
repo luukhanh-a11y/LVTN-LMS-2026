@@ -328,7 +328,7 @@ export const studentService = {
     try {
       const tasks: any[] = await studentService.getAssignments();
       const pending = tasks
-        .filter((t) => t.id !== currentTaskId && t.status !== 'DA_NOP' && t.status !== 'DA_CHAM')
+        .filter((t) => t.id !== currentTaskId && (!t.completed || t.status === 'YC_LAM_LAI'))
         .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
 
       const next = pending[0];
@@ -959,8 +959,13 @@ export const studentService = {
       hocSinhId: hoSo.hocSinhId,
       chiTietBaiLam: JSON.stringify(baiLam)
     };
+    // BaiNopResponse có sẵn alias getScore()/getXpEarned()/getIsLate()/getStatus() dành riêng
+    // cho màn kết quả ở AssignmentQuizPlayer.tsx — nhưng backend luôn bọc trong ApiResponse
+    // {code, data}, nên phải bóc lớp .data ra thì các field đó mới nằm đúng chỗ result.score
+    // đọc; trước đây trả nguyên response.data khiến result.score/xpEarned luôn undefined,
+    // học sinh làm bài (kể cả được chấm điểm ngay) vẫn không thấy điểm hiện ra.
     const response = await api.post(`/bai-nop`, payload);
-    return response.data;
+    return response.data?.data || response.data;
   },
 
   getEssayAssignmentDetail: async (assignmentId: number) => {

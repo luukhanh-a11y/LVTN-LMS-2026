@@ -93,25 +93,38 @@ public class BaiNopService {
                 baiNop.setXpNhanDuoc((short) 0);
             }
         } else {
-            baiNop.setTrangThai(TrangThaiBaiNop.DA_CHAM);
+            List<ChiTietBaiTap> chiTietList = chiTietBaiTapRepository.findByBaiTap_BaiTapIdOrderByThuTuAsc(baiTap.getBaiTapId());
+            // Bài tập "Chọn câu hỏi" có thể bị trộn lẫn 1 câu Tự luận cùng các câu tự chấm được
+            // (Trắc nghiệm/Nối cặp/Điền khuyết) — dạng bài Tự luận không có đáp án chuẩn để so
+            // khớp, nên gameService.chamDiem() luôn trả về 0 cho câu đó nếu tính chung, kéo điểm
+            // trung bình sai VÀ đóng luôn bài nộp thành DA_CHAM khiến GV không bao giờ thấy để
+            // chấm tay câu tự luận (nội dung bài làm vẫn được lưu trong chiTietBaiLam nhưng bị
+            // "mất tích" khỏi luồng chấm điểm). Phải loại câu tự luận khỏi điểm tự động và để cả
+            // bài nộp chờ GV chấm tay khi có ít nhất 1 câu như vậy.
+            boolean coCauTuLuan = chiTietList != null && chiTietList.stream().anyMatch(this::laCauTuLuan);
+
             if (baiNop.getChiTietBaiLam() != null && !baiNop.getChiTietBaiLam().isEmpty()) {
                 try {
-                    List<ChiTietBaiTap> chiTietList = chiTietBaiTapRepository.findByBaiTap_BaiTapIdOrderByThuTuAsc(baiTap.getBaiTapId());
                     if (chiTietList != null && !chiTietList.isEmpty()) {
                        JsonNode baiLamNode = objectMapper.readTree(baiNop.getChiTietBaiLam());
                        JsonNode mapBaiLam = baiLamNode.has("dapAnHocSinh") ? baiLamNode.get("dapAnHocSinh") : (baiLamNode.has("baiLamNhieuCau") ? baiLamNode.get("baiLamNhieuCau") : baiLamNode);
 
                         BigDecimal tongDiem = BigDecimal.ZERO;
+                        int soCauTuDong = 0;
                         for (ChiTietBaiTap ct : chiTietList) {
+                            if (laCauTuLuan(ct)) continue;
                             String idCauHoi = ct.getDangBai().getDangBaiId().toString();
                             String dapAnChuan = ct.getDangBai().getDapAnChuan();
                             JsonNode baiLamItem = (mapBaiLam != null && mapBaiLam.has(idCauHoi)) ? mapBaiLam.get(idCauHoi) : null;
                             String subBaiLamJson = (baiLamItem != null) ? (baiLamItem.isTextual() ? "{\"dapAnDungId\":\"" + baiLamItem.asText() + "\"}" : baiLamItem.toString()) : "{}";
                             BigDecimal diemSub = gameService.chamDiem(dapAnChuan, subBaiLamJson);
                             tongDiem = tongDiem.add(diemSub);
+                            soCauTuDong++;
                         }
-                        BigDecimal diem = tongDiem.divide(new BigDecimal(chiTietList.size()), 2, RoundingMode.HALF_UP);
-                        baiNop.setDiemTuDong(diem);
+                        if (soCauTuDong > 0) {
+                            BigDecimal diem = tongDiem.divide(new BigDecimal(soCauTuDong), 2, RoundingMode.HALF_UP);
+                            baiNop.setDiemTuDong(diem);
+                        }
                     } else if (baiTap.getDangBai() != null && baiTap.getDangBai().getDapAnChuan() != null) {
                         BigDecimal diem = gameService.chamDiem(baiTap.getDangBai().getDapAnChuan(), baiNop.getChiTietBaiLam());
                         baiNop.setDiemTuDong(diem);
@@ -120,11 +133,18 @@ public class BaiNopService {
                     // Log warning and proceed
                 }
             }
-            if (baiNop.getDiemTuDong() == null) {
-                baiNop.setDiemTuDong(BigDecimal.ZERO);
+
+            if (coCauTuLuan) {
+                baiNop.setTrangThai(TrangThaiBaiNop.CHUA_CHAM);
+                baiNop.setXpNhanDuoc((short) 0);
+            } else {
+                baiNop.setTrangThai(TrangThaiBaiNop.DA_CHAM);
+                if (baiNop.getDiemTuDong() == null) {
+                    baiNop.setDiemTuDong(BigDecimal.ZERO);
+                }
+                short xp = (short) (baiNop.getDiemTuDong().doubleValue() * 10);
+                baiNop.setXpNhanDuoc(xp > 0 ? xp : (short) 0);
             }
-            short xp = (short) (baiNop.getDiemTuDong().doubleValue() * 10);
-            baiNop.setXpNhanDuoc(xp > 0 ? xp : (short) 0);
         }
 
         BaiNop savedBaiNop = baiNopRepository.save(baiNop);
@@ -138,6 +158,19 @@ public class BaiNopService {
         }
 
         return baiNopMapper.toResponse(savedBaiNop);
+    }
+
+    // Dạng bài Tự luận không có đáp án chuẩn khách quan (dapAnChuan rỗng "{}") — nhận diện qua
+    // "loai" lưu trong duLieuGame, dùng để loại câu này khỏi vòng lặp tự chấm điểm ở create().
+    private boolean laCauTuLuan(ChiTietBaiTap ct) {
+        try {
+            String duLieuGame = ct.getDangBai() != null ? ct.getDangBai().getDuLieuGame() : null;
+            if (duLieuGame == null || duLieuGame.isBlank()) return false;
+            JsonNode node = objectMapper.readTree(duLieuGame);
+            return node.has("loai") && "TU_LUAN".equals(node.get("loai").asText());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // chiTietBaiLam của bài nộp H5P là JSON {rawScore, maxScore, completed, interactionDetails}

@@ -248,7 +248,7 @@ export default function StudentAssignments() {
                         <h3 className="text-lg font-bold text-slate-800 mb-1">{task.title}</h3>
                         
                         <div className="flex flex-wrap items-center text-sm font-medium gap-y-1">
-                          {task.status === 'DA_NOP' ? (
+                          {task.status !== 'YC_LAM_LAI' && task.completed ? (
                             <span className="text-student-success flex items-center"><CheckCircle className="w-4 h-4 mr-1"/> Đã nộp</span>
                           ) : task.isLate ? (
                             <span className="text-rose-600 flex items-center"><AlertCircle className="w-4 h-4 mr-1"/> Quá hạn nộp</span>
@@ -264,8 +264,10 @@ export default function StudentAssignments() {
                     </div>
 
                     <div className="flex justify-end">
-                      {task.status === 'DA_NOP' ? (
-                         <Button variant="outline" className="w-full md:w-auto border-slate-200 text-slate-600" disabled>Chờ chấm điểm</Button>
+                      {task.status !== 'YC_LAM_LAI' && task.completed ? (
+                         <Button variant="outline" className="w-full md:w-auto border-slate-200 text-slate-600" disabled>
+                           {task.status === 'DA_CHAM' ? 'Đã chấm điểm' : 'Chờ chấm điểm'}
+                         </Button>
                       ) : task.type === 'H5P' ? (
                          <Button
                            onClick={() => navigate(`/student/tasks/${task.id}/play`)}

@@ -148,7 +148,9 @@
       "Bash(echo \"BACKEND=$?\")",
       "Bash(\"/c/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe\" -uroot -proot -h127.0.0.1 -P3306 lms1 --default-character-set=utf8mb4 -e \"DESCRIBE sach;\")",
       "Bash(git check-ignore *)",
-      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -proot -e \"SELECT 1\")"
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -proot -e \"SELECT 1\")",
+      "Bash(git commit *)",
+      "Bash(xargs -I{} echo {})"
     ]
   }
 }

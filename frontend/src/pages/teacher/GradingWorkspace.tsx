@@ -37,10 +37,14 @@ export default function GradingWorkspace() {
   const [pendingByClass, setPendingByClass] = useState<Record<number, number>>({});
   const [h5pContentId, setH5pContentId] = useState<string | null>(null);
 
+  const refreshPendingCounts = () => {
+    teacherService.getPendingGradingCountByClass().then(setPendingByClass).catch(() => {});
+  };
+
   useEffect(() => {
     teacherService.getClasses({ onlyTeaching: true }).then(setClasses).catch(() => {});
     teacherService.getBadges().then(setBadges).catch(() => {});
-    teacherService.getPendingGradingCountByClass().then(setPendingByClass).catch(() => {});
+    refreshPendingCounts();
   }, []);
 
   useEffect(() => {
@@ -51,6 +55,9 @@ export default function GradingWorkspace() {
           setAssignments(sorted);
         })
         .catch(() => {});
+      // Bài nộp mới có thể vừa được học sinh gửi sau khi trang này đã tải — làm mới số đếm
+      // "chưa chấm" mỗi lần chọn lớp để badge không bị đứng im theo dữ liệu lúc mount.
+      refreshPendingCounts();
     } else {
       setAssignments([]);
     }
@@ -343,6 +350,7 @@ export default function GradingWorkspace() {
       // Refresh submissions
       const updatedSubmissions = await teacherService.getSubmissions(selectedAssignmentId!);
       setSubmissions(updatedSubmissions);
+      refreshPendingCounts();
     } catch (err) {
       toast.error('Có lỗi xảy ra khi chấm bài');
     }

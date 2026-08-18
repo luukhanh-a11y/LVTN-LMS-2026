@@ -27,14 +27,6 @@ public class OllamaClient {
 
     private static final String OLLAMA_URL = "http://localhost:11434/api/generate";
     public static final String DEFAULT_MODEL = "gemma3:4b";
-
-    // Văn phong dùng chung cho mọi tính năng AI trong hệ thống: giáo viên tiểu học
-    // Việt Nam, khích lệ, không chê nặng nề, trả lời đúng trọng tâm không lan man.
-    // Câu cấm chèn tiếng Anh được nói rõ 2 lần (cuối văn bản model hay "nghe" kỹ
-    // hơn) vì gemma3:4b (bản 4B tham số, quantize) thỉnh thoảng dính từ tiếng Anh
-    // giữa câu tiếng Việt dù đã dặn 1 lần — đây là hạn chế của model nhỏ, không có
-    // cách "huấn luyện lại" thực sự trên phần cứng hiện tại, chỉ có thể giảm tần
-    // suất bằng prompt chặt hơn + nhiệt độ thấp hơn + tự động thử lại (xem generate()).
     public static final String TEACHER_PERSONA = """
             Bạn là trợ lý hỗ trợ giáo viên tiểu học tại Việt Nam.
             Văn phong bắt buộc: gọi học sinh là "con", xưng "cô/thầy", nhẹ nhàng, khích lệ, mang tính xây dựng, không chê trách nặng nề.

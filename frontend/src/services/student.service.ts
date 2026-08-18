@@ -1,4 +1,5 @@
 import { api } from '../lib/axios';
+import { useAcademicStore } from '../stores/useAcademicStore';
 
 export interface Material {
   id: number;
@@ -21,21 +22,37 @@ export const studentService = {
     const chuDeRes = await api.get(`/chude/sach/${bookId}`);
     const chuDes = chuDeRes.data?.data || chuDeRes.data || [];
 
+    // 2b. Lấy tiến độ thật của học sinh để đánh dấu bài đã hoàn thành trên lộ trình
+    // (trước đây luôn hard-code 'CURRENT' cho mọi bài — không phản ánh bài nào đã xong).
+    let myProgress: any[] = [];
+    try {
+      const hsRes = await api.get('/hoso-hocsinh/my-profile');
+      const hoSo = hsRes.data?.data || hsRes.data;
+      if (hoSo?.hocSinhId) {
+        const tdRes = await api.get('/tien-do-hoc-sinh');
+        const allTd = tdRes.data?.data || tdRes.data || [];
+        myProgress = allTd.filter((p: any) => p.hocSinhId === hoSo.hocSinhId);
+      }
+    } catch (err) {}
+
     // 3. Lấy danh sách bài học cho từng chủ đề
     const roadMap = await Promise.all(
       chuDes.map(async (cd: any) => {
         const baiHocRes = await api.get(`/bai-hoc/chu-de/${cd.chuDeId}`);
         const baiHocs = baiHocRes.data?.data || baiHocRes.data || [];
-        
+
         return {
           id: cd.chuDeId,
           tenChuDe: cd.tenChuDe || cd.tieuDe,
           icon: '🔢', // TODO: Lấy icon thật nếu có
-          baiHoc: baiHocs.map((bh: any) => ({
-            id: bh.baiHocId,
-            tenBaiHoc: bh.tenBaiHoc || bh.tieuDe,
-            type: 'CURRENT' // TODO: Hiện tại mở khóa tất cả, chờ API bulk progress
-          }))
+          baiHoc: baiHocs.map((bh: any) => {
+            const daHoanThanh = myProgress.some((p: any) => p.baiHocId === bh.baiHocId && p.daHoanThanh === true);
+            return {
+              id: bh.baiHocId,
+              tenBaiHoc: bh.tenBaiHoc || bh.tieuDe,
+              type: daHoanThanh ? 'COMPLETED' : 'CURRENT'
+            };
+          })
         };
       })
     );
@@ -45,6 +62,25 @@ export const studentService = {
       tenSach: sach.tenSach || sach.tenMonHoc || 'Sách',
       chuDe: roadMap
     };
+  },
+
+  // Tìm bài học kế tiếp trong CÙNG 1 SÁCH (dùng cho luồng điều hướng qua Lộ trình sách/bookId
+  // — khác với getNextLessonId dựa trên subjectId của luồng Subject Tree cũ).
+  getNextLessonIdInBook: async (currentLessonId: number, bookId: number): Promise<number | null> => {
+    try {
+      const roadmap = await studentService.getBookRoadmap(bookId);
+      const allLessons: any[] = [];
+      (roadmap.chuDe || []).forEach((cd: any) => {
+        (cd.baiHoc || []).forEach((bh: any) => allLessons.push(bh));
+      });
+      const idx = allLessons.findIndex((l: any) => l.id === currentLessonId);
+      if (idx !== -1 && idx < allLessons.length - 1) {
+        return allLessons[idx + 1].id;
+      }
+      return null;
+    } catch (err) {
+      return null;
+    }
   },
   getMaterials: async (): Promise<Material[]> => {
     const response = await api.get<Material[]>('/hoc-lieu');
@@ -59,12 +95,14 @@ export const studentService = {
       }
       
       let upcomingTasks: any[] = [];
+      let gradedEssays: any[] = [];
       const lopHocId = hoSo.lopHocId;
       if (lopHocId) {
         try {
           const btRes = await api.get(`/bai-tap/lop-hoc/${lopHocId}`);
-          let allTasks = (btRes.data.data || btRes.data || []).filter((t: any) => t.trangThai === 'DANG_MO' || !t.trangThai);
-          
+          const allTasksRaw = btRes.data.data || btRes.data || [];
+          let allTasks = allTasksRaw.filter((t: any) => t.trangThai === 'DANG_MO' || !t.trangThai);
+
           let mySubmissions: any[] = [];
           const hsId = hoSo.hocSinhId || hoSo.id || hoSo.nguoiDungId;
           if (hsId) {
@@ -91,6 +129,29 @@ export const studentService = {
               loaiBaiTap: t.loaiBaiTap
             };
           });
+
+          // Bài tự luận đã được giáo viên chấm (có nhận xét) — chỉ TU_LUAN mới cần chấm tay,
+          // các dạng còn lại (trắc nghiệm/nối cặp/điền khuyết/H5P) đã tự chấm điểm ngay lúc
+          // nộp bài rồi nên không cần hiện lại ở đây. Dùng allTasksRaw (chưa lọc DANG_MO) để
+          // vẫn tra được loaiBaiTap kể cả khi bài tập đã đóng.
+          const taskById = new Map(allTasksRaw.map((t: any) => [t.baiTapId, t]));
+          gradedEssays = mySubmissions
+            .filter((s: any) => s.danhGiaId != null && taskById.get(s.baiTapId)?.loaiBaiTap === 'TU_LUAN')
+            .map((s: any) => {
+              const task = taskById.get(s.baiTapId);
+              return {
+                baiTapId: s.baiTapId,
+                baiNopId: s.baiNopId,
+                danhGiaId: s.danhGiaId,
+                title: task?.tenBaiTap || task?.tieuDe || s.tieuDeBaiTap || 'Bài tự luận',
+                diem: s.diemDanhGia,
+                xepLoai: s.xepLoaiDanhGia,
+                nhanXet: s.nhanXetDanhGia,
+                hanhDong: s.hanhDongDanhGia,
+                thoiDiemNop: s.thoiDiemNop
+              };
+            })
+            .sort((a: any, b: any) => (b.danhGiaId || 0) - (a.danhGiaId || 0));
         } catch (err) {
         }
       }
@@ -130,15 +191,13 @@ export const studentService = {
         }
       }
       
-      let currentHocKyId = 1;
-      try {
-        const hkRes = await api.get('/hoc-ky');
-        const listHk = hkRes.data?.data || hkRes.data || [];
-        if (listHk.length > 0) {
-          const hk = listHk.find((k: any) => k.soHocKy === 1 || k.hocKyId === 1) || listHk[0];
-          currentHocKyId = hk.hocKyId || hk.id || 1;
-        }
-      } catch (err) {}
+      // Học kỳ "hiện tại" PHẢI lấy từ CauHinhHeThong (qua useAcademicStore, được set sẵn
+      // lúc vào app) — trước đây code này tự tìm "hoc_ky có soHocKy=1" trong TOÀN BỘ danh
+      // sách học kỳ mọi năm học, nên dù trường đang ở học kỳ 2, sách vẫn bị lấy nhầm về
+      // học kỳ 1 (vì luôn "tìm thấy" HK1 và dừng lại luôn ở nhánh dùng nó — nhánh dự phòng
+      // đọc đúng học kỳ thật bên dưới chỉ chạy khi HK1 KHÔNG có sách nào, gần như không
+      // bao giờ xảy ra vì HK1 luôn có sẵn dữ liệu SGK).
+      const currentHocKyId = useAcademicStore.getState().currentHocKyId || 1;
 
       let enrolledSubjects: any[] = [];
       const hocSinhId = hoSo.hocSinhId || hoSo.id || hoSo.nguoiDungId;
@@ -154,27 +213,31 @@ export const studentService = {
             }
           }
 
+          // Chỉ còn 1 tầng dự phòng: nếu học kỳ hiện tại thật sự chưa có sách nào gán riêng
+          // cho học sinh, lấy tạm toàn bộ SGK đúng khối lớp (không phân biệt học kỳ).
           if (!myBooks || myBooks.length === 0) {
             if (hoSo.lopHocId) {
               const lopRes = await api.get(`/lophoc/${hoSo.lopHocId}`);
               const lop = lopRes.data.data || lopRes.data;
               if (lop?.khoiLop) {
-                const currentHocKyId = localStorage.getItem('academic-storage') 
-                  ? JSON.parse(localStorage.getItem('academic-storage') as string).state?.currentHocKyId 
-                  : null;
-                  
-                if (currentHocKyId && hoSo.hocSinhId) {
-                  const sachRes = await api.get(`/sach/sach-giao-khoa/hoc-sinh/${hoSo.hocSinhId}/hoc-ky/${currentHocKyId}`);
-                  myBooks = sachRes.data.data || sachRes.data || [];
-                } else {
-                  // Fallback
-                  const sachRes = await api.get(`/sach`);
-                  const allBooks = sachRes.data.data || sachRes.data || [];
-                  myBooks = allBooks.filter((s: any) => 
-                    s.khoiLop === lop.khoiLop && 
-                    (!s.loaiSach || s.loaiSach === 'SACH_GIAO_KHOA')
-                  );
-                }
+                // Đây là fallback gọi thẳng /sach (endpoint admin, không lọc trạng thái ẩn/hiện)
+                // nên phải tự lọc sách bị ẩn (trangThai=AN) và sách thuộc môn học đang bị ẩn ở đây,
+                // nếu không sách admin đã ẩn vẫn lọt vào thư viện học sinh qua nhánh dự phòng này.
+                const [sachRes, monHocRes] = await Promise.all([
+                  api.get(`/sach`),
+                  api.get(`/monhoc`).catch(() => ({ data: [] })),
+                ]);
+                const allBooks = sachRes.data.data || sachRes.data || [];
+                const monHocList = monHocRes.data?.data || monHocRes.data || [];
+                const hiddenMaMonSet = new Set(
+                  monHocList.filter((m: any) => m.trangThai === 'AN').map((m: any) => m.maMon)
+                );
+                myBooks = allBooks.filter((s: any) =>
+                  s.khoiLop === lop.khoiLop &&
+                  (!s.loaiSach || s.loaiSach === 'SACH_GIAO_KHOA') &&
+                  s.trangThai !== 'AN' &&
+                  !hiddenMaMonSet.has(s.maMon)
+                );
               }
             }
           }
@@ -184,6 +247,7 @@ export const studentService = {
             name: s.tenSach || s.tieuDe || "Môn học",
             desc: s.moTa || `Sách giáo khoa - Học kỳ ${s.hocKy || 1}`,
             icon: (s.tenSach || "").includes("Toán") ? "3d-math" : "3d-vietnamese",
+            anhBiaUrl: s.anhBiaUrl || null,
             progress: 0
           }));
         } catch (err) {
@@ -209,6 +273,7 @@ export const studentService = {
         completedLessons: 0,
         rank: 1,
         upcomingTasks,
+        gradedEssays,
         subjects: enrolledSubjects,
         recentNotifications
       };
@@ -574,7 +639,14 @@ export const studentService = {
         } catch (err) {}
 
         let allCompleted = true;
-        const items = dangBaiList.map((db: any) => {
+        const items = dangBaiList
+          // Bỏ hẳn dạng bài Tự luận khỏi bài học — không hiển thị cho học sinh nữa.
+          .filter((db: any) => {
+            let parsed: any = {};
+            try { parsed = typeof db.duLieuGame === 'string' ? JSON.parse(db.duLieuGame) : (db.duLieuGame || {}); } catch (err) {}
+            return parsed.loai !== 'TU_LUAN';
+          })
+          .map((db: any) => {
           const prog = myProgress.find((p: any) => p.baiHocId === baiHocId || p.contentNodeId === db.dangBaiId);
           const completed = prog ? prog.daHoanThanh === true : false;
           if (!completed) {
@@ -720,9 +792,11 @@ export const studentService = {
         } catch (err) {}
 
         if (hoSo.hocSinhId) {
-          // Chỉ cần gọi API update-progress của backend
-          await api.post(`/tien-do-hoc-sinh/update-progress?hocSinhId=${hoSo.hocSinhId}&baiHocId=${contentNodeId}`);
-          
+          // Đánh dấu thủ công -> set thẳng 100% hoàn thành, KHÔNG dùng update-progress
+          // (update-progress chỉ tính % dựa trên lịch sử tự học — bài toàn Lý thuyết
+          // không có gì để nộp nên sẽ không bao giờ đạt 100% qua đường đó).
+          await api.post(`/tien-do-hoc-sinh/mark-complete?hocSinhId=${hoSo.hocSinhId}&baiHocId=${contentNodeId}`);
+
           return {
             diem: 0,
             xpEarned: 10,

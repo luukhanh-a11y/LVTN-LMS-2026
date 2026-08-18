@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useEffect, useState } from 'react';
 import { studentService } from '../../services/student.service';
+import GradedResultModal, { type GradedEssayResult } from '../../components/student/GradedResultModal';
 
 export default function StudentDashboardSenior() {
   const navigate = useNavigate();
-  const [data, setData] = useState<any>({ upcomingTasks: [], fullName: '' });
+  const [data, setData] = useState<any>({ upcomingTasks: [], gradedEssays: [], fullName: '' });
   const [loading, setLoading] = useState(true);
+  const [viewingResult, setViewingResult] = useState<GradedEssayResult | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -108,24 +110,40 @@ export default function StudentDashboardSenior() {
             </div>
         </section>
 
-        {/* PHẦN 2: BÀI TẬP ĐÃ XONG (Làm mờ để giảm tải nhận thức) */}
-        <section>
-          <div className="flex items-center gap-3 opacity-60">
-            <CheckCircle2 className="w-6 h-6 text-green-500" />
-            <h3 className="text-lg font-bold text-slate-600">Đã hoàn thành gần đây</h3>
-          </div>
-          <div className="mt-4 bg-white/50 p-5 rounded-[1.5rem] border border-slate-200/50 flex items-center justify-between opacity-70">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
-                <Book className="w-5 h-5" />
-              </div>
-              <span className="font-bold text-slate-600">Luyện từ và câu</span>
+        {/* PHẦN 2: BÀI TỰ LUẬN ĐÃ ĐƯỢC CÔ CHẤM (Làm mờ để giảm tải nhận thức) */}
+        {(data.gradedEssays || []).length > 0 && (
+          <section>
+            <div className="flex items-center gap-3 opacity-60">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <h3 className="text-lg font-bold text-slate-600">Bài đã được cô nhận xét</h3>
             </div>
-            <span className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">10 Điểm</span>
-          </div>
-        </section>
+            <div className="mt-4 space-y-3">
+              {(data.gradedEssays || []).map((r: GradedEssayResult) => (
+                <button
+                  key={r.baiTapId}
+                  onClick={() => setViewingResult(r)}
+                  className="w-full bg-white/50 p-5 rounded-[1.5rem] border border-slate-200/50 flex items-center justify-between opacity-70 hover:opacity-100 transition-opacity cursor-pointer text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+                      <Book className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-slate-600">{r.title}</span>
+                  </div>
+                  <span className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">
+                    {r.diem != null ? `${Number(r.diem).toFixed(1)} Điểm` : 'Xem nhận xét'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
       </div>
+
+      {viewingResult && (
+        <GradedResultModal result={viewingResult} onClose={() => setViewingResult(null)} />
+      )}
     </div>
   );
 }

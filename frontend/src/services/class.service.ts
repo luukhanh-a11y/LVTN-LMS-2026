@@ -85,12 +85,8 @@ export const classService = {
     return response.data?.data || response.data;
   },
 
-  toggleStatus: async (id: number, currentStatus: string): Promise<ClassRoom> => {
-    // Assuming backend takes a PUT with the inverted status
-    const newStatus = currentStatus === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    // MOCK THIS CALL as there is no endpoint /lophoc/{id}/status yet
-    const response = await api.put(`/lophoc/${id}/status`, { trangThai: newStatus });
-    return response.data?.data || response.data;
+  deleteClass: async (id: number): Promise<void> => {
+    await api.delete(`/lophoc/${id}`);
   },
 
   // Nguồn thật là /hoso-hocsinh — có sẵn hocSinhId (khác nguoiDungId, cần cho chuyển lớp/xét kết quả).

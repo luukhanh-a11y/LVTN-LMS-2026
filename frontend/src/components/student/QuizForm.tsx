@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2, XCircle, BookOpen } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, BookOpen, Volume2 } from 'lucide-react';
 import LessonVisual from './LessonVisual';
+import { cleanMediaUrl, hasRealAudio, playRealAudio } from '../../lib/utils';
 
 export interface QuizFormProps {
   loai: string;
@@ -48,13 +49,13 @@ export default function QuizForm({
   };
 
   const renderThanhPhan = (tp: any, index: number) => {
-    if (tp.type === 'text') {
-      return <span key={index}>{tp.content}</span>;
-    }
     if (tp.type === 'image') {
-      return <img key={index} src={tp.url || tp.content} alt="Content" className="max-h-48 rounded-lg inline-block" />;
+      return <img key={index} src={cleanMediaUrl(tp.url || tp.content)} alt="Content" className="max-h-48 rounded-lg inline-block" />;
     }
-    return <span key={index}>{tp.content}</span>;
+    if (tp.type === 'audio') {
+      return <audio key={index} src={cleanMediaUrl(tp.url || tp.content)} controls className="w-full max-w-md" />;
+    }
+    return <span key={index}>{tp.noiDung || tp.content}</span>;
   };
 
   const renderInlineBlanks = (text: string) => {
@@ -122,8 +123,8 @@ export default function QuizForm({
     return (
       <div className="inline-flex items-center gap-3 mx-2 align-middle bg-white/50 px-3 py-1 rounded-2xl border border-amber-200/50">
         {text && <span className="font-semibold text-slate-700">{text}</span>}
-        {img && <img src={img} alt="media" className="h-14 rounded-lg object-contain shadow-sm border border-slate-100" />}
-        {audio && <audio src={audio} controls className="h-10 w-40" />}
+        {img && <img src={cleanMediaUrl(img)} alt="media" className="h-14 rounded-lg object-contain shadow-sm border border-slate-100" />}
+        {audio && <audio src={cleanMediaUrl(audio)} controls className="h-10 w-40" />}
       </div>
     );
   };
@@ -214,9 +215,7 @@ export default function QuizForm({
                 <BookOpen className="w-5 h-5" />
                 <span>BÀI ĐỌC</span>
               </div>
-              <div className="text-xl text-slate-700 leading-[2.2] font-medium whitespace-pre-wrap mt-4">
-                {cauHinh.noiDung}
-              </div>
+              <div className="text-xl text-slate-700 leading-[2.2] font-medium mt-4" dangerouslySetInnerHTML={{ __html: cauHinh.noiDung }} />
             </div>
           )}
 
@@ -226,12 +225,24 @@ export default function QuizForm({
               <div className="absolute -bottom-1 w-10 h-1 bg-black/20 rounded-full blur-sm"></div>
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Câu hỏi</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Câu hỏi</h3>
+                {hasRealAudio(cauHinh?.amThanh) && (
+                <button
+                  type="button"
+                  onClick={() => playRealAudio(cauHinh?.amThanh)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-white font-black rounded-full shadow-[0_5px_0_0_#b45309] hover:shadow-[0_3px_0_0_#b45309] hover:translate-y-[2px] active:shadow-none active:translate-y-[5px] transition-all cursor-pointer"
+                >
+                  <Volume2 className="w-5 h-5" /> Nghe đọc
+                </button>
+                )}
+              </div>
               <div className="text-2xl md:text-[1.75rem] text-slate-800 leading-[1.6] font-bold">
-                {typeof cauHinh?.cauHoi === 'string' ? (
-                  <span>{cauHinh.cauHoi}</span>
-                ) : (
-                  cauHoi.map((tp: any, i: number) => renderThanhPhan(tp, i))
+                {typeof cauHinh?.cauHoi === 'string' && <span dangerouslySetInnerHTML={{ __html: cauHinh.cauHoi }} />}
+                {cauHoi.length > 0 && (
+                  <div className="flex flex-col gap-2 mt-2">
+                    {cauHoi.map((tp: any, i: number) => renderThanhPhan(tp, i))}
+                  </div>
                 )}
               </div>
             </div>
@@ -239,19 +250,19 @@ export default function QuizForm({
           
           {cauHinh?.amThanh && (
             <div className="mt-10 bg-slate-50 p-5 rounded-2xl border-2 border-slate-100">
-              <audio controls className="w-full rounded-xl" src={cauHinh.amThanh} />
+              <audio controls className="w-full rounded-xl" src={cleanMediaUrl(cauHinh.amThanh)} />
             </div>
           )}
 
           {cauHinh?.hinhAnh && (
             <div className="mt-10">
-              <img src={cauHinh.hinhAnh} alt="Câu hỏi" className="max-w-full md:max-w-xl max-h-96 object-contain rounded-3xl border-[6px] border-white shadow-2xl mx-auto" />
+              <img src={cleanMediaUrl(cauHinh.hinhAnh)} alt="Câu hỏi" className="max-w-full md:max-w-3xl max-h-[75vh] object-contain rounded-3xl border-[6px] border-white shadow-2xl mx-auto" />
             </div>
           )}
 
           {cauHinh?.video && (
             <div className="mt-10 bg-slate-50 p-2 rounded-3xl border-2 border-slate-100 shadow-lg mx-auto max-w-3xl overflow-hidden">
-              <video src={cauHinh.video} controls className="w-full rounded-2xl max-h-[400px] object-cover bg-black" />
+              <video src={cleanMediaUrl(cauHinh.video)} controls className="w-full rounded-2xl max-h-[70vh] object-contain bg-black" />
             </div>
           )}
 
@@ -316,10 +327,10 @@ export default function QuizForm({
                     </div>
                     <div className={`text-xl md:text-[1.35rem] leading-relaxed w-full flex flex-col items-start ${isSelected && !hasResult ? 'font-black' : 'font-semibold'}`}>
                       {lc.hinhAnh && (
-                        <img src={lc.hinhAnh} alt="Lựa chọn" className="max-h-32 rounded-xl mb-3 object-contain mx-auto border-2 border-slate-100" />
+                        <img src={cleanMediaUrl(lc.hinhAnh)} alt="Lựa chọn" className="max-h-32 rounded-xl mb-3 object-contain mx-auto border-2 border-slate-100" />
                       )}
                       {lc.amThanh && (
-                        <audio src={lc.amThanh} controls className="w-full max-w-[200px] mb-3" onClick={e => e.stopPropagation()} />
+                        <audio src={cleanMediaUrl(lc.amThanh)} controls className="w-full max-w-[200px] mb-3" onClick={e => e.stopPropagation()} />
                       )}
                       <span className="w-full text-center">
                         {lc.elements ? lc.elements.map((tp: any, i: number) => renderThanhPhan(tp, i)) : (lc.noiDung || lc.text || lc.content || lc.value || (typeof lc === 'string' ? lc : JSON.stringify(lc)))}

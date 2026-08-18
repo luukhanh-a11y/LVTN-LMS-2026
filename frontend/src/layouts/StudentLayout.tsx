@@ -1,6 +1,8 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Bell, LogOut, Home, BookOpen, Trophy } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useAcademicStore } from '../stores/useAcademicStore';
+import { academicService } from '../services/academic.service';
 import { useEffect, useRef, useState } from 'react';
 import { userService } from '../services/user.service';
 
@@ -16,7 +18,9 @@ export default function StudentLayout() {
   // Dùng ref để tránh gọi API nhiều lần khi route thay đổi
   const hasFetchedProfile = useRef(false);
   
-  const isLessonPage = location.pathname.includes('/student/lesson');
+  // Trang bài học (SGK) và trang làm bài tập giao (game/quiz) đều tự vẽ toàn màn hình
+  // riêng (fixed inset-0) — ẩn header/dock chung của layout để không bị chồng lên trên.
+  const isLessonPage = location.pathname.includes('/student/lesson') || /\/student\/tasks\/\d+\/quiz/.test(location.pathname);
 
   useEffect(() => {
     if (user?.requirePasswordChange) {
@@ -36,6 +40,14 @@ export default function StudentLayout() {
         setClassName(data.className || data.lopHoc?.tenLop || 'Lớp ?');
       })
       .catch(err => console.error('[StudentLayout] Failed to fetch profile:', err));
+
+    // Học sinh không có UI chọn năm học/học kỳ như Giáo viên/Admin/Phụ huynh — nhưng vẫn
+    // cần biết đúng học kỳ HIỆN TẠI thật (CauHinhHeThong) để lấy đúng sách giáo khoa. Thiếu
+    // bước này khiến useAcademicStore().currentHocKyId luôn rỗng, làm student.service.ts
+    // không có cách nào biết học kỳ thật, mặc định sai về học kỳ 1 quanh năm.
+    academicService.getCauHinhHeThong()
+      .then(cauHinh => useAcademicStore.getState().setCurrentHocKy(cauHinh.hocKyHienTaiId))
+      .catch(err => console.error('[StudentLayout] Failed to fetch current hoc ky:', err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Chỉ chạy 1 lần khi mount — intentional empty deps
 
@@ -47,9 +59,12 @@ export default function StudentLayout() {
 
   return (
     <div className="flex flex-col min-h-screen bg-sky-50 font-sans relative">
-      {/* Header */}
+      {/* Header — z-50 (không phải z-10): đây là header chung của toàn app, phải luôn
+          nổi trên MỌI nội dung của từng trang con khi cuộn (trang con có thể dùng
+          z-20/z-30 cho hiệu ứng riêng — nếu header chung thấp hơn, nội dung trang con
+          sẽ trồi lên đè qua header lúc cuộn, nhìn như bị vỡ layout). */}
       {!isLessonPage && (
-        <header className="h-16 bg-white border-b border-sky-100 flex items-center justify-between px-6 sticky top-0 z-10">
+        <header className="h-16 bg-white border-b border-sky-100 flex items-center justify-between px-6 sticky top-0 z-50">
           <Link to="/student" className="flex items-center group">
             <img 
               src="https://www.titkul.vn/upload/photo/cropped-titkul-logo-header-7055.png" 

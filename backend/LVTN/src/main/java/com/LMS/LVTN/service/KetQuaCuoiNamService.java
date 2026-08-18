@@ -225,7 +225,11 @@ public class KetQuaCuoiNamService {
                 if (ketQua.getLopHoc() != null) {
                     chuyenLopReq.setLopCuId(ketQua.getLopHoc().getLopHocId());
                 }
-                chuyenLopReq.setLopMoiId(req.getLopMoiId());
+                if (req.getLopMoiId() != null) {
+                    chuyenLopReq.setLopMoiId(req.getLopMoiId());
+                } else if (ketQua.getLopHoc() != null) {
+                    chuyenLopReq.setLopMoiId(ketQua.getLopHoc().getLopHocId());
+                }
                 chuyenLopReq.setNamHocCu(ketQua.getNamHoc());
                 chuyenLopReq.setNamHocMoi(
                         req.getNamHocMoi() != null ? req.getNamHocMoi() : (ketQua.getNamHoc() + " -> Mới"));

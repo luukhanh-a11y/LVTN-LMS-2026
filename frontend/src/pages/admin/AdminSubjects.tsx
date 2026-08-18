@@ -138,8 +138,8 @@ export default function AdminSubjects({ isInsideTab = false }: { isInsideTab?: b
                     <h4 className="font-semibold text-slate-800">{sub.tenMonHoc || sub.tenMon}</h4>
                     <div className="flex items-center gap-3 mt-1">
                       <p className="text-xs text-slate-500 uppercase tracking-wider">Mã môn: {sub.maMon || '---'}</p>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${sub.trangThai === 'INACTIVE' ? 'bg-slate-100 text-slate-500' : 'bg-green-100 text-green-700'}`}>
-                        {sub.trangThai === 'INACTIVE' ? 'NGỪNG HĐ' : 'HOẠT ĐỘNG'}
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${sub.trangThai === 'AN' ? 'bg-slate-100 text-slate-500' : 'bg-green-100 text-green-700'}`}>
+                        {sub.trangThai === 'AN' ? 'ĐÃ ẨN' : 'HOẠT ĐỘNG'}
                       </span>
                     </div>
                     {sub.moTa && <p className="text-sm text-slate-500 mt-1 line-clamp-1">{sub.moTa}</p>}
@@ -204,7 +204,7 @@ export default function AdminSubjects({ isInsideTab = false }: { isInsideTab?: b
             <button 
               type="button"
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.trangThai === 'ACTIVE' ? 'bg-blue-600' : 'bg-slate-200'}`}
-              onClick={() => setFormData(prev => ({ ...prev, trangThai: prev.trangThai === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }))}
+              onClick={() => setFormData(prev => ({ ...prev, trangThai: prev.trangThai === 'ACTIVE' ? 'AN' : 'ACTIVE' }))}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.trangThai === 'ACTIVE' ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>

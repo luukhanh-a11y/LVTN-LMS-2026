@@ -7,6 +7,8 @@ import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.MonHocMapper;
 import com.LMS.LVTN.repository.MonHocRepository;
+import com.LMS.LVTN.repository.PhanCongGiangDayRepository;
+import com.LMS.LVTN.repository.SachRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -22,6 +24,8 @@ public class MonHocService {
 
     MonHocRepository monHocRepository;
     MonHocMapper monHocMapper;
+    SachRepository sachRepository;
+    PhanCongGiangDayRepository phanCongGiangDayRepository;
 
     public MonHocResponse create(MonHocRequest request) {
         if (monHocRepository.existsByMaMon(request.getMaMon())) {
@@ -52,8 +56,10 @@ public class MonHocService {
     }
 
     public void delete(int monHocId) {
-        if (!monHocRepository.existsById(monHocId)) {
-            throw new AppExceptions(Errorcode.MON_HOC_NOT_FOUND);
+        MonHoc monHoc = monHocRepository.findById(monHocId)
+                .orElseThrow(() -> new AppExceptions(Errorcode.MON_HOC_NOT_FOUND));
+        if (sachRepository.existsByMaMon(monHoc.getMaMon()) || phanCongGiangDayRepository.existsByMonHoc_MonHocId(monHocId)) {
+            throw new AppExceptions(Errorcode.MON_HOC_DANG_SU_DUNG);
         }
         monHocRepository.deleteById(monHocId);
     }

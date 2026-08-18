@@ -16,6 +16,9 @@ public interface BaiTapRepository extends JpaRepository<BaiTap, Long> {
     List<BaiTap> findByLopHoc_LopHocId(Long lopHocId);
     List<BaiTap> findByGiaoVien_GiaoVienId(Long giaoVienId);
     List<BaiTap> findByDangBai_DangBaiId(Integer dangBaiId);
+    boolean existsByDangBai_DangBaiId(Integer dangBaiId);
+    boolean existsByDangBai_BaiHoc_ChuDe_Sach_SachId(Integer sachId);
+    boolean existsByLopHoc_LopHocId(Long lopHocId);
     List<BaiTap> findByLopHoc_LopHocIdAndGiaoVien_GiaoVienIdAndHocKy_HocKyId(Long lopHocId, Long giaoVienId, Integer hocKyId);
 
     // BaiTap không có cột môn học trực tiếp — môn được suy ra từ nội dung SGK đính kèm, cùng
@@ -33,19 +36,14 @@ public interface BaiTapRepository extends JpaRepository<BaiTap, Long> {
     List<BaiTap> findByChiTietDangBaiMonHoc(@Param("lopHocId") Long lopHocId, @Param("giaoVienId") Long giaoVienId,
                                              @Param("hocKyId") Integer hocKyId, @Param("maMon") String maMon);
 
-    // Bài tự luận tự do (không có nội dung SGK đính kèm) lưu môn học trực tiếp ở BaiTap.monHoc.
-    @Query("SELECT b FROM BaiTap b WHERE b.lopHoc.lopHocId = :lopHocId AND b.giaoVien.giaoVienId = :giaoVienId " +
-           "AND b.hocKy.hocKyId = :hocKyId AND b.monHoc.maMon = :maMon")
-    List<BaiTap> findByDirectMonHoc(@Param("lopHocId") Long lopHocId, @Param("giaoVienId") Long giaoVienId,
-                                     @Param("hocKyId") Integer hocKyId, @Param("maMon") String maMon);
-
     // Dùng cho bảng điểm khi 1 giáo viên dạy nhiều môn cho cùng 1 lớp — nếu không lọc theo môn,
-    // bài tập của môn A sẽ bị tính lẫn vào môn B chỉ vì cùng giáo viên/lớp/học kỳ.
+    // bài tập của môn A sẽ bị tính lẫn vào môn B chỉ vì cùng giáo viên/lớp/học kỳ. Bài tự luận
+    // tự do vẫn đi qua ChiTietBaiTap (gắn 1 dang_bai GIAO_VIEN_BO_SUNG do giáo viên tự tạo khi
+    // giao bài) — không cần cột môn học riêng trên BaiTap.
     default List<BaiTap> findByLopHocAndGiaoVienAndHocKyAndMonHoc(Long lopHocId, Long giaoVienId, Integer hocKyId, String maMon) {
         Map<Long, BaiTap> combined = new LinkedHashMap<>();
         for (BaiTap b : findByLegacyDangBaiMonHoc(lopHocId, giaoVienId, hocKyId, maMon)) combined.put(b.getBaiTapId(), b);
         for (BaiTap b : findByChiTietDangBaiMonHoc(lopHocId, giaoVienId, hocKyId, maMon)) combined.put(b.getBaiTapId(), b);
-        for (BaiTap b : findByDirectMonHoc(lopHocId, giaoVienId, hocKyId, maMon)) combined.put(b.getBaiTapId(), b);
         return new ArrayList<>(combined.values());
     }
 }

@@ -283,6 +283,39 @@ export const teacherService = {
     await api.delete(`/giao-vien/dang-bai/${dangBaiId}`, { params: { giaoVienId } });
   },
 
+  // Tạo 1 dạng bài TU_LUAN (nguồn GIAO_VIEN_BO_SUNG) gắn vào 1 bài học có sẵn — dùng khi
+  // giáo viên "Tạo bài tự luận tự do". Nhờ gắn vào bài học thật (qua ChiTietBaiTap khi tạo
+  // BaiTap), môn học của bài tập được suy ra tự nhiên qua bài học → chủ đề → sách → môn,
+  // dùng chung cơ chế lọc bảng điểm theo môn đã có sẵn — không cần thêm cột riêng nào.
+  createTuLuanDangBai: async (dto: {
+    baiHocId: number;
+    tenDangBai: string;
+    giaoVienId: number;
+    cauHoi: string;
+    noiDung: string;
+  }): Promise<{ dangBaiId: number }> => {
+    const payload = {
+      baiHocId: dto.baiHocId,
+      tenDangBai: dto.tenDangBai,
+      loaiNoiDung: 'JSON_TEXT',
+      nguonGoc: 'GIAO_VIEN_BO_SUNG',
+      giaoVienId: dto.giaoVienId,
+      xpThuong: 10,
+      duLieuGame: JSON.stringify({
+        loai: 'TU_LUAN',
+        video: '',
+        amThanh: '',
+        hinhAnh: '',
+        cauHoi: dto.cauHoi,
+        noiDung: dto.noiDung,
+        giaoDien: 'MAC_DINH'
+      }),
+      dapAnChuan: JSON.stringify({})
+    };
+    const response = await api.post('/giao-vien/dang-bai', payload);
+    return response.data?.data || response.data;
+  },
+
   // === Xét kết quả cuối năm (đề xuất — Admin duyệt lần cuối mới thật sự chuyển lớp) ===
   // /nguoi-dung không trả hocSinhId (chỉ nguoiDungId) nên phải lấy qua /hoso-hocsinh.
   getHocSinhByLop: async (lopHocId: number): Promise<{ hocSinhId: number; hoTen: string; maHocSinh: string }[]> => {

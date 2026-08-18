@@ -89,14 +89,22 @@ export const parentService = {
     return response.data;
   },
 
-  resetChildPassword: async (childId: number, newPassword: string) => {
-    const response = await api.post(`/parents/me/children/${childId}/reset-password`, { newPassword });
-    return response.data;
-  },
-
   getDiemTrungBinhMon: async (childId: number, hocKyId: number = 1) => {
     const response = await api.get(`/thong-ke-diem/hoc-sinh/${childId}/hoc-ky/${hocKyId}`);
     return response.data?.data || response.data || [];
+  },
+
+  getChildProfile: async (childId: number) => {
+    const response = await api.get(`/parents/me/children/${childId}/profile`);
+    return response.data?.data || response.data;
+  },
+
+  // Endpoint riêng cho ticket của phụ huynh (không dùng chung /phieuhotro trực tiếp) —
+  // backend tự tra đúng NguoiDung của con từ hocSinhId (childId ở đây KHÔNG phải là
+  // nguoiDungId mà PhieuHoTro cần), tránh lỗi USER_NOT_FOUND khi gửi thẳng.
+  createChildTicket: async (childId: number, loaiYeuCau: string, moTa: string) => {
+    const response = await api.post(`/parents/me/children/${childId}/tickets`, { loaiYeuCau, moTa });
+    return response.data?.data || response.data;
   }
 };
 

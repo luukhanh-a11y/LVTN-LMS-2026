@@ -15,16 +15,18 @@ export default function StudentLibrary() {
       try {
         const dashboard = await studentService.getDashboard();
         const mappedBooks = (dashboard.subjects || []).map((s: any, idx: number) => {
-          let imageUrl = 'https://cdnelearning.nxbgd.vn/uploads/202005290909380127_SHSTunhienxahoi1biacopy_size_285_404.png';
-          if (s.name.includes('Toán')) {
-            imageUrl = 'https://cdnelearning.nxbgd.vn/uploads/202005290909086057_SHSToan1Tap1biacopy_size_285_404.png';
-          } else if (s.name.includes('Tiếng Việt')) {
-            imageUrl = 'https://cdnelearning.nxbgd.vn/uploads/202005290909541206_SHSTiengViet1tap2biacopy_size_285_404.png';
+          // Dùng đúng ảnh bìa thật đã upload cho sách (anhBiaUrl) — trước đây gán cứng
+          // theo tên môn (chỉ Toán/Tiếng Việt đúng, mọi môn khác đều hiện nhầm 1 ảnh mặc
+          // định). Sách chưa có ảnh thật (anhBiaUrl null) thì để trống, dựa vào onError
+          // bên dưới tự hiện khung chữ tên sách thay vì hiện ảnh sai.
+          let imageUrl = s.anhBiaUrl || '';
+          if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('blob')) {
+            imageUrl = `http://localhost:8080${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
           }
           return {
             id: s.id || idx,
             title: s.name,
-            image: imageUrl,
+            image: imageUrl || `https://placehold.co/400x533/e2e8f0/475569?text=${encodeURIComponent(s.name)}`,
             progress: s.progress || 0,
           };
         });

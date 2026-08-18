@@ -1,6 +1,7 @@
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\configuration\AppConfig.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\configuration\JwtAuthenticationEntryPoint.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\configuration\JwtAuthenticationFilter.java
+E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\configuration\OpenApiConfig.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\configuration\SecurityConfig.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\configuration\WebMvcConfig.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\controller\AdminController.java
@@ -131,6 +132,7 @@ E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\NamHocResponse.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\NguoiDungResponse.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ParentAssignmentDTO.java
+E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ParentChildProfileDTO.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\ParentDashboardResponse.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\PhanCongGiangDayResponse.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\dto\response\PhieuHoTroResponse.java
@@ -305,3 +307,5 @@ E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\service\Thon
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\service\ThongKeDiemService.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\service\TienDoHocSinhService.java
 E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\service\TokenCleanupService.java
+E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\validation\NguoiDungUniquenessValidator.java
+E:\SourceCode\LVTN-LMS-2026\backend\LVTN\src\main\java\com\LMS\LVTN\validation\NoiDungSgkValidator.java

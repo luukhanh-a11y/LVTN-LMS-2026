@@ -49,6 +49,14 @@ public class TienDoHocSinhController {
                 .build();
     }
 
+    @PostMapping("/mark-complete")
+    public ApiResponse<String> markComplete(@RequestParam Long hocSinhId, @RequestParam Integer baiHocId) {
+        tienDoHocSinhService.markHoanThanh(hocSinhId, baiHocId);
+        return ApiResponse.<String>builder()
+                .data("Đã đánh dấu hoàn thành bài học")
+                .build();
+    }
+
     @PostMapping("/unmark-progress")
     public ApiResponse<String> unmarkProgress(@RequestParam Long hocSinhId, @RequestParam Integer baiHocId) {
         tienDoHocSinhService.unmarkProgress(hocSinhId, baiHocId);

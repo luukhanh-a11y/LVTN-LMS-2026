@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ChevronUp, ChevronDown, Minimize, Maximize, CheckCircle2, BookOpen, Loader2, Star, Gem, Lightbulb, ArrowRight, XCircle } from 'lucide-react';
+import { ArrowLeft, ChevronUp, ChevronDown, CheckCircle2, BookOpen, Loader2, Star, Gem, Lightbulb, ArrowRight, XCircle } from 'lucide-react';
 import H5PPlayer from '../../components/h5p/H5PPlayer';
 import { studentService } from '../../services/student.service';
 import QuizForm from '../../components/student/QuizForm';
@@ -18,8 +18,10 @@ import { FrogGame } from '../../components/games/FrogGame';
 import { BalloonGame } from '../../components/games/BalloonGame';
 import { CatchingGame } from '../../components/games/CatchingGame';
 import { GoldMinerGame } from '../../components/games/GoldMinerGame';
+import { DragMatchGame } from '../../components/games/DragMatchGame';
 import LyThuyetForm from '../../components/student/LyThuyetForm';
 import TuLuanForm from '../../components/student/TuLuanForm';
+import NoiCapForm from '../../components/student/NoiCapForm';
 import { X } from 'lucide-react';
 
 export interface QuizResult {
@@ -27,14 +29,24 @@ export interface QuizResult {
   xpEarned?: number;
   dapAnChuan?: any;
   isFirstTime?: boolean;
+  chiTietBaiLam?: any;
 }
 
 export type Loai = 'LY_THUYET' | 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET';
+
+// chiTietBaiLam lưu ở lich_su_tu_hoc dạng chuỗi JSON — parse lại để form (vd TuLuanForm)
+// hiển thị được câu trả lời/ảnh bài làm đã nộp trước đó khi xem lại.
+function parseChiTietBaiLam(raw: any) {
+  if (!raw) return null;
+  if (typeof raw !== 'string') return raw;
+  try { return JSON.parse(raw); } catch { return null; }
+}
 
 export default function LessonPlayer() {
   const { lessonId } = useParams();
   const [searchParams] = useSearchParams();
   const subjectId = searchParams.get('subjectId');
+  const bookId = searchParams.get('bookId');
 
   const [title, setTitle] = useState('');
   const [h5pContentId, setH5pContentId] = useState<string | null>(null);
@@ -64,7 +76,6 @@ export default function LessonPlayer() {
 
   useEffect(() => clearHideBannerTimeout, []);
 
-  const [isFullscreen, setIsFullscreen] = useState(true);
   const [itemsList, setItemsList] = useState<any[]>([]);
   const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [autoNextTime, setAutoNextTime] = useState<number | null>(null);
@@ -93,7 +104,11 @@ export default function LessonPlayer() {
     setShowBanner(false);
     setAutoNextTime(null);
 
-    studentService.getNextLessonId(Number(lessonId), subjectId ? Number(subjectId) : null).then(setNextLessonId);
+    if (bookId) {
+      studentService.getNextLessonIdInBook(Number(lessonId), Number(bookId)).then(setNextLessonId);
+    } else {
+      studentService.getNextLessonId(Number(lessonId), subjectId ? Number(subjectId) : null).then(setNextLessonId);
+    }
 
     studentService
       .getContentNodeDetail(Number(lessonId))
@@ -130,6 +145,7 @@ export default function LessonPlayer() {
                 diem: lastSub.diemSo ?? 10,
                 xpEarned: Math.round(lastSub.diemSo ?? 10),
                 dapAnChuan: lastSub.dapAnChuan || activeItem.dapAnChuan,
+                chiTietBaiLam: parseChiTietBaiLam(lastSub.chiTietBaiLam),
                 isFirstTime: false
               });
             }
@@ -138,7 +154,7 @@ export default function LessonPlayer() {
       })
       .catch(() => toast.error('Không tải được nội dung bài học.'))
       .finally(() => setIsLoading(false));
-  }, [lessonId, subjectId]);
+  }, [lessonId, subjectId, bookId]);
 
   const handleComplete = async () => {
     if (!lessonId || completed) return;
@@ -148,6 +164,11 @@ export default function LessonPlayer() {
       setXpEarned(result.xpEarned ?? 0);
       setCompleted(true);
       toast.success(`Đã hoàn thành bài học! +${result.xpEarned ?? 10} XP`);
+      // Nội dung lý thuyết (không phải quiz) không tự chuyển màn như handleSubmitQuiz —
+      // dùng chung cơ chế đếm ngược 10s để không bị đứng lại ở trang vừa hoàn thành.
+      if (activeItemIndex < itemsList.length - 1) {
+        setAutoNextTime(10);
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? 'Không thể đánh dấu hoàn thành.');
     } finally {
@@ -171,6 +192,18 @@ export default function LessonPlayer() {
 
   const loadItem = async (index: number) => {
     if (index < 0 || index >= itemsList.length) return;
+
+    // Bấm chuyển sang phần khác (trước/sau) trong cùng bài học -> coi như đã xong phần
+    // đang xem, tự động đánh dấu hoàn thành bài học luôn thay vì bắt bấm nút riêng.
+    if (lessonId && !completed) {
+      try {
+        const result = await studentService.markContentNodeComplete(Number(lessonId));
+        setCompleted(true);
+        toast.success(`Đã hoàn thành bài học! +${result?.xpEarned ?? 10} XP`);
+        if (result?.xpEarned) setXpEarned(result.xpEarned);
+      } catch (e) {}
+    }
+
     setActiveItemIndex(index);
     const activeItem = itemsList[index];
 
@@ -219,6 +252,7 @@ export default function LessonPlayer() {
         diem: result.diem,
         xpEarned: result.xpEarned ?? 0,
         dapAnChuan: result.dapAnChuan,
+        chiTietBaiLam: baiLam,
         isFirstTime: !wasCompleted
       });
       
@@ -255,7 +289,7 @@ export default function LessonPlayer() {
     }
   };
 
-  const backLink = subjectId ? `/student/subject/${subjectId}` : '/student';
+  const backLink = bookId ? `/student/roadmap?bookId=${bookId}` : subjectId ? `/student/subject/${subjectId}` : '/student';
   const isLyThuyet = loaiNoiDung === 'JSON_TEXT' && loai === 'LY_THUYET';
   const isTuLuan = loaiNoiDung === 'JSON_TEXT' && loai === 'TU_LUAN';
   const isQuizType = loaiNoiDung === 'JSON_TEXT' && !isLyThuyet && !isTuLuan;
@@ -269,8 +303,14 @@ export default function LessonPlayer() {
   // Games that are exclusively tied to a specific loai
   const isMatchingGame = loai === 'NOI_CAP' && (cauHinh?.giaoDien === 'NOI_CAP_LINE' || !cauHinh?.giaoDien);
   const isSortingGame = loai === 'NOI_CAP' && cauHinh?.giaoDien === 'PHAN_LOAI';
+  // Kéo thẻ thả vào ô — dành cho NOI_CAP có nhiều cặp (nối dây dễ rối khi số cặp lớn).
+  const isDragMatchGame = loai === 'NOI_CAP' && cauHinh?.giaoDien === 'KEO_THA_GHEP_CAP';
+  // NOI_CAP với template mặc định (giaoDien = MAC_DINH, không chọn skin game cụ thể) —
+  // dùng chung NoiCapForm như bên admin preview/teacher MaterialDetail, tránh rơi vào
+  // nhánh isQuizType bên dưới (QuizForm không hỗ trợ loai=NOI_CAP).
+  const isNoiCapDefault = loai === 'NOI_CAP' && !isMatchingGame && !isSortingGame && !isDragMatchGame;
   const isBeeGame = loai === 'DIEN_KHUYET' && cauHinh?.giaoDien === 'ONG_TIM_MAT';
-  const isAnyGame = isHarvestGame || isFrogGame || isBalloonGame || isMatchingGame || isMillionaireGame || isBeeGame || isSortingGame || isCatchingGame || isGoldMinerGame;
+  const isAnyGame = isHarvestGame || isFrogGame || isBalloonGame || isMatchingGame || isMillionaireGame || isBeeGame || isSortingGame || isCatchingGame || isGoldMinerGame || isDragMatchGame;
 
   if (isLoading) {
     return (
@@ -281,25 +321,18 @@ export default function LessonPlayer() {
   }
 
   return (
-    <div className={isFullscreen ? `fixed inset-0 z-50 flex flex-col overflow-hidden ${isAnyGame ? "bg-slate-900" : "bg-slate-100"}` : "flex flex-col h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden"}>
+    <div className={`fixed inset-0 z-50 flex flex-col overflow-hidden ${isAnyGame ? "bg-slate-900" : "bg-slate-100"}`}>
             {/* Floating UI Container (Always Visible) */}
       <div className="absolute inset-0 pointer-events-none z-[100] overflow-hidden">
-        
+
         {/* Top Left Navigation */}
         <div className="absolute top-6 left-6 flex flex-col gap-4 pointer-events-auto">
           <Link to={backLink} className={`w-12 h-12 flex items-center justify-center rounded-full backdrop-blur-md transition-all group relative border shadow-lg ${isAnyGame ? 'bg-white/10 hover:bg-white/30 text-white border-white/20' : 'bg-slate-800 hover:bg-slate-900 text-white border-slate-700'}`}>
             <ArrowLeft className="w-6 h-6" />
             <span className="absolute left-16 opacity-0 group-hover:opacity-100 bg-black/90 text-white text-sm font-bold px-4 py-2 rounded-xl whitespace-nowrap transition-opacity pointer-events-none drop-shadow-md">
-              {isFullscreen ? "Thoát" : "Quay lại bài học"}
+              Thoát
             </span>
           </Link>
-          
-          <button onClick={() => setIsFullscreen(!isFullscreen)} className={`w-12 h-12 flex items-center justify-center rounded-full backdrop-blur-md transition-all group relative border shadow-lg ${isAnyGame ? 'bg-white/10 hover:bg-white/30 text-white border-white/20' : 'bg-slate-800 hover:bg-slate-900 text-white border-slate-700'}`}>
-            {isFullscreen ? <Minimize className="w-6 h-6" /> : <Maximize className="w-6 h-6" />}
-            <span className="absolute left-16 opacity-0 group-hover:opacity-100 bg-black/90 text-white text-sm font-bold px-4 py-2 rounded-xl whitespace-nowrap transition-opacity pointer-events-none drop-shadow-md">
-              {isFullscreen ? "Thu nhỏ" : "Phóng to"}
-            </span>
-          </button>
 
           {/* Màn trước */}
           {activeItemIndex > 0 && (
@@ -365,7 +398,7 @@ export default function LessonPlayer() {
 
           {nextLessonId && (
             <Link
-              to={`/student/lesson/${nextLessonId}${subjectId ? `?subjectId=${subjectId}` : ''}`}
+              to={`/student/lesson/${nextLessonId}${bookId ? `?bookId=${bookId}` : subjectId ? `?subjectId=${subjectId}` : ''}`}
               className={`w-12 h-12 flex items-center justify-center rounded-full backdrop-blur-md transition-all group relative border shadow-lg ${isAnyGame ? 'bg-white/10 hover:bg-[#3A82DF] text-white border-white/20' : 'bg-slate-800 hover:bg-[#3A82DF] text-white border-slate-700'}`}
             >
               <ArrowRight className="w-6 h-6" />
@@ -454,12 +487,16 @@ export default function LessonPlayer() {
                 <BalloonGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
              ) : isMatchingGame ? (
                 <MatchingGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
+             ) : isDragMatchGame ? (
+                <DragMatchGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
              ) : isMillionaireGame ? (
                 <MillionaireGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
              ) : isBeeGame ? (
                 <BeeGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
              ) : isSortingGame ? (
                 <SortingGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
+             ) : isNoiCapDefault ? (
+                <NoiCapForm loai={loai} cauHinh={cauHinh} dapAnChuan={dapAnChuan} result={quizResult} onSubmit={handleSubmitQuiz} submitting={submitting} />
              ) : isCatchingGame ? (
                 <CatchingGame key={gameKey} cauHinh={cauHinh} result={quizResult} activeDapAnChuan={dapAnChuan} onSubmit={handleSubmitQuiz} />
              ) : isGoldMinerGame ? (

@@ -16,4 +16,6 @@ public interface PhanCongGiangDayRepository extends JpaRepository<PhanCongGiangD
     List<PhanCongGiangDay> findByHocKy_HocKyId(Integer hocKyId);
     Optional<PhanCongGiangDay> findByGiaoVien_GiaoVienIdAndLopHoc_LopHocIdAndMonHoc_MaMonAndHocKy_HocKyId(Long giaoVienId, Long lopHocId, String maMon, Integer hocKyId);
     Optional<PhanCongGiangDay> findByGiaoVien_GiaoVienIdAndLopHoc_LopHocIdAndMonHoc_MonHocIdAndHocKy_HocKyId(Long giaoVienId, Long lopHocId, Integer monHocId, Integer hocKyId);
+    boolean existsByMonHoc_MonHocId(Integer monHocId);
+    boolean existsByLopHoc_LopHocId(Long lopHocId);
 }

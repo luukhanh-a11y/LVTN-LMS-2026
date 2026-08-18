@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { adminService } from '../../../services/admin.service';
 
 import { RichTextEditor } from '../../../components/ui/RichTextEditor';
+import { FileUploadInput } from '../../../components/ui/FileUploadInput';
 
 interface GameAuthoringFormProps {
   dangBaiId: number; // 0 if new
@@ -17,7 +18,7 @@ interface GameAuthoringFormProps {
 }
 
 type LoaiGame = 'LY_THUYET' | 'TU_LUAN' | 'TRAC_NGHIEM' | 'NOI_CAP' | 'DIEN_KHUYET';
-type GiaoDien = 'MAC_DINH' | 'DAO_VANG' | 'DUOI_BAT' | 'PHAN_LOAI' | 'THU_HOACH_NONG_SAN' | 'ECH_QUA_SONG' | 'BAN_BONG_BAY' | 'TRIEU_PHU' | 'ONG_TIM_MAT';
+type GiaoDien = 'MAC_DINH' | 'DAO_VANG' | 'DUOI_BAT' | 'PHAN_LOAI' | 'THU_HOACH_NONG_SAN' | 'ECH_QUA_SONG' | 'BAN_BONG_BAY' | 'TRIEU_PHU' | 'ONG_TIM_MAT' | 'KEO_THA_GHEP_CAP';
 
 let uidCounter = 0;
 const uid = () => `id${Date.now()}_${uidCounter++}`;
@@ -321,7 +322,7 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
           </div>
           <div className="col-span-4">
             <label className="block text-sm font-bold text-slate-900 mb-2">ID Bài học</label>
-            <Input className="h-12 bg-slate-100 text-slate-500 font-mono border-slate-200" value={baiHocId} disabled />
+            <Input className="h-12 bg-slate-100 text-slate-500 font-mono border-slate-200" value={internalBaiHocId} disabled />
           </div>
 
           <div className="col-span-4">
@@ -381,6 +382,7 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
                   <>
                     <option value="MAC_DINH">Nối cặp (Kéo dây)</option>
                     <option value="PHAN_LOAI">Phân loại (Thùng rác)</option>
+                    <option value="KEO_THA_GHEP_CAP">Kéo thả ghép cặp (nhiều cặp)</option>
                   </>
                 ) : loai === 'DIEN_KHUYET' ? (
                   <>
@@ -413,16 +415,16 @@ export default function GameAuthoringForm({ dangBaiId, baiHocId, onSaveSuccess, 
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hình ảnh (URL)</label>
-                <Input className="h-10 bg-white border-slate-200" value={hinhAnh} onChange={e => setHinhAnh(e.target.value)} placeholder="https://" />
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hình ảnh</label>
+                <FileUploadInput value={hinhAnh} onChange={setHinhAnh} kind="image" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Âm thanh (URL)</label>
-                <Input className="h-10 bg-white border-slate-200" value={amThanh} onChange={e => setAmThanh(e.target.value)} placeholder="https://" />
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Âm thanh</label>
+                <FileUploadInput value={amThanh} onChange={setAmThanh} kind="audio" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Video (URL)</label>
-                <Input className="h-10 bg-white border-slate-200" value={video} onChange={e => setVideo(e.target.value)} placeholder="https://" />
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Video</label>
+                <FileUploadInput value={video} onChange={setVideo} kind="video" />
               </div>
             </div>
           </div>

@@ -41,7 +41,7 @@ import TeacherProfile from './pages/teacher/TeacherProfile';
 
 // Pages - Parent
 import ParentDashboard from './pages/parent/ParentDashboard';
-import ParentChildren from './pages/parent/ParentAchievements';
+import ParentChildren from './pages/parent/ParentChildProfile';
 import ParentGrades from './pages/parent/ParentGrades';
 import ParentAssignments from './pages/parent/ParentAssignments';
 import ParentNotifications from './pages/parent/ParentNotifications';

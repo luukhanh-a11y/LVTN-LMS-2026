@@ -66,8 +66,8 @@ export default function ClassDetail() {
               name: hs.hoTen || hs.name || hs.fullName || 'Học sinh',
               dob: hs.ngaySinh ? new Date(hs.ngaySinh).toLocaleDateString('vi-VN') : (hs.dob || 'N/A'),
               avgScore: kq?.diemTrungBinh || 0,
-              academic: kq?.ketQuaHocTap || 'Chưa xếp',
-              conduct: kq?.ketQuaRenLuyen || 'Tốt',
+              academic: kq?.ketQuaHocTap || 'HOAN_THANH',
+              conduct: kq?.ketQuaRenLuyen || 'TOT',
               result: kq?.quyetDinh === 'LEN_LOP' ? 'LEN_LOP' : (kq?.quyetDinh === 'O_LAI' ? 'O_LAI' : 'CHUA_XET')
             };
           });
@@ -170,8 +170,8 @@ export default function ClassDetail() {
         selectedStudents.map(studentId => {
           const student = studentsData.find(s => s.id === studentId);
           return teacherService.luuKetQuaCuoiNam(classId, studentId, {
-            ketQuaHocTap: student?.academic === 'Chưa xếp' ? 'HOAN_THANH' : (student?.academic || 'HOAN_THANH'),
-            ketQuaRenLuyen: student?.conduct === 'Chưa xét' ? 'TOT' : (student?.conduct || 'TOT'),
+            ketQuaHocTap: student?.academic || 'HOAN_THANH',
+            ketQuaRenLuyen: student?.conduct || 'TOT',
             quyetDinh: student?.result === 'CHUA_XET' ? 'LEN_LOP' : (student?.result || 'LEN_LOP'),
             duocXetDacCach: false
           });
@@ -193,9 +193,9 @@ export default function ClassDetail() {
             name: hs.hoTen || hs.name || hs.fullName || 'Học sinh',
             dob: hs.ngaySinh ? new Date(hs.ngaySinh).toLocaleDateString('vi-VN') : (hs.dob || 'N/A'),
             avgScore: kq?.diemTrungBinh || 0,
-            academic: kq?.ketQuaHocTap || 'Chưa xếp',
-            conduct: kq?.ketQuaRenLuyen || 'Chưa xét',
-            result: kq?.quyetDinh || 'CHUA_XET'
+            academic: kq?.ketQuaHocTap || 'HOAN_THANH',
+            conduct: kq?.ketQuaRenLuyen || 'TOT',
+            result: kq?.quyetDinh === 'LEN_LOP' ? 'LEN_LOP' : (kq?.quyetDinh === 'O_LAI' ? 'O_LAI' : 'CHUA_XET')
           };
         });
         setStudentsData(mergedData);
@@ -379,7 +379,7 @@ export default function ClassDetail() {
                         </td>
                         <td className="px-6 py-4 font-medium">
                           <select 
-                            value={student.academic === 'Chưa xếp' ? 'HOAN_THANH' : student.academic} 
+                            value={student.academic} 
                             onChange={(e) => updateStudentField(student.id, 'academic', e.target.value)}
                             className="px-2 py-1.5 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer"
                           >
@@ -390,7 +390,7 @@ export default function ClassDetail() {
                         </td>
                         <td className="px-6 py-4">
                           <select 
-                            value={student.conduct === 'Chưa xét' ? 'TOT' : student.conduct} 
+                            value={student.conduct} 
                             onChange={(e) => updateStudentField(student.id, 'conduct', e.target.value)}
                             className="px-2 py-1.5 border border-slate-200 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer"
                           >

@@ -4,11 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { studentService } from '../../services/student.service';
+import GradedResultModal, { type GradedEssayResult } from '../../components/student/GradedResultModal';
+
+// Lớp 1 không có danh sách/điều hướng gì để tự vào xem bài tự luận đã được cô chấm
+// (giao diện Junior chỉ có đúng 1 nút to duy nhất) — nên phải TỰ ĐỘNG hiện kết quả mới
+// nhất ngay khi vào Trang Chủ. Nhớ id đã xem trong localStorage để không hiện lặp lại
+// mỗi lần mở lại trang.
+const SEEN_KEY = 'seenGradedEssayId';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  
+
   const [pendingTasks, setPendingTasks] = useState<any[]>([]);
+  const [newResult, setNewResult] = useState<GradedEssayResult | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -16,12 +24,26 @@ export default function StudentDashboard() {
         const data = await studentService.getDashboard();
         const tasks = data.upcomingTasks || [];
         setPendingTasks(tasks);
+
+        const gradedEssays: GradedEssayResult[] = data.gradedEssays || [];
+        const newest = gradedEssays[0];
+        if (newest && newest.danhGiaId) {
+          const seenId = Number(localStorage.getItem(SEEN_KEY) || 0);
+          if (newest.danhGiaId > seenId) {
+            setNewResult(newest);
+          }
+        }
       } catch (err) {
         console.error(err);
       }
     };
     loadData();
   }, [navigate]);
+
+  const handleCloseResult = () => {
+    if (newResult?.danhGiaId) localStorage.setItem(SEEN_KEY, String(newResult.danhGiaId));
+    setNewResult(null);
+  };
 
   const hasTasks = pendingTasks.length > 0;
   const currentTask = pendingTasks[0]; // Luôn lấy bài tập đầu tiên trong hàng đợi
@@ -106,6 +128,10 @@ export default function StudentDashboard() {
           <BookOpen className="w-16 h-16 text-white drop-shadow-md" />
         )}
       </button>
+
+      {newResult && (
+        <GradedResultModal result={newResult} onClose={handleCloseResult} simple />
+      )}
 
     </div>
   );

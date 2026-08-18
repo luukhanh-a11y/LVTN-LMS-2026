@@ -52,7 +52,11 @@ public enum Errorcode {
     LOP_HOC_HOC_KY_NAM_HOC_MISMATCH(1036, "Lớp học và học kỳ không thuộc cùng một năm học", HttpStatus.BAD_REQUEST),
     PHAN_CONG_GIANG_DAY_EXISTED(1037, "Giáo viên đã được phân công dạy môn này ở lớp và học kỳ này", HttpStatus.CONFLICT),
     OLD_PASSWORD_INCORRECT(1038, "Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST),
-    NEW_PASSWORD_TOO_SHORT(1039, "Mật khẩu mới phải có ít nhất 6 ký tự", HttpStatus.BAD_REQUEST);
+    NEW_PASSWORD_TOO_SHORT(1039, "Mật khẩu mới phải có ít nhất 6 ký tự", HttpStatus.BAD_REQUEST),
+    DANG_BAI_DANG_SU_DUNG(1040, "Dạng bài này đang được sử dụng (trong bài tập đã giao hoặc lịch sử tự học của học sinh) nên không thể xoá", HttpStatus.CONFLICT),
+    SACH_DANG_SU_DUNG(1041, "Sách này đã có dạng bài được giáo viên giao bài tập hoặc học sinh sử dụng, không thể xoá — hãy ẩn sách thay vì xoá", HttpStatus.CONFLICT),
+    MON_HOC_DANG_SU_DUNG(1042, "Môn học này đang được sử dụng (có sách hoặc đã được phân công giảng dạy), không thể xoá — hãy ẩn môn học thay vì xoá", HttpStatus.CONFLICT),
+    LOP_HOC_DANG_SU_DUNG(1043, "Lớp học này đang có học sinh, bài tập hoặc phân công giảng dạy, không thể xoá", HttpStatus.CONFLICT);
 
     private int code;
 

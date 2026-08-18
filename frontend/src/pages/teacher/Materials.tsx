@@ -4,6 +4,10 @@ import { Library, Search, BookOpen, Layers, LayoutTemplate, HelpCircle, PlusCirc
 import { cn } from '../../lib/utils';
 import { teacherService } from '../../services/teacher.service';
 import { useAcademicStore } from '../../stores/useAcademicStore';
+import QuizForm from '../../components/student/QuizForm';
+import NoiCapForm from '../../components/student/NoiCapForm';
+import TuLuanForm from '../../components/student/TuLuanForm';
+import LyThuyetForm from '../../components/student/LyThuyetForm';
 
 export default function Materials() {
   const currentHocKyId = useAcademicStore(state => state.currentHocKyId);
@@ -85,8 +89,14 @@ export default function Materials() {
       // Loại bỏ các sách trùng lặp (vì 1 sách có thể được fetch nhiều lần nếu có nhiều lớp học cùng môn)
       const uniqueBooks = Array.from(new Map(allBooks.map(b => [b.sachId || b.id, b])).values());
 
-      setBooks(uniqueBooks);
-      if (uniqueBooks.length > 0) setSelectedBook(uniqueBooks[0].sachId || uniqueBooks[0].id);
+      // API dùng chung với CreateAssignment.tsx (vốn cần cả SGK lẫn SBT để hiện SGK dạng
+      // disabled) nên trả về cả 2 loại — ở đây "Kho học liệu" của giáo viên chỉ quản lý/tạo
+      // nội dung dựa trên Sách bài tập, SGK là nội dung hệ thống cố định, không thuộc phạm vi
+      // này nên lọc bỏ ngay tại đây, không đụng tới API dùng chung.
+      const sbtBooks = uniqueBooks.filter(b => b.loaiSach !== 'SACH_GIAO_KHOA');
+
+      setBooks(sbtBooks);
+      if (sbtBooks.length > 0) setSelectedBook(sbtBooks[0].sachId || sbtBooks[0].id);
       else setSelectedBook(null);
     }).catch(console.error);
   }, [selectedGrade, classes, currentHocKyId]);
@@ -159,6 +169,42 @@ export default function Materials() {
     }
   };
 
+  // Render preview sống bằng đúng component học sinh dùng thật (giống cách Admin xem
+  // trước bài giảng ở AdminGameAuthoringWorkspace.tsx) thay vì dump chuỗi JSON thô —
+  // giáo viên thấy ngay câu hỏi/lựa chọn/hình ảnh được trình bày đẹp và đáp án đúng
+  // được tô sáng, không cần tự đọc JSON.
+  const renderMaterialPreview = (cauHinh: any, dapAnChuan: any) => {
+    const loai = cauHinh?.loai || 'LY_THUYET';
+    // Ép giao diện mặc định cho preview — các giao diện game hoá (DAO_VANG, TRIEU_PHU...)
+    // không phù hợp hiển thị thu gọn trong 1 thẻ danh sách.
+    const previewCauHinh = { ...cauHinh, giaoDien: 'MAC_DINH' };
+    // QuizForm/NoiCapForm chỉ tô sáng đáp án đúng khi có "result" (mô phỏng đã làm bài
+    // đúng) — không phải chỉ cần prop dapAnChuan suông. Với TU_LUAN/LY_THUYET thì để
+    // result = null vì không có khái niệm "đáp án đúng" cần tô sáng.
+    const revealResult = dapAnChuan ? { dapAnChuan, diem: 10 } : null;
+    const commonProps = {
+      loai,
+      cauHinh: previewCauHinh,
+      dapAnChuan,
+      onSubmit: () => {},
+      submitting: false,
+    };
+
+    if (loai === 'TRAC_NGHIEM' || loai === 'DIEN_KHUYET') {
+      return <QuizForm {...commonProps} result={revealResult} />;
+    }
+    if (loai === 'NOI_CAP') {
+      return <NoiCapForm {...commonProps} result={revealResult} />;
+    }
+    if (loai === 'TU_LUAN') {
+      return <TuLuanForm {...commonProps} result={null} />;
+    }
+    if (loai === 'LY_THUYET') {
+      return <LyThuyetForm cauHinh={previewCauHinh} />;
+    }
+    return <div className="text-sm text-slate-500 py-4">Chưa hỗ trợ xem trước cho dạng {loai}.</div>;
+  };
+
   // Card học liệu dùng chung cho cả tab "Kho học liệu" (theo cây sách) và tab
   // "Học liệu của tôi" (liệt kê trực tiếp, không cần duyệt sách).
   const renderMaterialCard = (m: any, idx: number) => {
@@ -184,49 +230,22 @@ export default function Materials() {
                 )}
               </div>
               <p className="text-slate-900 font-bold group-hover:text-blue-600 transition-colors mb-2">{m.tenDangBai || m.content}</p>
-
-              {/* Hiển thị chi tiết câu hỏi và đáp án */}
-              <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
-                {m.loaiNoiDung === 'H5P' ? (
-                  <p className="text-purple-700 font-medium">🎮 Nội dung tương tác H5P — bấm để xem chi tiết.</p>
-                ) : (
-                  <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
-                )}
-                {m.loaiNoiDung !== 'H5P' && cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
-                  <ul className="mt-2 space-y-1">
-                    {cauHinh.luaChon.map((choice: any, cIdx: number) => {
-                      const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
-                      const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
-                      const isCorrect = dapAnChuan !== null && (
-                        (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                        (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) ||
-                        (String(dapAnChuan) === String(val))
-                      );
-                      return (
-                        <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
-                          <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
-                          {hinhAnh ? (
-                            <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
-                          ) : (
-                            <span>{val}</span>
-                          )}
-                          {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  dapAnChuan && (
-                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
-                      Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
-                    </div>
-                  )
-                )}
-              </div>
-
             </div>
           </div>
         </div>
+
+        {/* Preview chi tiết câu hỏi/đáp án — stopPropagation để bấm chọn đáp án bên trong
+            không vô tình kích hoạt điều hướng của thẻ <Link> bao ngoài. */}
+        {m.loaiNoiDung === 'H5P' ? (
+          <p className="text-purple-700 font-medium text-sm pl-1">🎮 Nội dung tương tác H5P — bấm để xem chi tiết.</p>
+        ) : (
+          <div
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50 max-h-[420px] overflow-y-auto [&_button[type='submit']]:!hidden"
+          >
+            {renderMaterialPreview(cauHinh, dapAnChuan)}
+          </div>
+        )}
       </Link>
     );
   };
@@ -316,7 +335,10 @@ export default function Materials() {
         </div>
 
         {/* Khung nội dung */}
-        <div className="flex-1 flex flex-col bg-white">
+        {/* min-w-0: bắt buộc phải có — mặc định flex item có min-width:auto, nên nếu
+            "Đáp án chuẩn" chứa chuỗi JSON/URL dài không có khoảng trắng để ngắt dòng,
+            nó sẽ ép khung này rộng ra vượt cả sidebar bên trái (w-80), gây đè layout. */}
+        <div className="flex-1 min-w-0 flex flex-col bg-white">
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900">
               Danh sách Học liệu

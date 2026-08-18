@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { adminService } from '../../../services/admin.service';
 import { useAcademicStore } from '../../../stores/useAcademicStore';
 import { Plus, Trash2 } from 'lucide-react';
+import { FileUploadInput } from '../../../components/ui/FileUploadInput';
 
 function toSlug(str: string) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -141,14 +142,11 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Ảnh Bìa</label>
-          <div className="flex gap-4 items-center">
-            {anhBiaUrl && (
-              <img src={anhBiaUrl.startsWith('http') || anhBiaUrl.startsWith('blob') ? anhBiaUrl : `http://localhost:8080/${anhBiaUrl}`} alt="Bìa" className="h-16 w-16 object-cover rounded border" />
-            )}
-            <div className="flex-1">
-              <Input value={anhBiaUrl} onChange={e => setAnhBiaUrl(e.target.value)} placeholder="Nhập URL ảnh hoặc dán link ảnh bìa" />
-            </div>
-          </div>
+          <FileUploadInput
+            value={anhBiaUrl.startsWith('http') || anhBiaUrl.startsWith('blob') || !anhBiaUrl ? anhBiaUrl : `http://localhost:8080/${anhBiaUrl}`}
+            onChange={setAnhBiaUrl}
+            kind="image"
+          />
         </div>
 
         <div>
@@ -240,7 +238,7 @@ export function CreateSachModal({ isOpen, onClose, onSuccess, monHocList, initia
         <div className="flex items-center justify-between border-t pt-4">
           <label className="flex items-center cursor-pointer">
             <div className="relative">
-              <input type="checkbox" className="sr-only" checked={trangThai === 'ACTIVE'} onChange={(e) => setTrangThai(e.target.checked ? 'ACTIVE' : 'INACTIVE')} />
+              <input type="checkbox" className="sr-only" checked={trangThai === 'ACTIVE'} onChange={(e) => setTrangThai(e.target.checked ? 'ACTIVE' : 'AN')} />
               <div className={`block w-10 h-6 rounded-full transition-colors ${trangThai === 'ACTIVE' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
               <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${trangThai === 'ACTIVE' ? 'transform translate-x-4' : ''}`}></div>
             </div>

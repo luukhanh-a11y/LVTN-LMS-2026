@@ -127,6 +127,21 @@ public class TienDoHocSinhService {
         tienDoHocSinhRepository.save(tienDo);
     }
 
+    // Học sinh tự bấm "Đánh dấu hoàn thành" (nút thủ công ở LessonPlayer) — khác với
+    // updateProgress() ở trên vốn CHỈ tính % dựa trên số dạng bài đã có lịch sử tự học
+    // (lich_su_tu_hoc, tạo ra khi nộp câu hỏi/trắc nghiệm). Bài học có dạng LY_THUYET
+    // (đọc/xem, không có gì để nộp) sẽ KHÔNG BAO GIỜ đạt 100% qua updateProgress() vì
+    // không dạng bài nào có lịch sử tự học — nên nút "hoàn thành" cần set thẳng 100%
+    // theo đúng ý định của học sinh, không tính lại từ lịch sử tự học.
+    @Transactional
+    public void markHoanThanh(Long hocSinhId, Integer baiHocId) {
+        TienDoHocSinh tienDo = getOrCreateTienDo(hocSinhId, baiHocId);
+        tienDo.setPhanTramHoanThanh((short) 100);
+        tienDo.setDaHoanThanh(true);
+        tienDo.setLanXemCuoi(LocalDateTime.now());
+        tienDoHocSinhRepository.save(tienDo);
+    }
+
     @Transactional
     public void unmarkProgress(Long hocSinhId, Integer baiHocId) {
         HoSoHocSinh hocSinh = hoSoHocSinhRepository.findById(hocSinhId)
@@ -283,6 +298,10 @@ public class TienDoHocSinhService {
             return com.LMS.LVTN.dto.response.ParentAssignmentDTO.builder()
                     .id(bt.getBaiTapId())
                     .title(bt.getTieuDe() != null ? bt.getTieuDe() : (bt.getDangBai() != null ? bt.getDangBai().getTenDangBai() : "Bài tập"))
+                    // thoiDiemBatDau = lúc bài tập thật sự mở cho học sinh làm (mốc "giao bài");
+                    // rơi về ngayTao nếu giáo viên không đặt lịch mở riêng — cùng quy ước với
+                    // student.service.ts (assignedDate: t.thoiDiemBatDau || t.ngayTao).
+                    .assignedDate(bt.getThoiDiemBatDau() != null ? bt.getThoiDiemBatDau() : bt.getNgayTao())
                     .dueDate(bt.getDeadline())
                     .xpReward(xpReward)
                     .completed(false) // Assuming not completed by default since parent just views it. Or could query BaiNop

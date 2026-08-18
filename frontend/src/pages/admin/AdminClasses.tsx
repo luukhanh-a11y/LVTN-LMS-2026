@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Users, MoreVertical, X } from 'lucide-react';
+import { Plus, Search, Users, MoreVertical, X, Pencil, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import Button from '../../components/Button';
@@ -21,28 +21,35 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingClass, setEditingClass] = useState<any>(null);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const mapClass = (c: any) => ({
+    id: c.lopHocId,
+    name: c.tenLop,
+    grade: c.khoiLop,
+    teacherId: c.giaoVienChuNhiem?.giaoVienId ?? null,
+    teacherName: c.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
+    siSoToiDa: c.siSoToiDa,
+    studentCount: `${c.siSoHienTai || 0}/${c.siSoToiDa}`,
+    trangThai: c.trangThai,
+    status: c.trangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'
+  });
+
+  const fetchClasses = async () => {
+    setLoading(true);
+    try {
+      const data = await classService.getAllClasses();
+      setClasses(data.map(mapClass));
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi tải danh sách lớp học');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchClasses = async () => {
-      setLoading(true);
-      try {
-        const data = await classService.getAllClasses();
-        const mapped = data.map((c: any) => ({
-          id: c.lopHocId,
-          name: c.tenLop,
-          grade: c.khoiLop,
-          teacherName: c.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
-          studentCount: `${c.siSoHienTai || 0}/${c.siSoToiDa}`,
-          status: c.trangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'
-        }));
-        setClasses(mapped);
-      } catch (err) {
-        console.error(err);
-        toast.error('Lỗi khi tải danh sách lớp học');
-      } finally {
-        setLoading(false);
-      }
-    };
     const fetchDependencies = async () => {
       try {
         const [teachersData, cauHinhData] = await Promise.all([
@@ -57,6 +64,7 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
     };
     fetchClasses();
     fetchDependencies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNamHocId]);
 
   const handleCreateClass = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,15 +73,15 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
       toast.error('Hệ thống chưa được cấu hình năm học, không thể tạo lớp!');
       return;
     }
-    
+
     const formData = new FormData(e.currentTarget);
     const payload = {
       tenLop: formData.get('tenLop') as string,
       khoiLop: Number(formData.get('khoiLop')),
       giaoVienChuNhiemId: formData.get('giaoVienChuNhiemId') ? Number(formData.get('giaoVienChuNhiemId')) : null,
       siSoToiDa: Number(formData.get('siSoToiDa')) || 40,
-      trangThai: formData.get('trangThai') === 'on' ? 'ACTIVE' : 'INACTIVE',
-      namHocId: selectedNamHocId || 1 
+      trangThai: formData.get('trangThai') === 'on' ? 'ACTIVE' : 'DONG_BANG',
+      namHocId: selectedNamHocId || 1
     };
 
     if (!payload.tenLop) {
@@ -83,24 +91,32 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
 
     setIsSubmitting(true);
     try {
-      await classService.createClass(payload);
-      toast.success('Tạo lớp học thành công!');
+      if (editingClass) {
+        await classService.updateClass(editingClass.id, payload);
+        toast.success('Cập nhật lớp học thành công!');
+      } else {
+        await classService.createClass(payload);
+        toast.success('Tạo lớp học thành công!');
+      }
       setShowAddModal(false);
-      // Reload classes
-      const data = await classService.getAllClasses();
-      const mapped = data.map((c: any) => ({
-        id: c.lopHocId,
-        name: c.tenLop,
-        grade: c.khoiLop,
-        teacherName: c.giaoVienChuNhiem?.hoTen || 'Chưa phân công',
-        studentCount: `${c.siSoHienTai || 0}/${c.siSoToiDa}`,
-        status: c.trangThai === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'
-      }));
-      setClasses(mapped);
+      setEditingClass(null);
+      fetchClasses();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Có lỗi khi tạo lớp');
+      toast.error(err?.response?.data?.message || (editingClass ? 'Có lỗi khi cập nhật lớp' : 'Có lỗi khi tạo lớp'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteClass = async (cls: any) => {
+    setOpenMenuId(null);
+    if (!window.confirm(`Xoá lớp "${cls.name}"? Hành động này không thể hoàn tác.`)) return;
+    try {
+      await classService.deleteClass(cls.id);
+      toast.success('Đã xoá lớp học');
+      fetchClasses();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi xoá lớp');
     }
   };
 
@@ -186,15 +202,49 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClasses.map(c => (
               <Link to={`/admin/classes/${c.id}`} key={c.id} className="block bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:border-blue-300 transition group relative cursor-pointer hover:shadow-md">
-                <button 
-                  className="absolute top-4 right-4 p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault(); // Prevent navigating when clicking the More icon
-                  }}
-                >
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-                
+                <div className="absolute top-4 right-4">
+                  <button
+                    className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === c.id ? null : c.id);
+                    }}
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+
+                  {openMenuId === c.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenMenuId(null); }} />
+                      <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                        <button
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                            setEditingClass(c);
+                            setShowAddModal(true);
+                          }}
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Sửa
+                        </button>
+                        <button
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteClass(c);
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Xoá
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <h4 className="text-2xl font-bold text-slate-900 mb-4">{c.name}</h4>
                 
                 <div className="space-y-3">
@@ -227,11 +277,11 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
 
       </div>
 
-      {/* MODAL THÊM LỚP MỚI */}
+      {/* MODAL THÊM / SỬA LỚP */}
       {showAddModal && (
         <CreateClassModal
           isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
+          onClose={() => { setShowAddModal(false); setEditingClass(null); }}
           activeGrade={activeGrade}
           grades={grades}
           teachers={teachers}
@@ -239,17 +289,19 @@ export default function AdminClasses({ isInsideTab = false }: { isInsideTab?: bo
           selectedNamHocId={selectedNamHocId}
           onSubmit={handleCreateClass}
           isSubmitting={isSubmitting}
+          editingClass={editingClass}
         />
       )}
     </div>
   );
 }
 
-function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namHocList, selectedNamHocId, onSubmit, isSubmitting }: any) {
-  const [trangThai, setTrangThai] = useState('ACTIVE');
+function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namHocList, selectedNamHocId, onSubmit, isSubmitting, editingClass }: any) {
+  const isEdit = !!editingClass;
+  const [trangThai, setTrangThai] = useState(editingClass?.trangThai === 'DONG_BANG' ? 'DONG_BANG' : 'ACTIVE');
   const [searchTerm, setSearchTerm] = useState('');
   const [isTeacherDropdownOpen, setIsTeacherDropdownOpen] = useState(false);
-  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState(editingClass?.teacherId ? String(editingClass.teacherId) : '');
 
   if (!isOpen) return null;
 
@@ -258,23 +310,23 @@ function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namH
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Thêm Lớp Học Mới</h3>
+            <h3 className="text-xl font-bold text-slate-900">{isEdit ? `Sửa Lớp ${editingClass.name}` : 'Thêm Lớp Học Mới'}</h3>
           </div>
           <button type="button" onClick={onClose} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={onSubmit} className="p-6 bg-slate-50/50 space-y-5 max-h-[80vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Tên lớp <span className="text-red-500">*</span></label>
-              <input type="text" name="tenLop" required placeholder="VD: 1A3" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+              <input type="text" name="tenLop" required defaultValue={editingClass?.name} placeholder="VD: 1A3" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Khối lớp</label>
-              <select name="khoiLop" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" defaultValue={activeGrade}>
+              <select name="khoiLop" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" defaultValue={editingClass?.grade ?? activeGrade}>
                 {grades.map((g: any) => <option key={g} value={g}>Khối {g}</option>)}
               </select>
             </div>
@@ -332,13 +384,13 @@ function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namH
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Sĩ số tối đa</label>
-              <input type="number" name="siSoToiDa" defaultValue={40} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+              <input type="number" name="siSoToiDa" defaultValue={editingClass?.siSoToiDa ?? 40} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">Sĩ số hiện tại</label>
               <div className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-500 font-medium flex items-center justify-between cursor-not-allowed">
-                <span>0 học sinh</span>
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">Mới tạo</span>
+                <span>{isEdit ? editingClass.studentCount.split('/')[0] : 0} học sinh</span>
+                {!isEdit && <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">Mới tạo</span>}
               </div>
             </div>
           </div>
@@ -347,7 +399,7 @@ function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namH
             <label className="text-sm font-bold text-slate-700">Trạng thái lớp</label>
             <label className="flex items-center cursor-pointer">
               <div className="relative">
-                <input type="checkbox" name="trangThai" className="sr-only" checked={trangThai === 'ACTIVE'} onChange={(e) => setTrangThai(e.target.checked ? 'ACTIVE' : 'INACTIVE')} />
+                <input type="checkbox" name="trangThai" className="sr-only" checked={trangThai === 'ACTIVE'} onChange={(e) => setTrangThai(e.target.checked ? 'ACTIVE' : 'DONG_BANG')} />
                 <div className={`block w-10 h-6 rounded-full transition-colors ${trangThai === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
                 <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${trangThai === 'ACTIVE' ? 'transform translate-x-4' : ''}`}></div>
               </div>
@@ -357,7 +409,9 @@ function CreateClassModal({ isOpen, onClose, activeGrade, grades, teachers, namH
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Hủy bỏ</Button>
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang tạo...' : 'Tạo lớp mới'}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (isEdit ? 'Đang lưu...' : 'Đang tạo...') : (isEdit ? 'Lưu thay đổi' : 'Tạo lớp mới')}
+            </Button>
           </div>
         </form>
       </div>

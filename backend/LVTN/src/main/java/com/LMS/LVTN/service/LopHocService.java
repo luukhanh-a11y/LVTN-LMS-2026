@@ -8,10 +8,13 @@ import com.LMS.LVTN.entity.NamHoc;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.LopHocMapper;
+import com.LMS.LVTN.repository.BaiTapRepository;
 import com.LMS.LVTN.repository.CauHinhHeThongRepository;
 import com.LMS.LVTN.repository.HoSoGiaoVienRepository;
+import com.LMS.LVTN.repository.HoSoHocSinhRepository;
 import com.LMS.LVTN.repository.LopHocRepository;
 import com.LMS.LVTN.repository.NamHocRepository;
+import com.LMS.LVTN.repository.PhanCongGiangDayRepository;
 import com.LMS.LVTN.entity.CauHinhHeThong;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,9 @@ public class LopHocService {
     NamHocRepository namHocRepository;
     HoSoGiaoVienRepository hoSoGiaoVienRepository;
     CauHinhHeThongRepository cauHinhHeThongRepository;
+    HoSoHocSinhRepository hoSoHocSinhRepository;
+    BaiTapRepository baiTapRepository;
+    PhanCongGiangDayRepository phanCongGiangDayRepository;
 
     private NamHoc getNamHocHienTaiTuCauHinh() {
         return cauHinhHeThongRepository.findById((short) 1)
@@ -62,7 +68,11 @@ public class LopHocService {
             lopHoc.setGiaoVienChuNhiem(giaoVien);
         }
 
-        return mapToResponseWithSiSo(lopHocRepository.save(lopHoc));
+        try {
+            return mapToResponseWithSiSo(lopHocRepository.save(lopHoc));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
+        }
     }
     @Transactional(readOnly = true)
     public List<LopHocResponse> getAll() {
@@ -128,12 +138,21 @@ public class LopHocService {
             lopHoc.setGiaoVienChuNhiem(giaoVien);
         }
 
-        return mapToResponseWithSiSo(lopHocRepository.save(lopHoc));
+        try {
+            return mapToResponseWithSiSo(lopHocRepository.save(lopHoc));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new AppExceptions(Errorcode.DATA_EXISTED);
+        }
     }
 
     public void delete(Long id) {
         if (!lopHocRepository.existsById(id)) {
             throw new AppExceptions(Errorcode.LOP_HOC_NOT_FOUND);
+        }
+        if (hoSoHocSinhRepository.existsByLopHoc_LopHocId(id)
+                || baiTapRepository.existsByLopHoc_LopHocId(id)
+                || phanCongGiangDayRepository.existsByLopHoc_LopHocId(id)) {
+            throw new AppExceptions(Errorcode.LOP_HOC_DANG_SU_DUNG);
         }
         lopHocRepository.deleteById(id);
     }

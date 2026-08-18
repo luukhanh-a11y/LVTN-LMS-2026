@@ -22,7 +22,7 @@ export default function ParentAchievements() {
   const activeChild = selectedChild || { name: 'Học sinh' };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
+    <div className="space-y-6 animate-in fade-in h-full flex flex-col">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Góc Thành Tích</h2>

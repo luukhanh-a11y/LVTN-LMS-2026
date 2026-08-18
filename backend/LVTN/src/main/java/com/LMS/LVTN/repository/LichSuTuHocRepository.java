@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface LichSuTuHocRepository extends JpaRepository<LichSuTuHoc, Long> {
     List<LichSuTuHoc> findByHocSinh_HocSinhId(Long hocSinhId);
     List<LichSuTuHoc> findByDangBai_DangBaiId(Integer dangBaiId);
+    boolean existsByDangBai_DangBaiId(Integer dangBaiId);
+    boolean existsByDangBai_BaiHoc_ChuDe_Sach_SachId(Integer sachId);
     List<LichSuTuHoc> findByHocSinh_HocSinhIdAndDangBai_DangBaiId(Long hocSinhId, Integer dangBaiId);
     List<LichSuTuHoc> findByHocSinh_MaHocSinh(String maHocSinh);
 

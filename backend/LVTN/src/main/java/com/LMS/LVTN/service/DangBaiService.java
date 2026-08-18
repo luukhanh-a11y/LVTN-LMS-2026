@@ -40,6 +40,7 @@ public class DangBaiService {
     private final com.LMS.LVTN.repository.BaiNopRepository baiNopRepository;
     private final com.LMS.LVTN.repository.BaiHocRepository baiHocRepository;
     private final com.LMS.LVTN.repository.DanhGiaBaiLamRepository danhGiaBaiLamRepository;
+    private final com.LMS.LVTN.repository.LichSuTuHocRepository lichSuTuHocRepository;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public List<DangBaiResponse> getAllDangBaiHeThong() {
@@ -175,7 +176,18 @@ public class DangBaiService {
     public void deleteDangBai(Integer id) {
         if (!dangBaiRepository.existsById(id))
             throw new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND);
+        if (dangBaiDangDuocSuDung(id))
+            throw new AppExceptions(Errorcode.DANG_BAI_DANG_SU_DUNG);
         dangBaiRepository.deleteById(id);
+    }
+
+    // Dạng bài coi là "đang sử dụng" nếu đã được giao trong bài tập (kiểu cũ gắn trực tiếp
+    // vào BaiTap, hoặc kiểu mới qua ChiTietBaiTap) hoặc học sinh đã có lịch sử tự học với nó —
+    // xoá thẳng trong các trường hợp này sẽ vi phạm khoá ngoại và làm mất dữ liệu bài đã giao/đã làm.
+    private boolean dangBaiDangDuocSuDung(Integer id) {
+        return chiTietBaiTapRepository.existsByDangBai_DangBaiId(id)
+                || baiTapRepository.existsByDangBai_DangBaiId(id)
+                || lichSuTuHocRepository.existsByDangBai_DangBaiId(id);
     }
 
     // ── Kho học liệu của giáo viên (dang_bai nguồn GIAO_VIEN_BO_SUNG) ──
@@ -249,6 +261,8 @@ public class DangBaiService {
         DangBai dangBai = dangBaiRepository.findById(id)
                 .orElseThrow(() -> new AppExceptions(Errorcode.DANG_BAI_NOT_FOUND));
         kiemTraQuyenSoHuu(dangBai, giaoVienId);
+        if (dangBaiDangDuocSuDung(id))
+            throw new AppExceptions(Errorcode.DANG_BAI_DANG_SU_DUNG);
         dangBaiRepository.deleteById(id);
     }
 

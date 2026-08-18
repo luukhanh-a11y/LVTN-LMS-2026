@@ -198,12 +198,12 @@ export const adminService = {
     return response.data;
   },
 
-  cloneSachKhongChuDe: async (params: { monHocId: number; khoiLop: number; hocKyCuId: number; hocKyMoiId: number }): Promise<any> => {
+  cloneSachKhongChuDe: async (params: { maMon: string; khoiLop: number; hocKyCuId: number; hocKyMoiId: number }): Promise<any> => {
     const response = await api.post('/sach/nhan-ban-khong-chu-de', null, { params });
     return response.data;
   },
 
-  cloneSachKemChuDe: async (params: { monHocId: number; khoiLop: number; hocKyCuId: number; hocKyMoiId: number }): Promise<any> => {
+  cloneSachKemChuDe: async (params: { maMon: string; khoiLop: number; hocKyCuId: number; hocKyMoiId: number }): Promise<any> => {
     const response = await api.post('/sach/nhan-ban-kem-chu-de', null, { params });
     return response.data;
   },
@@ -319,6 +319,10 @@ export const adminService = {
   updateDangBai: async (id: number, data: any): Promise<any> => {
     const response = await api.put(`/he-thong/dang-bai/${id}`, data);
     return response.data?.data || response.data;
+  },
+
+  deleteDangBai: async (id: number): Promise<void> => {
+    await api.delete(`/he-thong/dang-bai/${id}`);
   },
 
   // Cấu hình hệ thống chỉ có 1 bản ghi duy nhất, luôn có cauHinhId = 1

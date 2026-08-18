@@ -39,16 +39,20 @@ const formatTaskData = (task: any) => {
     result.dateGroupKey = 'Không xác định';
     result.dateGroupLabel = 'Không xác định';
     result.assignedTimestamp = 0;
+    result.assignedTimeStr = null;
   } else {
     const assigned = new Date(task.assignedDate);
     const assignedMidnight = new Date(assigned.getFullYear(), assigned.getMonth(), assigned.getDate()).getTime();
     const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const diffDays = Math.round((assignedMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
-    
+
     result.dateGroupKey = assignedMidnight.toString();
     result.assignedTimestamp = assigned.getTime();
     const dateFormatted = assigned.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    
+    // Mốc ngày GIỜ đầy đủ lúc bài tập được giao (khác với dateGroupLabel chỉ có ngày,
+    // dùng để nhóm theo ngày) — hiển thị cạnh hạn nộp để phụ huynh biết chính xác lúc nào.
+    result.assignedTimeStr = `${assigned.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${dateFormatted}`;
+
     if (diffDays === -1) result.dateGroupLabel = `Hôm qua, ${dateFormatted}`;
     else if (diffDays === 0) result.dateGroupLabel = `Hôm nay, ${dateFormatted}`;
     else if (diffDays === 1) result.dateGroupLabel = `Ngày mai, ${dateFormatted}`;
@@ -103,7 +107,7 @@ export default function ParentAssignments() {
   }, [selectedChild?.id]);
 
   return (
-    <div className="max-w-5xl mx-auto pb-12 animate-in fade-in">
+    <div className="pb-12 animate-in fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Bài tập của bé</h2>
@@ -162,6 +166,12 @@ export default function ParentAssignments() {
                             {task.isLate ? <span className="text-rose-500 mr-1">Đã hết hạn lúc:</span> : <span>Hạn:</span>} {task.deadline}
                           </span>
                         </div>
+
+                        {task.assignedTimeStr && (
+                          <div className="flex items-center text-xs text-slate-400 mt-1.5">
+                            <CalendarDays className="w-3.5 h-3.5 mr-1" /> Giao lúc: {task.assignedTimeStr}
+                          </div>
+                        )}
                       </div>
                     </div>
 

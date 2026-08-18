@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Volume2 } from 'lucide-react';
+import { cleanMediaUrl, hasRealAudio, playRealAudio } from '../../lib/utils';
 
 export interface NoiCapFormProps {
   loai: string;
@@ -40,10 +42,19 @@ export default function NoiCapForm({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden font-sans">
       <div className="p-5 md:p-8 space-y-6">
-        
+
         {/* Câu hỏi / Yêu cầu */}
         {(cauHinh?.cauHoi || cauHinh?.noiDung) && (
           <div className="mb-6">
+            {hasRealAudio(cauHinh?.amThanh) && (
+              <button
+                type="button"
+                onClick={() => playRealAudio(cauHinh?.amThanh)}
+                className="flex items-center gap-2 mb-4 px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-white font-black rounded-full shadow-[0_5px_0_0_#b45309] hover:shadow-[0_3px_0_0_#b45309] hover:translate-y-[2px] active:shadow-none active:translate-y-[5px] transition-all cursor-pointer"
+              >
+                <Volume2 className="w-5 h-5" /> Nghe đọc
+              </button>
+            )}
             {cauHinh.cauHoi && (
               <div className="text-lg font-bold text-slate-800 mb-2" dangerouslySetInnerHTML={{ __html: cauHinh.cauHoi }} />
             )}
@@ -51,7 +62,7 @@ export default function NoiCapForm({
               <div className="prose max-w-none text-slate-600 mb-4" dangerouslySetInnerHTML={{ __html: cauHinh.noiDung }} />
             )}
             {cauHinh.hinhAnh && (
-              <img src={cauHinh.hinhAnh} alt="Minh họa" className="max-w-full h-auto rounded-xl object-contain max-h-64" />
+              <img src={cleanMediaUrl(cauHinh.hinhAnh)} alt="Minh họa" className="max-w-full h-auto rounded-xl object-contain max-h-[60vh] mx-auto" />
             )}
           </div>
         )}
@@ -65,7 +76,7 @@ export default function NoiCapForm({
                     {idx + 1}
                   </span>
                   {t.hinhAnh && (
-                    <img src={t.hinhAnh} alt="Hình" className="w-12 h-12 rounded object-cover border border-slate-200" />
+                    <img src={cleanMediaUrl(t.hinhAnh)} alt="Hình" className="w-12 h-12 rounded object-cover border border-slate-200" />
                   )}
                   <span className="font-medium text-slate-700">{t.noiDung || '...'}</span>
                 </div>

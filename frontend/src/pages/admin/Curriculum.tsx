@@ -143,14 +143,19 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
     return matchKhoi && matchMon && matchLoai;
   });
 
+  // Backend trả message thật (lý do cụ thể vì sao không xoá được, VD: "đang được sử dụng")
+  // trong ApiResponse.message — hiển thị message này thay vì toast chung chung để người dùng
+  // biết chính xác cần làm gì tiếp theo.
+  const getErrorMessage = (err: any, fallback: string) => err?.response?.data?.message || fallback;
+
   const handleDeleteSach = async (sach: any) => {
     if (!window.confirm(`Xoá bộ sách "${sach.tenSach}"? Toàn bộ chương/bài học/dạng bài bên trong cũng bị xoá.`)) return;
     try {
       await adminService.deleteSach(sach.sachId);
       toast.success('Đã xoá thành công');
       fetchData();
-    } catch {
-      toast.error('Có lỗi xảy ra khi xoá');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Có lỗi xảy ra khi xoá'));
     }
   };
 
@@ -160,8 +165,8 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
       await adminService.deleteChuDe(chuong.chuDeId);
       toast.success('Đã xoá thành công');
       fetchData();
-    } catch {
-      toast.error('Có lỗi xảy ra khi xoá');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Có lỗi xảy ra khi xoá'));
     }
   };
 
@@ -172,8 +177,22 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
       toast.success('Đã xoá thành công');
       if (selectedBaiHoc === bai.baiHocId) setSelectedBaiHoc(null);
       fetchData();
-    } catch {
-      toast.error('Có lỗi xảy ra khi xoá');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Có lỗi xảy ra khi xoá'));
+    }
+  };
+
+  const handleDeleteDangBai = async (dangBai: any) => {
+    if (!window.confirm(`Xoá dạng bài "${dangBai.tenDangBai}"?`)) return;
+    try {
+      await adminService.deleteDangBai(dangBai.dangBaiId);
+      toast.success('Đã xoá thành công');
+      if (selectedDangBai === dangBai.dangBaiId) setSelectedDangBai(null);
+      fetchData();
+    } catch (err) {
+      // Lỗi phổ biến nhất ở đây: dạng bài đã được giao trong bài tập hoặc học sinh đã có
+      // lịch sử tự học — backend chặn xoá (409) và trả message giải thích rõ lý do.
+      toast.error(getErrorMessage(err, 'Có lỗi xảy ra khi xoá'));
     }
   };
 
@@ -392,8 +411,12 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
                         <div
                           key={dangBai.dangBaiId}
                           onClick={() => navigate(`/admin/curriculum/games/edit/${dangBai.dangBaiId}`)}
-                          className={`p-3 border rounded-xl cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all ${selectedDangBai === dangBai.dangBaiId ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200' : 'border-slate-200 bg-white'}`}
+                          className={`group relative p-3 pr-7 border rounded-xl cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all ${selectedDangBai === dangBai.dangBaiId ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-200' : 'border-slate-200 bg-white'}`}
                         >
+                          <Trash2
+                            className="w-3.5 h-3.5 text-slate-300 hover:text-red-500 absolute top-2.5 right-2.5 hidden group-hover:block"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteDangBai(dangBai); }}
+                          />
                           <div className="font-semibold text-sm text-slate-800">{dangBai.tenDangBai}</div>
                           <div className="text-xs text-slate-500 mt-1">Dạng: {displayType}</div>
                         </div>
@@ -427,7 +450,7 @@ export default function AdminCurriculum({ isInsideTab = false }: { isInsideTab?:
 }
 
 function NhanBanSachForm({ monHocList, namHocList, onComplete }: { monHocList: any[], namHocList: any[], onComplete: () => void }) {
-  const [monHocId, setMonHocId] = useState('');
+  const [maMon, setMaMon] = useState('');
   const [khoiLop, setKhoiLop] = useState('');
 
   const [namHocCuId, setNamHocCuId] = useState('');
@@ -454,7 +477,7 @@ function NhanBanSachForm({ monHocList, namHocList, onComplete }: { monHocList: a
   }, [namHocMoiId]);
 
   const handleClone = async () => {
-    if (!monHocId || !khoiLop || !hocKyCuId || !hocKyMoiId) {
+    if (!maMon || !khoiLop || !hocKyCuId || !hocKyMoiId) {
       toast.error('Vui lòng chọn đủ Môn học, Khối, Học kỳ nguồn và đích');
       return;
     }
@@ -465,7 +488,7 @@ function NhanBanSachForm({ monHocList, namHocList, onComplete }: { monHocList: a
     setIsCloning(true);
     try {
       const params = {
-        monHocId: Number(monHocId), khoiLop: Number(khoiLop),
+        maMon: maMon, khoiLop: Number(khoiLop),
         hocKyCuId: Number(hocKyCuId), hocKyMoiId: Number(hocKyMoiId),
       };
       if (kemCon) {
@@ -488,9 +511,9 @@ function NhanBanSachForm({ monHocList, namHocList, onComplete }: { monHocList: a
         <p className="text-sm text-slate-500">Sao chép sách của 1 môn/khối từ một năm học - học kỳ NGUỒN sang một năm học - học kỳ ĐÍCH khác. Bản sao độc lập hoàn toàn với bản gốc.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select className="px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={monHocId} onChange={e => setMonHocId(e.target.value)}>
+          <select className="px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={maMon} onChange={e => setMaMon(e.target.value)}>
             <option value="">-- Môn học --</option>
-            {monHocList.map(m => <option key={m.monHocId} value={m.monHocId}>{m.tenMon || m.tenMonHoc}</option>)}
+            {monHocList.map(m => <option key={m.monHocId} value={m.maMon}>{m.tenMon || m.tenMonHoc}</option>)}
           </select>
           <select className="px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={khoiLop} onChange={e => setKhoiLop(e.target.value)}>
             <option value="">-- Khối --</option>

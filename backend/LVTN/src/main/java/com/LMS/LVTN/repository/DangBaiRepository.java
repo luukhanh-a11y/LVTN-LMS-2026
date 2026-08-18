@@ -2,6 +2,7 @@ package com.LMS.LVTN.repository;
 
 import com.LMS.LVTN.entity.DangBai;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,5 +26,16 @@ public interface DangBaiRepository extends JpaRepository<DangBai, Integer> {
     List<DangBai> findByNguonGocAndGiaoVien_GiaoVienId(com.LMS.LVTN.enums.NguonGoc nguonGoc, Long giaoVienId);
 
     List<DangBai> findByNguonGoc(com.LMS.LVTN.enums.NguonGoc nguonGoc);
+
+    // Xoá dạng bài theo chuỗi quan hệ ChuDe/Sach — dùng khi xoá cả 1 chương/sách, phải xoá
+    // hết dạng bài bên dưới các bài học TRƯỚC KHI xoá bài học, nếu không sẽ vi phạm khoá
+    // ngoại dang_bai.bai_hoc_id (NO ACTION, không có ON DELETE CASCADE ở DB).
+    @Modifying
+    @Query("DELETE FROM DangBai d WHERE d.baiHoc.chuDe.chuDeId = :chuDeId")
+    void deleteAllByChuDeId(@Param("chuDeId") Integer chuDeId);
+
+    @Modifying
+    @Query("DELETE FROM DangBai d WHERE d.baiHoc.chuDe.sach.sachId = :sachId")
+    void deleteAllBySachId(@Param("sachId") Integer sachId);
 }
 

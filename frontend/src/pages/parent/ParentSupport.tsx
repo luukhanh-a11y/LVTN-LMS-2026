@@ -5,12 +5,13 @@ import Button from '../../components/Button';
 import { cn } from '../../lib/utils';
 import { useParentContextStore } from '../../stores/useParentContextStore';
 import { ticketService } from '../../services/ticket.service';
+import { parentService } from '../../services/parent.service';
 
 export default function ParentSupport() {
   const { selectedChild } = useParentContextStore();
   const activeChild = selectedChild || { name: 'Học sinh', id: 0 };
-  
-  const [type, setType] = useState('HO_TRO_KY_THUAT');
+
+  const [type, setType] = useState('RESET_MAT_KHAU');
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tickets, setTickets] = useState<any[]>([]);
@@ -30,14 +31,20 @@ export default function ParentSupport() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeChild.id) {
+      toast.error('Vui lòng chọn học sinh trước khi gửi yêu cầu');
+      return;
+    }
     if (!content.trim()) {
       toast.error('Vui lòng nhập nội dung');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
-      await ticketService.createTicket(activeChild.id, type, content);
+      // Dùng endpoint riêng của phụ huynh (không gọi thẳng ticketService.createTicket) —
+      // backend tự tra đúng tài khoản (NguoiDung) của con từ hocSinhId, tránh gửi nhầm ID.
+      await parentService.createChildTicket(activeChild.id, type, content);
       toast.success('Đã gửi yêu cầu hỗ trợ thành công!');
       setContent('');
       fetchTickets();
@@ -49,7 +56,7 @@ export default function ParentSupport() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in h-full flex flex-col">
+    <div className="space-y-6 animate-in fade-in h-full flex flex-col">
       <div>
         <h2 className="text-2xl font-bold text-slate-900">Gửi Hỗ Trợ</h2>
         <p className="text-sm text-slate-500 mt-1">
@@ -76,6 +83,7 @@ export default function ParentSupport() {
                 onChange={(e) => setType(e.target.value)}
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-slate-50 font-medium"
               >
+                <option value="RESET_MAT_KHAU">Cấp lại mật khẩu cho con</option>
                 <option value="Xin phép nghỉ học">Xin phép nghỉ học</option>
                 <option value="Hỏi bài tập">Hỏi bài tập</option>
                 <option value="Thắc mắc điểm số">Thắc mắc điểm số</option>

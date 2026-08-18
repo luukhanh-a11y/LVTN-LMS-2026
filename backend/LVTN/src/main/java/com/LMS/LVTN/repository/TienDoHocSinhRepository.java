@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 public interface TienDoHocSinhRepository extends JpaRepository<TienDoHocSinh, Long> {
     java.util.Optional<TienDoHocSinh> findByHocSinh_HocSinhIdAndBaiHoc_BaiHocId(Long hocSinhId, Integer baiHocId);
     java.util.List<TienDoHocSinh> findByHocSinh_HocSinhIdIn(java.util.List<Long> hocSinhIds);
+    boolean existsByBaiHoc_ChuDe_Sach_SachId(Integer sachId);
 
     // Tiến độ phải tính riêng theo từng học kỳ — học sinh ở lại lớp học lại 1 bài học
     // ở học kỳ/năm học khác thì không được kế thừa tiến độ cũ (xem TienDoHocSinhService).

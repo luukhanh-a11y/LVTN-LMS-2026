@@ -5,6 +5,21 @@ import { studentService } from '../../services/student.service';
 import { useAuthStore } from '../../stores/useAuthStore';
 import toast from 'react-hot-toast';
 
+import QuizForm from '../../components/student/QuizForm';
+import NoiCapForm from '../../components/student/NoiCapForm';
+import TuLuanForm from '../../components/student/TuLuanForm';
+import LyThuyetForm from '../../components/student/LyThuyetForm';
+import { MatchingGame } from '../../components/games/MatchingGame';
+import { MillionaireGame } from '../../components/games/MillionaireGame';
+import { BeeGame } from '../../components/games/BeeGame';
+import { SortingGame } from '../../components/games/SortingGame';
+import { HarvestGame } from '../../components/games/HarvestGame';
+import { FrogGame } from '../../components/games/FrogGame';
+import { BalloonGame } from '../../components/games/BalloonGame';
+import { CatchingGame } from '../../components/games/CatchingGame';
+import { GoldMinerGame } from '../../components/games/GoldMinerGame';
+import { DragMatchGame } from '../../components/games/DragMatchGame';
+
 interface QuizDetail {
   assignmentId: number;
   title: string;
@@ -26,6 +41,46 @@ interface SubmissionResult {
   isLate: boolean;
 }
 
+// Chọn đúng component game theo (loại dạng bài, giao diện đã chọn) — cùng logic switch
+// đang dùng ở LessonPlayer.tsx (luồng tự học SGK), để trang làm bài tập giao từ giáo
+// viên cũng hiển thị đúng game (Đào Vàng, Ếch qua sông, Kéo thả ghép cặp...) thay vì
+// luôn rơi về form nhập liệu mặc định như trước đây.
+function renderGameByGiaoDien(loai: string, cauHinh: any, onSubmit: (baiLam: any) => void) {
+  const giaoDien = cauHinh?.giaoDien;
+  const commonGameProps = { cauHinh, result: null, activeDapAnChuan: undefined, onSubmit };
+
+  if (loai === 'TRAC_NGHIEM' || loai === 'DIEN_KHUYET') {
+    if (loai === 'TRAC_NGHIEM') {
+      if (giaoDien === 'THU_HOACH_NONG_SAN') return <HarvestGame {...commonGameProps} />;
+      if (giaoDien === 'ECH_QUA_SONG') return <FrogGame {...commonGameProps} />;
+      if (giaoDien === 'BAN_BONG_BAY') return <BalloonGame {...commonGameProps} />;
+      if (giaoDien === 'TRIEU_PHU') return <MillionaireGame {...commonGameProps} />;
+      if (giaoDien === 'DUOI_BAT') return <CatchingGame {...commonGameProps} />;
+      if (giaoDien === 'DAO_VANG') return <GoldMinerGame {...commonGameProps} />;
+    } else if (giaoDien === 'ONG_TIM_MAT') {
+      return <BeeGame {...commonGameProps} />;
+    }
+    return <QuizForm loai={loai} cauHinh={cauHinh} dapAnChuan={undefined} result={null} onSubmit={onSubmit} submitting={false} />;
+  }
+
+  if (loai === 'NOI_CAP') {
+    if (giaoDien === 'PHAN_LOAI') return <SortingGame {...commonGameProps} />;
+    if (giaoDien === 'KEO_THA_GHEP_CAP') return <DragMatchGame {...commonGameProps} />;
+    if (giaoDien === 'NOI_CAP_LINE' || !giaoDien) return <MatchingGame {...commonGameProps} />;
+    return <NoiCapForm loai={loai} cauHinh={cauHinh} dapAnChuan={undefined} result={null} onSubmit={onSubmit} submitting={false} />;
+  }
+
+  if (loai === 'TU_LUAN') {
+    return <TuLuanForm cauHinh={cauHinh} result={null} onSubmit={onSubmit} submitting={false} />;
+  }
+
+  if (loai === 'LY_THUYET') {
+    return <LyThuyetForm cauHinh={cauHinh} />;
+  }
+
+  return <div className="text-sm text-slate-500 py-4">Dạng bài "{loai}" chưa được hỗ trợ hiển thị.</div>;
+}
+
 export default function AssignmentQuizPlayer() {
   const { assignmentId } = useParams();
   const navigate = useNavigate();
@@ -37,14 +92,15 @@ export default function AssignmentQuizPlayer() {
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Trắc nghiệm
-  const [dapAnDungId, setDapAnDungId] = useState('');
-  // Nối cặp
-  const [capChon, setCapChon] = useState<Record<string, string>>({});
-  // Điền khuyết
-  const [traLoiTheoCho, setTraLoiTheoCho] = useState<Record<string, string>>({});
-  // Bộ đề tổng hợp nhiều câu (Giao từ Sách Bài Tập)
+  // Bộ đề tổng hợp nhiều câu (Giao từ Sách Bài Tập) — gom bài làm của từng câu trước
+  // khi nộp chung 1 lần bằng nút "Nộp bài" ở cuối trang.
   const [dapAnNhieuCau, setDapAnNhieuCau] = useState<Record<string, any>>({});
+
+  // detail.cauHinh.danhSachCauHoi LUÔN tồn tại (mảng 1 phần tử ngay cả khi giao đúng 1
+  // câu) — không thể dùng "có tồn tại mảng" để phân biệt 1 câu hay nhiều câu như code cũ
+  // (luôn đúng, khiến bài 1-câu cũng bị coi là nhiều câu). Chỉ detail.loai === 'NHIEU_CAU'
+  // (backend chỉ gán giá trị này khi thật sự > 1 câu) mới đáng tin.
+  const isNhieuCau = detail?.loai === 'NHIEU_CAU';
 
   useEffect(() => {
     if (!assignmentId) return;
@@ -66,44 +122,11 @@ export default function AssignmentQuizPlayer() {
     return () => clearTimeout(timer);
   }, [result, goToNextTask]);
 
-  const handleSubmit = async () => {
-    if (!detail || !assignmentId) return;
-
-    let baiLam: Record<string, unknown>;
-    if (detail.loai === 'TRAC_NGHIEM') {
-      if (!dapAnDungId) {
-        toast.error('Vui lòng chọn 1 đáp án.');
-        return;
-      }
-      baiLam = { dapAnDungId };
-    } else if (detail.loai === 'NOI_CAP') {
-      const capArr = Object.entries(capChon).map(([traiId, phaiId]) => ({ traiId, phaiId }));
-      if (capArr.length < (detail.cauHinh.cotTrai?.length ?? 0)) {
-        toast.error('Vui lòng nối đủ tất cả các mục.');
-        return;
-      }
-      baiLam = { capChon: capArr };
-    } else if (detail.loai === 'NHIEU_CAU' || detail.cauHinh?.danhSachCauHoi) {
-      const ds = detail.cauHinh.danhSachCauHoi || [];
-      if (ds.some((c: any) => !dapAnNhieuCau[c.id])) {
-        toast.error('Vui lòng hoàn thành đầy đủ tất cả các câu hỏi trong bộ đề.');
-        return;
-      }
-      baiLam = { dapAnHocSinh: dapAnNhieuCau };
-    } else {
-      const cho = detail.cauHinh.danhSachCho || [];
-      if (cho.some((c: any) => !traLoiTheoCho[c.id]?.trim())) {
-        toast.error('Vui lòng điền đủ tất cả các chỗ trống.');
-        return;
-      }
-      baiLam = { traLoiTheoCho };
-    }
-
-    if (!user?.userId) {
+  const submitToServer = async (baiLam: Record<string, unknown>) => {
+    if (!assignmentId || !user?.userId) {
       toast.error('Không tìm thấy thông tin học sinh.');
       return;
     }
-
     setIsSubmitting(true);
     try {
       const res = await studentService.submitQuizAssignment(Number(assignmentId), baiLam);
@@ -113,6 +136,34 @@ export default function AssignmentQuizPlayer() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Dùng cho bài giao chỉ 1 câu — mỗi game tự gọi onSubmit ngay khi học sinh chọn/ghép
+  // xong đáp án (giống hệt cách LessonPlayer.tsx xử lý), không cần nút "Nộp bài" riêng
+  // ở ngoài nữa.
+  //
+  // QUAN TRỌNG: backend (BaiNopService) LUÔN chấm điểm theo khoá "dapAnHocSinh":
+  // { <dangBaiId>: <bài làm> } — kể cả khi bài tập chỉ có 1 câu (chỉ cần chiTietBaiTap
+  // không rỗng là backend đi theo nhánh này, không có nhánh riêng cho "1 câu"). Gửi thẳng
+  // {dapAnDungId:...} không bọc key sẽ luôn bị chấm 0 điểm dù làm đúng.
+  const handleSingleSubmit = (baiLam: Record<string, unknown>) => {
+    const dangBaiId = detail?.cauHinh?.danhSachCauHoi?.[0]?.id;
+    if (!dangBaiId) {
+      submitToServer(baiLam);
+      return;
+    }
+    submitToServer({ dapAnHocSinh: { [dangBaiId]: baiLam } });
+  };
+
+  // Dùng cho bộ đề nhiều câu — bấm "Nộp bài" ở cuối trang mới thực sự gửi lên chấm.
+  const handleSubmitNhieuCau = () => {
+    if (!detail) return;
+    const ds = detail.cauHinh.danhSachCauHoi || [];
+    if (ds.some((c: any) => !dapAnNhieuCau[c.id])) {
+      toast.error('Vui lòng hoàn thành đầy đủ tất cả các câu hỏi trong bộ đề.');
+      return;
+    }
+    submitToServer({ dapAnHocSinh: dapAnNhieuCau });
   };
 
   if (isLoading) {
@@ -149,8 +200,11 @@ export default function AssignmentQuizPlayer() {
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-8rem)] bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+    // fixed inset-0 (không phải khung card gọn trong layout) — giống hệt cách
+    // LessonPlayer.tsx tự vẽ toàn màn hình cho trang học bài, để game có tối đa không
+    // gian hiển thị và thao tác (StudentLayout.tsx đã ẩn header/dock chung cho route này).
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-slate-100">
+      <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white shrink-0">
         <div className="flex items-center space-x-4">
           <Link to="/student/tasks" className="p-2 bg-white rounded-full border border-slate-200 text-slate-500 hover:text-student-primary hover:border-student-primary/30 transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -167,166 +221,58 @@ export default function AssignmentQuizPlayer() {
         )}
       </div>
 
-      <div className="flex-1 bg-slate-100 p-6 flex justify-center items-center relative">
-        <div className={`w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5 transition-all duration-500 ${result ? 'scale-95 opacity-50 blur-sm' : ''}`}>
-          {detail.cauHinh?.cauHoi && (
-            <p className="text-lg font-bold text-slate-800">{detail.cauHinh.cauHoi}</p>
-          )}
-
-          {detail.loai === 'TRAC_NGHIEM' && (
-            <div className="space-y-2">
-              {(detail.cauHinh.luaChon || []).map((lc: any) => (
-                <label key={lc.id} className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${dapAnDungId === lc.id ? 'border-student-primary bg-student-primary/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                  <input type="radio" name="dapAn" checked={dapAnDungId === lc.id} onChange={() => setDapAnDungId(lc.id)} />
-                  <span className="text-slate-700">{lc.noiDung}</span>
-                </label>
-              ))}
+      <div className="flex-1 p-4 md:p-6 flex justify-center items-center relative overflow-y-auto">
+        {/* max-w-3xl cũ quá hẹp so với khung fixed inset-0 toàn màn hình, để lại rất
+            nhiều khoảng trống thừa 2 bên — nới lên gần hết chiều rộng khả dụng. */}
+        <div className={`w-full h-full transition-all duration-500 ${isNhieuCau ? 'max-w-7xl bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5 overflow-y-auto' : 'max-w-7xl'} ${result ? 'scale-95 opacity-50 blur-sm' : ''}`}>
+          {!isNhieuCau ? (
+            // Giao đúng 1 câu — để game tự chiếm toàn bộ khung, tự xử lý nộp bài.
+            // h-full (không phải min-h cố định): các game như Đào Vàng/Đuổi Bắt định vị
+            // đáp án dựa theo chiều cao container thật — khung quá thấp khiến lớp trang
+            // trí (gai nhọn ở đáy hầm) đè lên đúng chỗ khối đáp án, chặn mất thao tác bấm.
+            <div className="h-full">
+              {renderGameByGiaoDien(detail.loai, detail.cauHinh, handleSingleSubmit)}
             </div>
-          )}
+          ) : (
+            <>
+              <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+                {(detail.cauHinh.danhSachCauHoi || []).map((ch: any, idx: number) => (
+                  <div key={ch.id || idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+                      <p className="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <span className="w-7 h-7 flex items-center justify-center bg-student-primary/10 text-student-primary rounded-full text-sm font-black">{idx + 1}</span>
+                        <span className="text-xs text-slate-500 font-normal">
+                          {ch.kieu === 'NOI_CAP' ? 'Nối cặp' : ch.kieu === 'DIEN_KHUYET' ? 'Điền từ' : 'Trắc nghiệm'}
+                        </span>
+                      </p>
+                      {dapAnNhieuCau[ch.id] ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          ✓ Đã trả lời
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                          Chưa trả lời
+                        </span>
+                      )}
+                    </div>
 
-          {detail.loai === 'NOI_CAP' && (
-            <div className="space-y-3">
-              {(detail.cauHinh.cotTrai || []).map((t: any) => (
-                <div key={t.id} className="flex items-center gap-3">
-                  <span className="flex-1 font-medium text-slate-700">{t.noiDung}</span>
-                  <select
-                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-student-primary text-sm"
-                    value={capChon[t.id] || ''}
-                    onChange={(e) => setCapChon((prev) => ({ ...prev, [t.id]: e.target.value }))}
-                  >
-                    <option value="">-- Chọn --</option>
-                    {(detail.cauHinh.cotPhai || []).map((p: any) => (
-                      <option key={p.id} value={p.id}>{p.noiDung}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {detail.loai === 'DIEN_KHUYET' && (
-            <div className="space-y-3">
-              {(detail.cauHinh.danhSachCho || []).map((c: any) => (
-                <div key={c.id} className="flex flex-wrap items-center gap-2 text-slate-700">
-                  <span>{c.vanBanTruoc}</span>
-                  <input
-                    className="w-28 px-2 py-1 border border-slate-300 rounded-lg outline-none focus:border-student-primary text-sm text-center"
-                    value={traLoiTheoCho[c.id] || ''}
-                    onChange={(e) => setTraLoiTheoCho((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                  />
-                  <span>{c.vanBanSau}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {(detail.loai === 'NHIEU_CAU' || (detail.cauHinh && detail.cauHinh.danhSachCauHoi)) && (
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-              {(detail.cauHinh.danhSachCauHoi || []).map((ch: any, idx: number) => (
-                <div key={ch.id || idx} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
-                    <p className="font-bold text-slate-800 text-base flex items-center gap-2">
-                      <span className="w-7 h-7 flex items-center justify-center bg-student-primary/10 text-student-primary rounded-full text-sm font-black">{idx + 1}</span>
-                      <span>{ch.noiDung || `Câu hỏi số ${idx + 1}`} <span className="text-xs text-slate-500 font-normal">{ch.kieu ? `(${ch.kieu === 'NOI_CAP' ? 'Nối cặp' : ch.kieu === 'DIEN_KHUYET' ? 'Điền từ' : 'Trắc nghiệm'})` : ''}</span></span>
-                    </p>
-                    {ch.giaoDien === 'TRO_CHOI' ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm animate-pulse">
-                        🎮 Chế độ Trò Chơi
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                        📝 Quizzes Chuẩn
-                      </span>
-                    )}
+                    <div className="max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 [&_button[type='submit']]:!hidden">
+                      {renderGameByGiaoDien(ch.kieu, ch, (baiLam) => setDapAnNhieuCau(prev => ({ ...prev, [ch.id]: baiLam })))}
+                    </div>
                   </div>
-                  
-                  {/* 1. TRẮC NGHIỆM */}
-                  {(!ch.kieu || ch.kieu === 'TRAC_NGHIEM') && ch.luaChon && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                      {(ch.luaChon || []).map((lc: any) => {
-                        const isSelected = dapAnNhieuCau[ch.id] === lc.id || dapAnNhieuCau[ch.id]?.dapAnDungId === lc.id;
-                        return (
-                          <label key={lc.id} className={`flex items-center gap-3 p-3.5 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-student-primary bg-student-primary/5 font-bold text-student-primary shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'}`}>
-                            <input type="radio" name={`cauHoi_${ch.id}`} checked={isSelected} onChange={() => setDapAnNhieuCau(prev => ({ ...prev, [ch.id]: lc.id }))} className="hidden" />
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-student-primary' : 'border-slate-300'}`}>
-                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-student-primary" />}
-                            </div>
-                            <span className="flex-1 text-sm">{lc.noiDung}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
+                ))}
+              </div>
 
-                  {/* 2. NỐI CẶP */}
-                  {ch.kieu === 'NOI_CAP' && (
-                    <div className="space-y-3 pt-2">
-                      {(ch.cotTrai || []).map((t: any) => {
-                        const currentCap = (dapAnNhieuCau[ch.id]?.capDung || []).find((c: any) => c.traiId === t.id)?.phaiId || '';
-                        return (
-                          <div key={t.id} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200">
-                            <span className="flex-1 font-medium text-slate-700">{t.noiDung}</span>
-                            <select
-                              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-student-primary text-sm"
-                              value={currentCap}
-                              onChange={(e) => {
-                                const newPhai = e.target.value;
-                                const oldCap = dapAnNhieuCau[ch.id]?.capDung || [];
-                                const filtered = oldCap.filter((c: any) => c.traiId !== t.id);
-                                if (newPhai) filtered.push({ traiId: t.id, phaiId: newPhai });
-                                setDapAnNhieuCau(prev => ({ ...prev, [ch.id]: { capDung: filtered } }));
-                              }}
-                            >
-                              <option value="">-- Chọn đáp án nối --</option>
-                              {(ch.cotPhai || []).map((p: any) => (
-                                <option key={p.id} value={p.id}>{p.noiDung}</option>
-                              ))}
-                            </select>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* 3. ĐIỀN KHUYẾT */}
-                  {ch.kieu === 'DIEN_KHUYET' && (
-                    <div className="space-y-3 pt-2 bg-white p-4 rounded-xl border border-slate-200">
-                      {(ch.danhSachCho || []).map((c: any) => {
-                        const currentVal = dapAnNhieuCau[ch.id]?.dapAnTheoCho?.[c.id] || '';
-                        return (
-                          <div key={c.id} className="flex flex-wrap items-center gap-2 text-slate-700">
-                            <span>{c.vanBanTruoc}</span>
-                            <input
-                              className="w-32 px-3 py-1.5 border-2 border-slate-300 rounded-lg outline-none focus:border-student-primary text-sm text-center font-bold text-student-primary"
-                              placeholder="Điền từ..."
-                              value={currentVal}
-                              onChange={(e) => {
-                                const oldMap = dapAnNhieuCau[ch.id]?.dapAnTheoCho || {};
-                                setDapAnNhieuCau(prev => ({
-                                  ...prev,
-                                  [ch.id]: { dapAnTheoCho: { ...oldMap, [c.id]: e.target.value } }
-                                }));
-                              }}
-                            />
-                            <span>{c.vanBanSau}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+              <button
+                onClick={handleSubmitNhieuCau}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center px-4 py-3 bg-student-primary text-white font-bold rounded-xl hover:bg-[#3A82DF] transition-colors disabled:opacity-60"
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
+                Nộp bài
+              </button>
+            </>
           )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center px-4 py-3 bg-student-primary text-white font-bold rounded-xl hover:bg-[#3A82DF] transition-colors disabled:opacity-60"
-          >
-            {isSubmitting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Send className="w-5 h-5 mr-2" />}
-            Nộp bài
-          </button>
         </div>
 
         {result && (

@@ -40,13 +40,6 @@ public class BaiTap {
     @JoinColumn(name = "hoc_ky_id", nullable = false)
     private HocKy hocKy;
 
-    // Chỉ dùng cho bài tập tự luận tự do (không gắn nội dung SGK nào) — vì môn học của các
-    // bài tập khác được suy ra từ dang_bai/chi_tiet_bai_tap, còn bài tự luận không có nội
-    // dung liên kết nên cần lưu trực tiếp môn học để bảng điểm lọc đúng môn.
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mon_hoc_id")
-    private MonHoc monHoc;
-
     @Column(name = "tieu_de", nullable = false, length = 300)
     private String tieuDe;
 

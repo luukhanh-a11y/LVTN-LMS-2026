@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class ParentAssignmentDTO {
     private Long id;
     private String title;
+    private LocalDateTime assignedDate;
     private LocalDateTime dueDate;
     private Integer xpReward;
     private Boolean completed;

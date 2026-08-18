@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { FileText, ListChecks, ChevronRight, ChevronLeft, Search, CheckCircle2, Sparkles, LayoutTemplate, PenLine } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { teacherService } from '../../services/teacher.service';
 import { useAcademicStore } from '../../stores/useAcademicStore';
 import H5PPlayer from '../../components/h5p/H5PPlayer';
 import { Modal } from '../../components/ui/Modal';
+import QuizForm from '../../components/student/QuizForm';
+import NoiCapForm from '../../components/student/NoiCapForm';
+import TuLuanForm from '../../components/student/TuLuanForm';
+import LyThuyetForm from '../../components/student/LyThuyetForm';
 
 const STEPS = [
   { id: 1, label: 'Thông tin chung', icon: FileText },
@@ -235,24 +238,41 @@ export default function CreateAssignment() {
       toast.error('Thiếu thông tin Lớp/Hạn nộp — vui lòng quay lại Bước 1.');
       return;
     }
+    // Cần 1 bài học để gắn dạng bài tự luận vào (suy ra môn học qua bài học → chủ đề → sách).
+    // Giáo viên không bắt buộc phải chọn "Bài học" — dùng bài đã chọn nếu có, không thì lấy
+    // đại diện bài đầu tiên của Chủ đề (mọi bài học trong cùng 1 chủ đề đều cùng 1 môn).
+    const containerBaiHocId = selectedBaiHocId ? Number(selectedBaiHocId) : Number(baiHocList[0]?.baiHocId);
+    if (!containerBaiHocId) {
+      toast.error('Chủ đề này chưa có Bài học nào — vui lòng chọn Chủ đề khác.');
+      return;
+    }
 
     setIsCreatingEssay(true);
     try {
+      const moTa = essayDescription.trim() || `Các con hãy viết một đoạn văn ngắn về chủ đề "${essayTopic.trim()}".`;
+
+      const dangBai = await teacherService.createTuLuanDangBai({
+        baiHocId: containerBaiHocId,
+        tenDangBai: essayTopic.trim(),
+        giaoVienId: profile.giaoVienId,
+        cauHoi: essayTopic.trim(),
+        noiDung: moTa
+      });
+
       const payload = {
         baiTap: {
           giaoVienId: profile.giaoVienId,
           lopHocId: Number(selectedClassId),
           hocKyId: currentHocKyId,
-          monHocId: selectedMonHocId ? Number(selectedMonHocId) : undefined,
           tieuDe: essayTopic.trim(),
-          moTa: essayDescription.trim() || `Các con hãy viết một đoạn văn ngắn về chủ đề "${essayTopic.trim()}".`,
+          moTa,
           loaiBaiTap: 'TU_LUAN',
           thoiDiemBatDau: new Date().toISOString().slice(0, 19),
           deadline: new Date(deadline).toISOString().slice(0, 19),
           soLanNopLaiToiDa: 3,
           trangThai: 'DANG_MO'
         },
-        danhSachChiTiet: []
+        danhSachChiTiet: [{ dangBaiId: dangBai.dangBaiId }]
       };
 
       await teacherService.createAssignment(payload);
@@ -265,6 +285,50 @@ export default function CreateAssignment() {
     } finally {
       setIsCreatingEssay(false);
     }
+  };
+
+  // Render preview sống bằng đúng component học sinh dùng thật (thay vì dump chuỗi
+  // "Đáp án chuẩn" JSON thô) — dùng chung cho cả 2 danh sách bên dưới ("đã chọn" và
+  // "câu hỏi khác trong bài học"), cùng cách làm với Materials.tsx ("Kho học liệu").
+  const renderQuestionPreview = (q: any) => {
+    if (q.loaiNoiDung === 'H5P') {
+      return q.h5pNoiDungId ? (
+        <button
+          type="button"
+          onClick={() => setPreviewH5P({ contentId: q.h5pNoiDungId, title: q.tenDangBai })}
+          className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium text-sm transition cursor-pointer"
+        >
+          🎮 Xem toàn bộ nội dung H5P (câu hỏi &amp; đáp án)
+        </button>
+      ) : (
+        <p className="text-red-600 font-medium text-sm">Nội dung H5P bị thiếu contentId, không xem trước được.</p>
+      );
+    }
+
+    let cauHinh: any = {};
+    let dapAnChuan: any = null;
+    try {
+      if (q.duLieuGame) cauHinh = JSON.parse(q.duLieuGame);
+      if (q.dapAnChuan) dapAnChuan = JSON.parse(q.dapAnChuan);
+    } catch { }
+
+    const loai = cauHinh?.loai || 'LY_THUYET';
+    const previewCauHinh = { ...cauHinh, giaoDien: 'MAC_DINH' };
+    const revealResult = dapAnChuan ? { dapAnChuan, diem: 10 } : null;
+    const commonProps = { loai, cauHinh: previewCauHinh, dapAnChuan, onSubmit: () => {}, submitting: false };
+
+    let content;
+    if (loai === 'TRAC_NGHIEM' || loai === 'DIEN_KHUYET') content = <QuizForm {...commonProps} result={revealResult} />;
+    else if (loai === 'NOI_CAP') content = <NoiCapForm {...commonProps} result={revealResult} />;
+    else if (loai === 'TU_LUAN') content = <TuLuanForm {...commonProps} result={null} />;
+    else if (loai === 'LY_THUYET') content = <LyThuyetForm cauHinh={previewCauHinh} />;
+    else content = <div className="text-sm text-slate-500 py-4">Chưa hỗ trợ xem trước cho dạng {loai}.</div>;
+
+    return (
+      <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50 max-h-[360px] overflow-y-auto [&_button[type='submit']]:!hidden">
+        {content}
+      </div>
+    );
   };
 
   return (
@@ -456,13 +520,6 @@ export default function CreateAssignment() {
                         const q = allFetchedQuestions[qId];
                         if (!q) return null;
 
-                        let cauHinh: any = {};
-                        let dapAnChuan: any = null;
-                        try {
-                          if (q.duLieuGame) cauHinh = JSON.parse(q.duLieuGame);
-                          if (q.dapAnChuan) dapAnChuan = JSON.parse(q.dapAnChuan);
-                        } catch { }
-
                         return (
                           <div key={q.dangBaiId} className="bg-white border border-blue-300 ring-1 ring-blue-100 rounded-xl p-5 shadow-sm transition">
                             <div className="flex items-start justify-between gap-4">
@@ -483,56 +540,10 @@ export default function CreateAssignment() {
                                     <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded">{q.loaiNoiDung}</span>
                                   </div>
                                   <p className="text-sm font-bold text-slate-900 mb-2">{q.tenDangBai}</p>
-                                  
+
                                   {/* Hiển thị chi tiết câu hỏi và đáp án */}
                                   <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
-                                    {q.loaiNoiDung === 'H5P' ? (
-                                      q.h5pNoiDungId ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => setPreviewH5P({ contentId: q.h5pNoiDungId, title: q.tenDangBai })}
-                                          className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium text-sm transition cursor-pointer"
-                                        >
-                                          🎮 Xem toàn bộ nội dung H5P (câu hỏi &amp; đáp án)
-                                        </button>
-                                      ) : (
-                                        <p className="text-red-600 font-medium">Nội dung H5P bị thiếu contentId, không xem trước được.</p>
-                                      )
-                                    ) : (
-                                      <>
-                                        <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
-                                        {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
-                                          <ul className="mt-2 space-y-1">
-                                            {cauHinh.luaChon.map((choice: any, cIdx: number) => {
-                                              const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
-                                              const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
-                                              const isCorrect = dapAnChuan !== null && (
-                                                (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                                                (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) ||
-                                                (String(dapAnChuan) === String(val))
-                                              );
-                                              return (
-                                                <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
-                                                  <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
-                                                  {hinhAnh ? (
-                                                    <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
-                                                  ) : (
-                                                    <span>{val}</span>
-                                                  )}
-                                                  {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
-                                                </li>
-                                              );
-                                            })}
-                                          </ul>
-                                        ) : (
-                                          dapAnChuan && (
-                                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
-                                              Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
-                                            </div>
-                                          )
-                                        )}
-                                      </>
-                                    )}
+                                    {renderQuestionPreview(q)}
                                   </div>
 
                                 </div>
@@ -557,6 +568,7 @@ export default function CreateAssignment() {
                                   <option value="TRIEU_PHU">Ai là triệu phú</option>
                                   <option value="ONG_TIM_MAT">Ong Tìm Mật</option>
                                   <option value="PHAN_LOAI">Phân Loại (Thùng rác)</option>
+                                  <option value="KEO_THA_GHEP_CAP">Kéo thả ghép cặp (nhiều cặp)</option>
                                 </select>
                               </div>
                             </div>
@@ -584,13 +596,6 @@ export default function CreateAssignment() {
                   ) : (
                     <div className="space-y-4">
                       {dangBaiList.filter(q => !selectedDangBais[q.dangBaiId]).map((q, idx) => {
-                        let cauHinh: any = {};
-                        let dapAnChuan: any = null;
-                        try {
-                          if (q.duLieuGame) cauHinh = JSON.parse(q.duLieuGame);
-                          if (q.dapAnChuan) dapAnChuan = JSON.parse(q.dapAnChuan);
-                        } catch { }
-
                         return (
                           <div key={q.dangBaiId} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm transition hover:border-blue-300">
                             <div className="flex items-start justify-between gap-4">
@@ -610,56 +615,10 @@ export default function CreateAssignment() {
                                     <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded">{q.loaiNoiDung}</span>
                                   </div>
                                   <p className="text-sm font-medium text-slate-900 mb-2">{q.tenDangBai}</p>
-                                  
+
                                   {/* Hiển thị chi tiết câu hỏi và đáp án */}
                                   <div className="mt-2 pl-4 border-l-2 border-slate-200 text-sm text-slate-600">
-                                    {q.loaiNoiDung === 'H5P' ? (
-                                      q.h5pNoiDungId ? (
-                                        <button
-                                          type="button"
-                                          onClick={() => setPreviewH5P({ contentId: q.h5pNoiDungId, title: q.tenDangBai })}
-                                          className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-purple-700 font-medium text-sm transition cursor-pointer"
-                                        >
-                                          🎮 Xem toàn bộ nội dung H5P (câu hỏi &amp; đáp án)
-                                        </button>
-                                      ) : (
-                                        <p className="text-red-600 font-medium">Nội dung H5P bị thiếu contentId, không xem trước được.</p>
-                                      )
-                                    ) : (
-                                      <>
-                                        <p className="font-semibold text-slate-800">{cauHinh.cauHoi || 'Không có nội dung câu hỏi'}</p>
-                                        {cauHinh.luaChon && Array.isArray(cauHinh.luaChon) ? (
-                                          <ul className="mt-2 space-y-1">
-                                            {cauHinh.luaChon.map((choice: any, cIdx: number) => {
-                                              const val = typeof choice === 'object' ? (choice.giaTri || choice.noiDung || choice.text || choice.content || choice.value || choice.id || JSON.stringify(choice)) : choice;
-                                              const hinhAnh = typeof choice === 'object' ? choice.hinhAnh : null;
-                                              const isCorrect = dapAnChuan !== null && (
-                                                (typeof choice === 'object' && choice.id != null && (String(dapAnChuan) === String(choice.id) || String(dapAnChuan?.dapAnDungId) === String(choice.id))) ||
-                                                (String(dapAnChuan) === String(cIdx) || String(dapAnChuan?.dapAnDungId) === String(cIdx)) ||
-                                                (String(dapAnChuan) === String(val))
-                                              );
-                                              return (
-                                                <li key={cIdx} className={cn("flex items-center gap-2", isCorrect ? "text-green-600 font-bold" : "")}>
-                                                  <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isCorrect ? "bg-green-500" : "bg-slate-300")} />
-                                                  {hinhAnh ? (
-                                                    <img src={hinhAnh} alt="choice" className="h-10 object-contain rounded border" />
-                                                  ) : (
-                                                    <span>{val}</span>
-                                                  )}
-                                                  {isCorrect && <span className="text-[10px] uppercase px-1.5 py-0.5 bg-green-100 text-green-700 rounded ml-2 shrink-0">Đáp án</span>}
-                                                </li>
-                                              );
-                                            })}
-                                          </ul>
-                                        ) : (
-                                          dapAnChuan && (
-                                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 font-semibold text-xs">
-                                              Đáp án chuẩn: {typeof dapAnChuan === 'object' ? JSON.stringify(dapAnChuan) : dapAnChuan}
-                                            </div>
-                                          )
-                                        )}
-                                      </>
-                                    )}
+                                    {renderQuestionPreview(q)}
                                   </div>
 
                                 </div>

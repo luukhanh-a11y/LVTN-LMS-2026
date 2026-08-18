@@ -16,4 +16,8 @@ public interface BaiHocRepository extends JpaRepository<BaiHoc, Integer> {
     @Modifying
     @Query("DELETE FROM DangBai d WHERE d.baiHoc.baiHocId = :baiHocId")
     void deleteAllByBaiHocId(@Param("baiHocId") Integer baiHocId);
+
+    @Modifying
+    @Query("DELETE FROM BaiHoc b WHERE b.chuDe.sach.sachId = :sachId")
+    void deleteAllBySachId(@Param("sachId") Integer sachId);
 }

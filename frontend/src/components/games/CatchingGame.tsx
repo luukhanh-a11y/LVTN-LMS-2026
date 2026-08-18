@@ -36,9 +36,9 @@ export const CatchingGame: React.FC<GameProps> = ({ cauHinh, result, activeDapAn
 
   // Initialize animals
   useEffect(() => {
-    if (!cauHinh?.danhSachLuaChon) return;
-    
-    const luaChon = cauHinh.danhSachLuaChon;
+    if (!cauHinh?.luaChon) return;
+
+    const luaChon = cauHinh.luaChon;
     
     // Create actual options
     const initialAnimals: BouncingAnimal[] = luaChon.map((lc: any, index: number) => {

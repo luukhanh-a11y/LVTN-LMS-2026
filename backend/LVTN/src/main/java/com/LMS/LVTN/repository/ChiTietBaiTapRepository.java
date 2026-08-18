@@ -10,5 +10,7 @@ import java.util.List;
 public interface ChiTietBaiTapRepository extends JpaRepository<ChiTietBaiTap, Long> {
     List<ChiTietBaiTap> findByBaiTap_BaiTapIdOrderByThuTuAsc(Long baiTapId);
     List<ChiTietBaiTap> findByDangBai_DangBaiId(Integer dangBaiId);
+    boolean existsByDangBai_DangBaiId(Integer dangBaiId);
+    boolean existsByDangBai_BaiHoc_ChuDe_Sach_SachId(Integer sachId);
     void deleteByBaiTap_BaiTapId(Long baiTapId);
 }

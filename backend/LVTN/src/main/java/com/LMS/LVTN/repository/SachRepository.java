@@ -29,6 +29,7 @@ public interface SachRepository extends JpaRepository<Sach, Integer> {
     List<Sach> findByHocKyIdOrNull(@Param("hocKyId") Integer hocKyId);
 
     List<Sach> findByMaMon(String maMon);
+    boolean existsByMaMon(String maMon);
 
     @Query("SELECT s FROM Sach s WHERE s.maMon = :maMon AND (s.hocKy.hocKyId = :hocKyId OR s.hocKy IS NULL)")
     List<Sach> findByMaMonAndHocKyIdOrNull(@Param("maMon") String maMon, @Param("hocKyId") Integer hocKyId);

@@ -53,7 +53,7 @@ export function ChangeTeacherModal({ isOpen, onClose, onSuccess, classId, curren
         khoiLop: classData.khoiLop,
         siSoToiDa: classData.siSoToiDa,
         trangThai: classData.trangThai,
-        namHocId: classData.namHoc?.namHocId || 1, // Fallback
+        namHocId: classData.namHocId || 1,
         giaoVienChuNhiemId: Number(selectedTeacherId)
       });
       toast.success('Đã cập nhật Giáo viên chủ nhiệm');

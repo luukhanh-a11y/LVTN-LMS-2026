@@ -4,13 +4,17 @@ import com.LMS.LVTN.dto.request.BaiNopRequest;
 import com.LMS.LVTN.dto.response.BaiNopResponse;
 import com.LMS.LVTN.entity.BaiNop;
 import com.LMS.LVTN.entity.BaiTap;
+import com.LMS.LVTN.entity.DanhGiaBaiLam;
 import com.LMS.LVTN.entity.HoSoHocSinh;
+import com.LMS.LVTN.enums.HanhDongDanhGia;
+import com.LMS.LVTN.enums.XepLoai;
+import java.math.BigDecimal;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-17T04:21:30+0700",
+    date = "2026-08-18T06:25:39+0700",
     comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Oracle Corporation)"
 )
 @Component
@@ -43,6 +47,11 @@ public class BaiNopMapperImpl implements BaiNopMapper {
         baiNopResponse.setTieuDeBaiTap( entityBaiTapTieuDe( entity ) );
         baiNopResponse.setHocSinhId( entityHocSinhHocSinhId( entity ) );
         baiNopResponse.setHoTenHocSinh( entityHocSinhHoTen( entity ) );
+        baiNopResponse.setDanhGiaId( entityDanhGiaBaiLamDanhGiaId( entity ) );
+        baiNopResponse.setDiemDanhGia( entityDanhGiaBaiLamDiemSo( entity ) );
+        baiNopResponse.setXepLoaiDanhGia( entityDanhGiaBaiLamXepLoai( entity ) );
+        baiNopResponse.setNhanXetDanhGia( entityDanhGiaBaiLamNhanXet( entity ) );
+        baiNopResponse.setHanhDongDanhGia( entityDanhGiaBaiLamHanhDong( entity ) );
         baiNopResponse.setBaiNopId( entity.getBaiNopId() );
         baiNopResponse.setNoiDungText( entity.getNoiDungText() );
         baiNopResponse.setFileDinhKem( entity.getFileDinhKem() );
@@ -104,5 +113,45 @@ public class BaiNopMapperImpl implements BaiNopMapper {
             return null;
         }
         return hocSinh.getHoTen();
+    }
+
+    private Long entityDanhGiaBaiLamDanhGiaId(BaiNop baiNop) {
+        DanhGiaBaiLam danhGiaBaiLam = baiNop.getDanhGiaBaiLam();
+        if ( danhGiaBaiLam == null ) {
+            return null;
+        }
+        return danhGiaBaiLam.getDanhGiaId();
+    }
+
+    private BigDecimal entityDanhGiaBaiLamDiemSo(BaiNop baiNop) {
+        DanhGiaBaiLam danhGiaBaiLam = baiNop.getDanhGiaBaiLam();
+        if ( danhGiaBaiLam == null ) {
+            return null;
+        }
+        return danhGiaBaiLam.getDiemSo();
+    }
+
+    private XepLoai entityDanhGiaBaiLamXepLoai(BaiNop baiNop) {
+        DanhGiaBaiLam danhGiaBaiLam = baiNop.getDanhGiaBaiLam();
+        if ( danhGiaBaiLam == null ) {
+            return null;
+        }
+        return danhGiaBaiLam.getXepLoai();
+    }
+
+    private String entityDanhGiaBaiLamNhanXet(BaiNop baiNop) {
+        DanhGiaBaiLam danhGiaBaiLam = baiNop.getDanhGiaBaiLam();
+        if ( danhGiaBaiLam == null ) {
+            return null;
+        }
+        return danhGiaBaiLam.getNhanXet();
+    }
+
+    private HanhDongDanhGia entityDanhGiaBaiLamHanhDong(BaiNop baiNop) {
+        DanhGiaBaiLam danhGiaBaiLam = baiNop.getDanhGiaBaiLam();
+        if ( danhGiaBaiLam == null ) {
+            return null;
+        }
+        return danhGiaBaiLam.getHanhDong();
     }
 }

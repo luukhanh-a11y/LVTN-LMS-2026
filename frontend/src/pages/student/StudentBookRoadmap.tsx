@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Star, Lock, Play, Map, Flag, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -11,6 +11,26 @@ export default function StudentBookRoadmap() {
   const bookId = searchParams.get('bookId');
   const [loading, setLoading] = useState(true);
   const [bookData, setBookData] = useState<any>(null);
+  const currentNodeRef = useRef<HTMLDivElement | null>(null);
+
+  // Học sinh đã học tới đâu thì vào lại trang phải thấy ngay bài đó (vd đã học đến
+  // Bài 10 thì mở trang lên phải ở ngay Bài 10, không bắt kéo từ Bài 1 xuống).
+  useEffect(() => {
+    if (bookData && currentNodeRef.current) {
+      currentNodeRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+    }
+  }, [bookData]);
+
+  // Bài "đang học" (CURRENT) đầu tiên theo đúng thứ tự lộ trình — mọi bài trước đó
+  // đã COMPLETED, đây chính là vị trí học sinh đang dừng lại.
+  const firstCurrentId = (() => {
+    for (const chuDe of bookData?.chuDe || []) {
+      for (const bai of chuDe.baiHoc || []) {
+        if (bai.type === 'CURRENT') return bai.id;
+      }
+    }
+    return null;
+  })();
 
   useEffect(() => {
     if (!bookId) {
@@ -42,7 +62,7 @@ export default function StudentBookRoadmap() {
     toast(type === 'COMPLETED' ? 'Ôn tập lại bài cũ...' : 'Bắt đầu bài mới!', { icon: '🚀', duration: 1500 });
     setTimeout(() => {
       toast.dismiss();
-      navigate('/student/lesson/' + id);
+      navigate('/student/lesson/' + id + '?bookId=' + bookId);
     }, 1000);
   };
 
@@ -69,15 +89,27 @@ export default function StudentBookRoadmap() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F9FF] font-sans flex flex-col relative overflow-hidden">
-      
-      {/* Background mây/trời bồng bềnh tạo chiều sâu */}
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent pointer-events-none"></div>
-      <div className="absolute -top-20 -right-20 w-72 h-72 bg-blue-200/40 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute top-60 -left-20 w-80 h-80 bg-green-100/40 rounded-full blur-3xl pointer-events-none"></div>
+    // overflow-hidden KHÔNG được đặt ở div gốc này nữa — nó phá "position: sticky" của
+    // header bên dưới (sticky tính theo tổ tiên có overflow khác "visible" gần nhất;
+    // nếu là div gốc — vốn không thật sự cuộn — header sẽ "dính" sai chỗ, trôi mất khỏi
+    // màn hình khi cuộn trang). Overflow-hidden chỉ cần cho riêng lớp trang trí nền phía
+    // dưới (các hình tròn mờ tràn ra ngoài khung) nên tách ra 1 lớp riêng.
+    // font-heading (Baloo 2) thay vì font-sans (Outfit) — chữ tròn trịa, dễ thương hơn,
+    // hợp với học sinh lớp 1 hơn font mặc định vốn thiết kế cho giao diện người lớn.
+    <div className="min-h-screen bg-[#F4F9FF] font-heading flex flex-col relative">
 
-      {/* HEADER: Glassmorphism */}
-      <header className="px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-white/60 backdrop-blur-xl border-b border-white/40 shadow-sm">
+      {/* Background mây/trời bồng bềnh tạo chiều sâu */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-100/50 to-transparent"></div>
+        <div className="absolute -top-20 -right-20 w-72 h-72 bg-blue-200/40 rounded-full blur-3xl"></div>
+        <div className="absolute top-60 -left-20 w-80 h-80 bg-green-100/40 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* HEADER: Glassmorphism — top-16 (không phải top-0) vì StudentLayout đã có sẵn
+          1 header ngoài cùng cao 64px (h-16) cũng sticky top-0 — nếu để top-0 ở đây,
+          2 header cùng dính vào y=0, đè lên nhau, khiến header trang này mất tác dụng
+          sticky thật sự và nội dung cuộn xuyên qua được. */}
+      <header className="px-6 py-4 flex items-center justify-between sticky top-16 z-40 bg-white/60 backdrop-blur-xl border-b border-white/40 shadow-sm">
         <button 
           onClick={() => navigate('/student/library')}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm cursor-pointer"
@@ -96,7 +128,9 @@ export default function StudentBookRoadmap() {
       </header>
 
       {/* BẢN ĐỒ HÀNH TRÌNH */}
-      <main className="flex-1 py-12 flex flex-col items-center relative z-10">
+      {/* pb-28: chừa chỗ cho thanh điều hướng nổi (Trang Chủ/Thư Viện/Thành Tích) của
+          StudentLayout — fixed ở đáy màn hình, nếu không sẽ đè lên các bài cuối cùng. */}
+      <main className="flex-1 py-12 pb-28 flex flex-col items-center relative z-10">
         
         {/* Đường mòn (Trail) đứt nét chạy dọc mượt mà hơn */}
         <div className="absolute top-0 bottom-0 left-1/2 -translate-x-[2px] w-[4px] border-l-4 border-dashed border-blue-200/70 z-0"></div>
@@ -126,8 +160,9 @@ export default function StudentBookRoadmap() {
                   const isLocked = bai.type === 'LOCKED';
 
                   return (
-                    <div 
+                    <div
                       key={bai.id}
+                      ref={bai.id === firstCurrentId ? currentNodeRef : undefined}
                       className={cn("relative transition-transform duration-500 flex items-center justify-center", offset)}
                     >
                       {/* Nhân vật Cú Mèo bay lơ lửng ở bài hiện tại */}

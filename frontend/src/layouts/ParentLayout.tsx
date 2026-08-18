@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, Users, FileText, Bell, Award,
+import {
+  LayoutDashboard, Users, FileText, Bell, Award, GraduationCap, LifeBuoy,
   LogOut, ChevronDown, Check, AlertCircle
 } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
@@ -201,7 +201,8 @@ export default function ParentLayout() {
           <NavItem to="/parent/assignments" icon={FileText} label="Bài tập" />
           <NavItem to="/parent/notifications" icon={Bell} label="Thông báo" />
           <NavItem to="/parent/rewards" icon={Award} label="Thành tích" />
-          <NavItem to="/parent/grades" icon={Award} label="Bảng điểm" />
+          <NavItem to="/parent/grades" icon={GraduationCap} label="Bảng điểm" />
+          <NavItem to="/parent/support" icon={LifeBuoy} label="Hỗ trợ" />
         </nav>
         
         {/* Footer Sidebar */}

@@ -52,13 +52,13 @@ export const GoldMinerGame: React.FC<GameProps> = ({ cauHinh, result, activeDapA
 
   // Initialize blocks
   useEffect(() => {
-    if (!cauHinh?.danhSachLuaChon || !containerRef.current) return;
-    
+    if (!cauHinh?.luaChon || !containerRef.current) return;
+
     // Defer initialization to get accurate container width/height
     const initBlocks = () => {
       const containerW = containerRef.current!.clientWidth;
       const containerH = containerRef.current!.clientHeight;
-      const luaChon = cauHinh.danhSachLuaChon;
+      const luaChon = cauHinh.luaChon;
       
       const cols = luaChon.length;
       const colWidth = containerW / cols;
@@ -228,7 +228,7 @@ export const GoldMinerGame: React.FC<GameProps> = ({ cauHinh, result, activeDapA
       ></div>
 
       {/* Ground */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 z-10 flex items-end overflow-hidden opacity-50">
+      <div className="absolute bottom-0 left-0 right-0 h-32 z-10 flex items-end overflow-hidden opacity-50 pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <img 
             key={i} 

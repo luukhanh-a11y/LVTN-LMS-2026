@@ -11,9 +11,12 @@ com\LMS\LVTN\mapper\PhanCongGiangDayMapperImpl.class
 com\LMS\LVTN\mapper\MonHocMapperImpl.class
 com\LMS\LVTN\mapper\PhieuHoTroMapperImpl.class
 com\LMS\LVTN\repository\BaiNopRepository$DemChoChamTheoLop.class
+com\LMS\LVTN\dto\response\ParentChildProfileDTO$ParentChildProfileDTOBuilder.class
 com\LMS\LVTN\mapper\LoImportMapperImpl.class
+com\LMS\LVTN\dto\response\ParentChildProfileDTO.class
 com\LMS\LVTN\mapper\BaiTapMapperImpl.class
 com\LMS\LVTN\mapper\HocKyMapperImpl.class
+com\LMS\LVTN\validation\NoiDungSgkValidator.class
 com\LMS\LVTN\mapper\SachMapperImpl.class
 com\LMS\LVTN\mapper\NamHocMapperImpl.class
 com\LMS\LVTN\mapper\BaiHocMapperImpl.class
@@ -23,7 +26,9 @@ com\LMS\LVTN\mapper\LichSuChuyenLopMapperImpl.class
 com\LMS\LVTN\mapper\HuyHieuMapperImpl.class
 com\LMS\LVTN\mapper\HoSoHocSinhMapperImpl.class
 com\LMS\LVTN\mapper\TienDoHocSinhMapperImpl.class
+com\LMS\LVTN\validation\NguoiDungUniquenessValidator.class
 com\LMS\LVTN\mapper\KetQuaCuoiNamMapperImpl.class
+com\LMS\LVTN\configuration\OpenApiConfig.class
 com\LMS\LVTN\mapper\CauHinhHeThongMapperImpl.class
 com\LMS\LVTN\mapper\ChuDeMapperImpl.class
 com\LMS\LVTN\mapper\KhenThuongHocSinhMapperImpl.class

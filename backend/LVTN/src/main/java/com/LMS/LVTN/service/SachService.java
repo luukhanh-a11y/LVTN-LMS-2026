@@ -6,16 +6,24 @@ import com.LMS.LVTN.entity.HoSoHocSinh;
 import com.LMS.LVTN.entity.HocKy;
 import com.LMS.LVTN.entity.MonHoc;
 import com.LMS.LVTN.entity.PhanCongGiangDay;
+import com.LMS.LVTN.entity.MonHoc;
 import com.LMS.LVTN.entity.Sach;
 import com.LMS.LVTN.enums.LoaiSach;
+import com.LMS.LVTN.enums.TrangThaiMonHoc;
 import com.LMS.LVTN.exception.AppExceptions;
 import com.LMS.LVTN.exception.Errorcode;
 import com.LMS.LVTN.mapper.SachMapper;
+import com.LMS.LVTN.repository.BaiHocRepository;
+import com.LMS.LVTN.repository.BaiTapRepository;
+import com.LMS.LVTN.repository.ChiTietBaiTapRepository;
+import com.LMS.LVTN.repository.DangBaiRepository;
 import com.LMS.LVTN.repository.HoSoHocSinhRepository;
 import com.LMS.LVTN.repository.HocKyRepository;
+import com.LMS.LVTN.repository.LichSuTuHocRepository;
 import com.LMS.LVTN.repository.MonHocRepository;
 import com.LMS.LVTN.repository.PhanCongGiangDayRepository;
 import com.LMS.LVTN.repository.SachRepository;
+import com.LMS.LVTN.repository.TienDoHocSinhRepository;
 import com.LMS.LVTN.repository.CauHinhHeThongRepository;
 import com.LMS.LVTN.repository.NamHocRepository;
 import com.LMS.LVTN.entity.CauHinhHeThong;
@@ -44,6 +52,12 @@ public class SachService {
     ChuDeService chuDeService;
     CauHinhHeThongRepository cauHinhHeThongRepository;
     NamHocRepository namHocRepository;
+    DangBaiRepository dangBaiRepository;
+    BaiHocRepository baiHocRepository;
+    ChiTietBaiTapRepository chiTietBaiTapRepository;
+    BaiTapRepository baiTapRepository;
+    LichSuTuHocRepository lichSuTuHocRepository;
+    TienDoHocSinhRepository tienDoHocSinhRepository;
 
     private Integer getHocKyHienTaiTuCauHinh() {
         return cauHinhHeThongRepository.findById((short) 1)
@@ -120,9 +134,34 @@ public class SachService {
         if (!sachRepository.existsById(id)) {
             throw new AppExceptions(Errorcode.SACH_NOT_FOUND);
         }
+        if (sachDangDuocSuDung(id)) {
+            throw new AppExceptions(Errorcode.SACH_DANG_SU_DUNG);
+        }
 
+        // Thứ tự bắt buộc: DangBai → BaiHoc → ChuDe → Sach (dang_bai/bai_hoc không có ON
+        // DELETE CASCADE ở DB, xoá ngược thứ tự sẽ vi phạm khoá ngoại nếu sách còn nội dung).
+        dangBaiRepository.deleteAllBySachId(id);
+        baiHocRepository.deleteAllBySachId(id);
         sachRepository.deleteAllBySachId(id);
         sachRepository.deleteById(id);
+    }
+
+    // Sách coi là "đang sử dụng" nếu có dạng bài bên trong đã được giao trong bài tập (kiểu
+    // cũ hoặc qua ChiTietBaiTap), học sinh đã có lịch sử tự học, hoặc đã có tiến độ học bài —
+    // những trường hợp này chỉ nên ẩn sách (trangThai=AN) thay vì xoá cứng.
+    private boolean sachDangDuocSuDung(Integer sachId) {
+        return chiTietBaiTapRepository.existsByDangBai_BaiHoc_ChuDe_Sach_SachId(sachId)
+                || baiTapRepository.existsByDangBai_BaiHoc_ChuDe_Sach_SachId(sachId)
+                || lichSuTuHocRepository.existsByDangBai_BaiHoc_ChuDe_Sach_SachId(sachId)
+                || tienDoHocSinhRepository.existsByBaiHoc_ChuDe_Sach_SachId(sachId);
+    }
+
+    // Sách bị ẩn nếu tự nó bị ẩn, hoặc môn học của nó bị ẩn (ẩn môn học → ẩn theo mọi sách
+    // thuộc môn đó). Sach.maMon chỉ khớp chuỗi với MonHoc.maMon, không phải khoá ngoại thật.
+    private boolean sachDangHienThi(Sach sach) {
+        if (sach.getTrangThai() == TrangThaiMonHoc.AN) return false;
+        MonHoc monHoc = monHocRepository.findByMaMon(sach.getMaMon()).orElse(null);
+        return monHoc == null || monHoc.getTrangThai() != TrangThaiMonHoc.AN;
     }
 
     public List<SachResponse> getSachGiaoKhoaForStudent(Long hocSinhId, Integer hocKyId) {
@@ -139,6 +178,7 @@ public class SachService {
         List<Sach> ketQua = sachRepository.findByLoaiSachAndKhoiLopAndHocKy_HocKyId(LoaiSach.SACH_GIAO_KHOA, khoiLop, hocKyId);
 
         return ketQua.stream()
+                .filter(this::sachDangHienThi)
                 .map(sachMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -161,6 +201,7 @@ public class SachService {
         ketQua.addAll(sgk);
 
         return ketQua.stream()
+                .filter(this::sachDangHienThi)
                 .map(sachMapper::toResponse)
                 .collect(Collectors.toList());
     }

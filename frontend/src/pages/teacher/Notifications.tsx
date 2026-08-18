@@ -3,17 +3,20 @@ import { Bell, MessageSquare, AlertCircle, CheckCircle2, Circle, Trash2, Check, 
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { ticketService } from '../../services/ticket.service';
+import { teacherService } from '../../services/teacher.service';
 import Button from '../../components/Button';
 
 export default function Notifications() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'resolved' | 'rejected'>('all');
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTicketType, setNewTicketType] = useState('HO_TRO_KY_THUAT');
   const [newTicketDesc, setNewTicketDesc] = useState('');
+  const [homeroomStudents, setHomeroomStudents] = useState<{ id: number; maHocSinh: string; hoTen: string; className: string }[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | ''>('');
 
   const fetchTickets = async () => {
     setLoading(true);
@@ -39,6 +42,9 @@ export default function Notifications() {
 
   useEffect(() => {
     fetchTickets();
+    teacherService.getHomeroomStudents()
+      .then(setHomeroomStudents)
+      .catch((err) => console.error(err));
   }, []);
 
   const filteredTickets = tickets.filter(t => {
@@ -50,12 +56,22 @@ export default function Notifications() {
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newTicketType === 'RESET_MAT_KHAU' && !selectedStudentId) {
+      toast.error('Vui lòng chọn học sinh cần cấp lại mật khẩu');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await ticketService.createTicket(null, newTicketType, newTicketDesc);
+      if (newTicketType === 'RESET_MAT_KHAU' && selectedStudentId) {
+        await ticketService.createHomeroomStudentTicket(Number(selectedStudentId), newTicketType, newTicketDesc);
+      } else {
+        await ticketService.createTicket(null, newTicketType, newTicketDesc);
+      }
       toast.success('Gửi yêu cầu hỗ trợ thành công');
       setShowAddModal(false);
       setNewTicketDesc('');
+      setSelectedStudentId('');
       fetchTickets();
     } catch (error) {
       toast.error('Lỗi khi gửi yêu cầu');
@@ -201,9 +217,12 @@ export default function Notifications() {
             <form onSubmit={handleSubmitTicket} className="p-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Loại yêu cầu</label>
-                <select 
+                <select
                   value={newTicketType}
-                  onChange={(e) => setNewTicketType(e.target.value)}
+                  onChange={(e) => {
+                    setNewTicketType(e.target.value);
+                    if (e.target.value !== 'RESET_MAT_KHAU') setSelectedStudentId('');
+                  }}
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
                 >
                   <option value="HO_TRO_KY_THUAT">Hỗ trợ kỹ thuật</option>
@@ -211,6 +230,28 @@ export default function Notifications() {
                   <option value="THAY_DOI_THONG_TIN">Thay đổi thông tin</option>
                 </select>
               </div>
+
+              {newTicketType === 'RESET_MAT_KHAU' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Học sinh cần cấp lại mật khẩu</label>
+                  <select
+                    value={selectedStudentId}
+                    onChange={(e) => setSelectedStudentId(e.target.value ? Number(e.target.value) : '')}
+                    required
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                  >
+                    <option value="">-- Chọn học sinh --</option>
+                    {homeroomStudents.map((hs) => (
+                      <option key={hs.id} value={hs.id}>
+                        {hs.hoTen} ({hs.maHocSinh}) - {hs.className}
+                      </option>
+                    ))}
+                  </select>
+                  {homeroomStudents.length === 0 && (
+                    <p className="text-xs text-slate-400">Bạn chưa là giáo viên chủ nhiệm của lớp nào nên không có học sinh để chọn.</p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700">Nội dung chi tiết</label>

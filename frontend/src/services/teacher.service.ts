@@ -210,6 +210,13 @@ export const teacherService = {
     return response.data?.data || response.data || [];
   },
 
+  // Danh sách học sinh thuộc (các) lớp giáo viên đang đăng nhập làm chủ nhiệm —
+  // dùng để chọn học sinh khi gửi phiếu hỗ trợ (VD: cấp lại mật khẩu cho học sinh).
+  getHomeroomStudents: async (): Promise<{ id: number; maHocSinh: string; hoTen: string; className: string }[]> => {
+    const response = await api.get('/teachers/me/homeroom-students');
+    return response.data?.data || response.data || [];
+  },
+
   // === Sách bài tập đúng bộ môn/lớp/học kỳ giáo viên được phân công (Giao bài tập) ===
   getSachBaiTapTheoPhanCong: async (params: { giaoVienId: number; lopHocId: number; maMon: string; hocKyId: number }): Promise<any[]> => {
     const response = await api.get('/sach/sach-bai-tap/phan-cong', { params });

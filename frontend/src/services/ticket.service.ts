@@ -68,5 +68,16 @@ export const ticketService = {
       moTa: description,
     });
     return response.data?.data || response.data;
+  },
+
+  // Endpoint riêng cho giáo viên gửi phiếu liên quan tới học sinh chủ nhiệm — hocSinhId ở
+  // đây KHÔNG phải là nguoiDungId mà PhieuHoTro cần, nên phải qua endpoint /teachers/me để
+  // backend tự tra đúng NguoiDung của học sinh (giống parentService.createChildTicket).
+  createHomeroomStudentTicket: async (hocSinhId: number, type: string, description: string) => {
+    const response = await api.post(`/teachers/me/students/${hocSinhId}/tickets`, {
+      loaiYeuCau: type,
+      moTa: description,
+    });
+    return response.data?.data || response.data;
   }
 };
